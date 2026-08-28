@@ -189,6 +189,14 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 - Existing cached refusals are now ignored immediately, including during
   stale-data fallback. Concurrent identical requests share the same last-good
   fallback when all mirrors refuse, without duplicating upstream requests.
+### Added
+
+- Keyless place search. The LOCATION search box and the `fly_to_location` voice
+  tool now resolve place names through Photon (komoot, over OpenStreetMap) when
+  no Google Maps key is configured — previously the lookup threw. Google stays
+  the primary path and is unchanged when it answers; the fallback also covers a
+  key whose Geocoding API is not enabled, which Google reports as HTTP 200 with
+  `REQUEST_DENIED`, so an empty result is the detector rather than an error.
 
 <<<<<<< HEAD
 - Refresh vulnerable transitive dependencies and update browser/image tooling

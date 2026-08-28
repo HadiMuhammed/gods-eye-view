@@ -2487,6 +2487,12 @@ silently demoting every later lookup for the session.
 - Input is the live basemap label context (place/street/nearby-place labels + enabled layers) — the model is instructed not to infer from coordinates.
 - Output is sanitized to exactly five words; falls back to the deterministic telemetry summary on error/timeout (5s abort); typewriter animation on update.
 
+### Keyless place search (August 2026)
+
+- `src/keylessGeocoder.js` is a Photon (komoot/OpenStreetMap) adapter used by `searchAndFlyTo` when the Google geocode produces no result: no key configured, or a key whose Geocoding API is not enabled — Google answers HTTP 200 with `REQUEST_DENIED`, so the empty result is the detector, not an error. Google stays the primary path and is byte-unchanged when it answers, and the Places near-view recovery is only attempted when a key exists, since Places is a Google service.
+- The adapter normalizes into the shape the Google path already produces — `lat`/`lng`, label, Google-style `types`, `{southwest,northeast}` bounds — so `geocodeNavigationMode`, `regionFramingPlan` and the region-swath cap keep running unchanged. Two translations are load-bearing and are pinned by tests: Photon's `extent` is `[west, north, east, south]`, and a specific OSM `key=value` rule beats the coarse `type` (Photon reports a lake as `water=lake` with `type: 'other'`, which framed at building range put the camera 26 m over the water; it reports a town square as `type: 'locality'`, which framed a plaza as a city).
+- The shared `viewportBias()` string is sent as Photon's `lat`/`lon` PROXIMITY bias, never as `bbox`: Google's `bounds` prefers, Photon's `bbox` filters, and the literal translation makes every off-screen search return nothing. One result per query, memoized by query+bias (misses included) to respect komoot's fair use.
+
 ### Map Stack Switcher (June 2026)
 
 - `src/mapStackController.js` switches between Google Photorealistic 3D (`photoreal`, the default when a Google or ion key is present), keyless Esri World Imagery (the zero-key default landing, with keyless terrain), Bing Aerial / Aerial-with-Labels via Cesium ion world imagery (require `CESIUM_ION_TOKEN`), and OSM tile fallback. Bing Road is **retired**: it is gone from `MAP_STACKS`, from the `set_map_stack` enum, and from the voice aliases (road phrasings now resolve to OSM, the one shipped road basemap). An old `map=bing-road` link is simply an unknown id and takes `setStack()`'s existing photoreal fallback with the Google 3D tile lit — pinned live in `scripts/qa-map-source-tray.mjs`.

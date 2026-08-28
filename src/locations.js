@@ -1,5 +1,6 @@
 import * as Cesium from 'cesium';
 import { viewportBias, placesNearViewRecovery } from './annotations/annotationResolver.js';
+import { geocodeKeyless } from './keylessGeocoder.js';
 
 /**
  * Points of Interest per city.
@@ -348,7 +349,6 @@ export const CANCELLED_SEARCH = Object.freeze({ cancelled: true });
  */
 export async function searchAndFlyTo(viewer, query, options = {}) {
   const apiKey = window.__GOOGLE_MAPS_API_KEY__ || import.meta.env.GOOGLE_MAPS_API_KEY;
-  if (!apiKey) throw new Error('No Google Maps API key available for geocoding');
 
   const beforeFly = typeof options.beforeFly === 'function' ? options.beforeFly : null;
   const mayFly = () => beforeFly === null || beforeFly() !== false;
@@ -356,13 +356,17 @@ export async function searchAndFlyTo(viewer, query, options = {}) {
   // Viewport-biased geocode — the same bias annotationResolver's geocodePlace uses:
   // "Sixth Street" spoken over Austin must prefer the Sixth Street on screen, not a
   // same-named road in another city (or the wrong end of town — the W 6th vs E 6th bug).
-  let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`;
   const bias = viewportBias(viewer);
-  if (bias) url += `&bounds=${bias}`;
-  const response = await fetch(url);
-  const data = await response.json();
+  let result = null;
 
-  const result = (data.status === 'OK' && data.results?.length) ? data.results[0] : null;
+  if (apiKey) {
+    let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`;
+    if (bias) url += `&bounds=${bias}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    result = (data.status === 'OK' && data.results?.length) ? data.results[0] : null;
+  }
+
   let lat = result?.geometry.location.lat;
   let lng = result?.geometry.location.lng;
   let label = result ? result.formatted_address : null;
@@ -372,7 +376,10 @@ export async function searchAndFlyTo(viewer, query, options = {}) {
   // Places-near-view recovery (annotationResolver's twin): a missed geocode, or one
   // that landed implausibly far from the view centre, snaps back to a view-biased
   // Places hit within the trust bound — "the Capitol" means the one on screen.
-  const recovered = await placesNearViewRecovery(viewer, query, result ? { lat, lon: lng } : null);
+  // Places is a Google service, so it is only worth asking when Google answered.
+  const recovered = apiKey
+    ? await placesNearViewRecovery(viewer, query, result ? { lat, lon: lng } : null)
+    : null;
   if (recovered) {
     lat = recovered.lat;
     lng = recovered.lon;
@@ -380,7 +387,16 @@ export async function searchAndFlyTo(viewer, query, options = {}) {
     types = recovered.types || [];
     viewport = placesViewportToBounds(recovered.viewport) || viewport;
   } else if (!result) {
-    return null;
+    // Keyless fallback. Reached when no key is configured, and also when a key
+    // exists but Google declined — an unenabled Geocoding API answers HTTP 200
+    // with REQUEST_DENIED, so the miss above is what detects it, not an error.
+    const keyless = await geocodeKeyless(query, { bias });
+    if (!keyless) return null;
+    lat = keyless.lat;
+    lng = keyless.lng;
+    label = keyless.label || query;
+    types = keyless.types;
+    viewport = keyless.viewport;
   }
 
   const requestedRange = finitePositive(options.range);
