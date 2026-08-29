@@ -20,10 +20,12 @@ import assert from 'node:assert/strict';
 import {
   geocodeKeyless,
   normalizePhotonFeature,
+  normalizeToponym,
   photonExtentToBounds,
   photonResultLabel,
   photonResultTypes,
   photonSearchUrl,
+  selectPhotonFeature,
 } from './keylessGeocoder.js';
 import { geocodeNavigationMode } from './locations.js';
 
@@ -130,7 +132,9 @@ test('the Google bias becomes a SOFT proximity bias, never a hard bbox', () => {
   const url = new URL(photonSearchUrl('Sixth Street', { bias: '30.2000,-97.8000|30.3000,-97.7000' }));
 
   assert.equal(url.searchParams.get('q'), 'Sixth Street');
-  assert.equal(url.searchParams.get('limit'), '1');
+  // Five, not one: proximity reorders the list, so the name actually asked for
+  // can sit below a nearer near-miss and must still be reachable.
+  assert.equal(url.searchParams.get('limit'), '5');
   assert.equal(url.searchParams.get('lat'), '30.25', 'centre of the biased rectangle');
   assert.equal(url.searchParams.get('lon'), '-97.75');
 
@@ -196,4 +200,91 @@ test('a feature without usable coordinates is rejected', () => {
   assert.equal(normalizePhotonFeature({ properties: { name: 'Nowhere' } }), null);
   assert.equal(normalizePhotonFeature({ geometry: { coordinates: [200, 10] } }), null);
   assert.equal(normalizePhotonFeature({ geometry: { coordinates: [10, 91] } }), null);
+});
+
+// ── Bias may choose among matches; it may not change what counts as one ──────
+
+/** Photon's real answers for "Huế": Austin-biased, then unbiased. */
+const HUTTO = {
+  geometry: { type: 'Point', coordinates: [-97.6842, 30.5427] },
+  properties: { osm_key: 'place', osm_value: 'town', type: 'city', name: 'Hutto', country: 'United States' },
+};
+const HUE = {
+  geometry: { type: 'Point', coordinates: [107.5908, 16.4674] },
+  properties: {
+    osm_key: 'place', osm_value: 'city', type: 'city', name: 'Huế', country: 'Việt Nam',
+    extent: [107.3763, 16.7739, 108.0518, 16.1276],
+  },
+};
+
+/** Answers biased requests with `nearby`, unbiased ones with `anywhere`. */
+function photonPair(nearby, anywhere) {
+  const urls = [];
+  const impl = (url) => {
+    urls.push(url);
+    const biased = new URL(url).searchParams.has('lat');
+    return Promise.resolve({ ok: true, json: () => Promise.resolve({ features: biased ? nearby : anywhere }) });
+  };
+  impl.urls = urls;
+  return impl;
+}
+
+test('a biased near-miss is refused, and the unbiased answer is taken instead', async () => {
+  // Measured from Austin against the live service: "Huế" scored Hutto, Texas
+  // above the city, and "Hạ Long" scored Long Branch. Distance alone must not
+  // outrank the name — three of twelve Vietnamese names crossed a continent.
+  const fetchImpl = photonPair([HUTTO], [HUE]);
+
+  const result = await geocodeKeyless('Huế', { bias: '30.20,-97.80|30.30,-97.70', fetchImpl });
+
+  assert.equal(result.label.startsWith('Huế'), true, `got ${result.label}`);
+  assert.equal(Math.round(result.lat), 16);
+  assert.equal(fetchImpl.urls.length, 2, 'the refused bias costs exactly one extra request');
+});
+
+test('a biased match that leads with the name is taken without a second request', async () => {
+  // The other half of the rule, and the reason bias exists at all: "Sixth
+  // Street" over Austin must stay Austin's.
+  const sixth = {
+    geometry: { type: 'Point', coordinates: [-97.7431, 30.2672] },
+    properties: { osm_key: 'highway', osm_value: 'residential', type: 'street', name: 'Sixth Street', country: 'United States' },
+  };
+  const fetchImpl = photonPair([sixth], [HUE]);
+
+  const result = await geocodeKeyless('Sixth Street', { bias: '30.20,-97.80|30.30,-97.70', fetchImpl });
+
+  assert.equal(result.label.startsWith('Sixth Street'), true);
+  assert.equal(fetchImpl.urls.length, 1);
+});
+
+test('a name is matched at its head, so a street that merely contains it loses', () => {
+  const road = { properties: { name: 'Nguyen Hue Road' } };
+  const city = { properties: { name: 'Huế' } };
+
+  assert.equal(selectPhotonFeature([road, city], 'hue'), city);
+  // Relaxing to substring is a second choice only, never a first one.
+  assert.equal(selectPhotonFeature([road], 'hue'), null);
+  assert.equal(selectPhotonFeature([road], 'hue', { allowContains: true }), road);
+  assert.equal(selectPhotonFeature([city], ''), null);
+  assert.equal(selectPhotonFeature(undefined, 'hue'), null);
+});
+
+test('a "place, region" query is matched on the place, not the region', async () => {
+  const lake = {
+    geometry: { type: 'Point', coordinates: [105.8524, 21.0287] },
+    properties: { osm_key: 'natural', osm_value: 'water', water: 'lake', name: 'Hoàn Kiếm Lake', country: 'Việt Nam' },
+  };
+  const street = { geometry: { type: 'Point', coordinates: [105.85, 21.03] }, properties: { name: 'Hoan Kiem District Road' } };
+  const fetchImpl = photonPair([], [street, lake]);
+
+  const result = await geocodeKeyless('Hoan Kiem Lake, Hanoi', { fetchImpl });
+
+  assert.equal(result.label.startsWith('Hoàn Kiếm Lake'), true, `got ${result.label}`);
+});
+
+test('accents and punctuation do not change what a name compares as', () => {
+  assert.equal(normalizeToponym('Huế'), 'hue');
+  assert.equal(normalizeToponym('Hạ Long Bay'), 'ha long bay');
+  assert.equal(normalizeToponym("  St. John's-Ravenscourt  "), 'st john s ravenscourt');
+  assert.equal(normalizeToponym(undefined), '');
 });

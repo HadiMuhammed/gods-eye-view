@@ -26,6 +26,12 @@ const PHOTON_TIMEOUT_MS = 6000;
 
 /** Bounded memo — a search box re-issues the same query on every keystroke. */
 const PHOTON_CACHE_MAX = 64;
+
+/**
+ * Candidates requested per pass. One is not enough: proximity bias reorders the
+ * list, so the name actually asked for can sit below a nearer near-miss.
+ */
+const PHOTON_RESULT_LIMIT = 5;
 const photonCache = new Map();
 
 /**
@@ -187,13 +193,13 @@ export function normalizePhotonFeature(feature) {
  * and to England's over London. Soft bias is the semantics Google gives, so
  * soft bias is what the adapter must produce.
  * @param {string} query - Free-text place name.
- * @param {{bias?: ?string}} [options]
+ * @param {{bias?: ?string, limit?: number}} [options]
  * @returns {string}
  */
-export function photonSearchUrl(query, { bias = null } = {}) {
+export function photonSearchUrl(query, { bias = null, limit = PHOTON_RESULT_LIMIT } = {}) {
   const url = new URL(PHOTON_ENDPOINT);
   url.searchParams.set('q', String(query ?? ''));
-  url.searchParams.set('limit', '1');
+  url.searchParams.set('limit', String(limit));
 
   const corners = String(bias ?? '').split('|');
   if (corners.length === 2) {
@@ -205,6 +211,49 @@ export function photonSearchUrl(query, { bias = null } = {}) {
     }
   }
   return url.toString();
+}
+
+/**
+ * Place name reduced to comparable form: unaccented, lowercased, punctuation
+ * collapsed to single spaces. "Huế" and "Hue" have to compare equal, because a
+ * user typing either means the same city.
+ * @param {string} text
+ * @returns {string}
+ */
+export function normalizeToponym(text) {
+  return String(text ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/**
+ * Pick the candidate whose name actually answers `target`.
+ *
+ * Matching leads rather than merely contains: "Hue" must select `Huế` and not
+ * `Nguyen Hue Road`, which contains the word but names a different thing.
+ * `allowContains` relaxes that to a substring match, used only as a second
+ * choice once no candidate leads with the name.
+ * @param {object[]} features - Photon features, in the order returned.
+ * @param {string} target - Normalized name being looked for.
+ * @param {{allowContains?: boolean}} [options]
+ * @returns {?object}
+ */
+export function selectPhotonFeature(features, target, { allowContains = false } = {}) {
+  if (!target) return null;
+  const names = (Array.isArray(features) ? features : [])
+    .map((feature) => [feature, normalizeToponym(feature?.properties?.name)]);
+
+  for (const [feature, name] of names) {
+    if (name === target || name.startsWith(`${target} `)) return feature;
+  }
+  if (!allowContains) return null;
+  for (const [feature, name] of names) {
+    if (name.includes(target)) return feature;
+  }
+  return null;
 }
 
 /** Evict the oldest memo entries until the cache is within its cap. */
@@ -228,23 +277,45 @@ export async function geocodeKeyless(query, { bias = null, fetchImpl = fetch } =
   const trimmed = String(query ?? '').trim();
   if (!trimmed) return null;
 
-  const url = photonSearchUrl(trimmed, { bias });
-  if (photonCache.has(url)) return photonCache.get(url);
+  const memoKey = `${bias ?? ''}\n${trimmed}`;
+  if (photonCache.has(memoKey)) return photonCache.get(memoKey);
 
-  let result = null;
-  try {
-    const response = await fetchImpl(url, { signal: AbortSignal.timeout(PHOTON_TIMEOUT_MS) });
-    if (response.ok) {
-      const body = await response.json();
-      result = normalizePhotonFeature(body?.features?.[0]);
+  const ask = async (url) => {
+    try {
+      const response = await fetchImpl(url, { signal: AbortSignal.timeout(PHOTON_TIMEOUT_MS) });
+      if (!response.ok) return null;
+      return (await response.json())?.features || [];
+    } catch {
+      return null;
     }
-  } catch {
-    result = null;
+  };
+
+  // Bias decides WHICH match wins, never WHAT counts as a match. Photon scores
+  // proximity against the name, so from Austin "Huế" came back as Hutto, Texas
+  // and "Hạ Long" as Long Branch — near misses beating the exact name by
+  // distance alone. Measured over twelve Vietnamese place names, three resolved
+  // to the wrong continent. So a biased answer is only accepted when it leads
+  // with the name asked for; otherwise the same query runs unbiased, which is
+  // what a user searching for somewhere off-screen meant in the first place.
+  let feature = null;
+  if (bias) {
+    feature = selectPhotonFeature(await ask(photonSearchUrl(trimmed, { bias })), normalizeToponym(trimmed));
   }
+
+  if (!feature) {
+    const anywhere = await ask(photonSearchUrl(trimmed, { bias: null }));
+    // "Hoan Kiem Lake, Hanoi" names a place and then the region holding it, the
+    // convention every geocoder's free-text field follows. The head segment is
+    // the thing being searched for; the tail only says where to look.
+    const head = normalizeToponym(trimmed.split(',')[0]);
+    feature = selectPhotonFeature(anywhere, head, { allowContains: true }) || anywhere?.[0];
+  }
+
+  const result = normalizePhotonFeature(feature);
 
   // Misses are cached too: a typo re-issued on every keystroke should cost one
   // request, not one per stroke.
-  photonCache.set(url, result);
+  photonCache.set(memoKey, result);
   trimPhotonCache();
   return result;
 }
