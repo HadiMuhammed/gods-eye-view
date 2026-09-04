@@ -190,9 +190,26 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
   stale-data fallback. Concurrent identical requests share the same last-good
   fallback when all mirrors refuse, without duplicating upstream requests.
 
+<<<<<<< HEAD
 - Refresh vulnerable transitive dependencies and update browser/image tooling
   to Puppeteer 25.10.0 and Sharp 0.35.4. Cesium remains on 1.138.0.
   Browser QA awaits the new asynchronous executable-path lookup.
+=======
+### Security
+
+- The GBFS proxy no longer follows upstream redirects. It validated the host
+  and path of the requested URL and then let `fetch()` follow whatever an
+  allowlisted operator answered with, so a redirect could carry the proxy to a
+  destination the allowlist never checked. A 3xx response now returns a 502 to
+  the client and logs the redirect target server-side. Every registered feed
+  answers 200 directly today, so nothing changes until an operator moves behind
+  a redirect, which then fails loudly instead of silently (#30).
+- The GBFS proxy enforces its 5 MB response cap while the body streams and
+  cancels the upstream read the moment the running byte count passes it. It
+  previously trusted `Content-Length`, then materialized the whole body before
+  measuring, so a chunked or mislabeled response could grow memory without
+  bound before the check ever ran (#31).
+>>>>>>> db35b49 (fix: gbfs - refuse upstream redirects and enforce cap while streaming. extract network step into fetch so test can stand in. Pass redirect 'manual,' reject and 3xx w/ a 502. Log target host serverside. Replace read then measure cap w/ readResponseTextCapped. Cancels stream if over 5mb. Closes #30 and #31)
 
 ## [0.1.1] — 2026-09-01 — Installation and live-data fixes
 
