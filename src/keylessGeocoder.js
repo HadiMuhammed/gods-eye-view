@@ -157,10 +157,21 @@ export function photonResultLabel(properties) {
 }
 
 /**
- * Photon GeoJSON feature → the normalized geocode result `searchAndFlyTo`
- * consumes. Returns null for a feature without usable coordinates.
+ * Photon GeoJSON feature → the normalized geocode result its callers consume.
+ * Returns null for a feature without usable coordinates.
+ *
+ * `name` is carried alongside the composed `label` because two call sites want
+ * different halves of the same answer: the search box shows the full label,
+ * while the annotation resolver matches OSM features on the canonical name
+ * alone. Deriving it here keeps one shape rather than two parsers of the same
+ * string.
+ *
+ * `properties.country` is deliberately NOT re-exported. Photon answers in the
+ * feature's own language ("Việt Nam", "日本", "Россия"), which no consumer in
+ * this app can match; the composed label is the only honest use for it.
  * @param {object} feature - One entry of Photon's `features` array.
- * @returns {?{lat:number, lng:number, label:string, types:string[], viewport:?object}}
+ * @returns {?{lat:number, lng:number, name:string, label:string,
+ *   types:string[], viewport:?object}}
  */
 export function normalizePhotonFeature(feature) {
   const [lng, lat] = feature?.geometry?.coordinates || [];
@@ -168,10 +179,12 @@ export function normalizePhotonFeature(feature) {
   if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
 
   const properties = feature.properties || {};
+  const name = String(properties.name || '');
   return {
     lat,
     lng,
-    label: photonResultLabel(properties) || String(properties.name || ''),
+    name,
+    label: photonResultLabel(properties) || name,
     types: photonResultTypes(properties),
     viewport: photonExtentToBounds(properties.extent),
   };
@@ -266,20 +279,33 @@ function trimPhotonCache() {
 }
 
 /**
- * Geocode a place name without any API key. Never throws: a network failure,
- * a timeout, or an empty result all resolve to null, which the caller reads as
- * "not found" exactly as it reads a Google miss.
+ * Geocode a place name without any API key, reporting whether the service
+ * ANSWERED as well as what it found.
+ *
+ * A caller that remembers negative results needs both halves. "Photon has no
+ * such place" is a verdict and may be cached; "Photon did not reply" is a
+ * network blip, and caching THAT keeps the app answering "not found" from
+ * memory long after the network came back — a whole session, for a key that
+ * would now resolve. Conflating the two is the defect this app already had to
+ * repair once in the Overpass disk cache, where refusals were persisted with
+ * normal data TTLs.
+ *
+ * Never throws: a failure, a timeout, and an empty result all resolve to a null
+ * `place`, which the caller reads exactly as it reads a Google miss.
  * @param {string} query - Free-text place name.
  * @param {{bias?: ?string, fetchImpl?: Function}} [options]
- * @returns {Promise<?{lat:number, lng:number, label:string, types:string[], viewport:?object}>}
+ * @returns {Promise<{place: ?{lat:number, lng:number, name:string, label:string,
+ *   types:string[], viewport:?object}, answered:boolean}>}
  */
-export async function geocodeKeyless(query, { bias = null, fetchImpl = fetch } = {}) {
+export async function geocodeKeylessWithOutcome(query, { bias = null, fetchImpl = fetch } = {}) {
   const trimmed = String(query ?? '').trim();
-  if (!trimmed) return null;
+  if (!trimmed) return { place: null, answered: true };
 
   const memoKey = `${bias ?? ''}\n${trimmed}`;
-  if (photonCache.has(memoKey)) return photonCache.get(memoKey);
+  // Only answered outcomes are memoised, so a hit is always an answer.
+  if (photonCache.has(memoKey)) return { place: photonCache.get(memoKey), answered: true };
 
+  /** One request: the feature array Photon returned, or null if it did not answer. */
   const ask = async (url) => {
     try {
       const response = await fetchImpl(url, { signal: AbortSignal.timeout(PHOTON_TIMEOUT_MS) });
@@ -298,24 +324,49 @@ export async function geocodeKeyless(query, { bias = null, fetchImpl = fetch } =
   // with the name asked for; otherwise the same query runs unbiased, which is
   // what a user searching for somewhere off-screen meant in the first place.
   let feature = null;
+  let everyAskAnswered = true;
   if (bias) {
-    feature = selectPhotonFeature(await ask(photonSearchUrl(trimmed, { bias })), normalizeToponym(trimmed));
+    const biased = await ask(photonSearchUrl(trimmed, { bias }));
+    if (biased === null) everyAskAnswered = false;
+    else feature = selectPhotonFeature(biased, normalizeToponym(trimmed));
   }
 
   if (!feature) {
     const anywhere = await ask(photonSearchUrl(trimmed, { bias: null }));
-    // "Hoan Kiem Lake, Hanoi" names a place and then the region holding it, the
-    // convention every geocoder's free-text field follows. The head segment is
-    // the thing being searched for; the tail only says where to look.
-    const head = normalizeToponym(trimmed.split(',')[0]);
-    feature = selectPhotonFeature(anywhere, head, { allowContains: true }) || anywhere?.[0];
+    if (anywhere === null) everyAskAnswered = false;
+    else {
+      // "Hoan Kiem Lake, Hanoi" names a place and then the region holding it, the
+      // convention every geocoder's free-text field follows. The head segment is
+      // the thing being searched for; the tail only says where to look.
+      const head = normalizeToponym(trimmed.split(',')[0]);
+      feature = selectPhotonFeature(anywhere, head, { allowContains: true }) || anywhere[0];
+    }
   }
 
-  const result = normalizePhotonFeature(feature);
+  const place = normalizePhotonFeature(feature);
+  // A found place is self-evidently an answer; a null one only counts as an
+  // answer when every request it rests on actually came back.
+  const answered = Boolean(place) || everyAskAnswered;
 
-  // Misses are cached too: a typo re-issued on every keystroke should cost one
-  // request, not one per stroke.
-  photonCache.set(memoKey, result);
-  trimPhotonCache();
-  return result;
+  // Answered misses are cached too: a typo re-issued on every keystroke should
+  // cost one request, not one per stroke. Unanswered ones are not, so the next
+  // attempt retries instead of replaying a network blip.
+  if (answered) {
+    photonCache.set(memoKey, place);
+    trimPhotonCache();
+  }
+  return { place, answered };
+}
+
+/**
+ * Geocode a place name without any API key. Never throws: a network failure, a
+ * timeout, or an empty result all resolve to null, which the caller reads as
+ * "not found" exactly as it reads a Google miss.
+ * @param {string} query - Free-text place name.
+ * @param {{bias?: ?string, fetchImpl?: Function}} [options]
+ * @returns {Promise<?{lat:number, lng:number, name:string, label:string, types:string[],
+ *   viewport:?object}>}
+ */
+export async function geocodeKeyless(query, options) {
+  return (await geocodeKeylessWithOutcome(query, options)).place;
 }

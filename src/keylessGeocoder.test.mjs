@@ -17,8 +17,12 @@
 // Run with: npm test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   geocodeKeyless,
+  geocodeKeylessWithOutcome,
   normalizePhotonFeature,
   normalizeToponym,
   photonExtentToBounds,
@@ -28,6 +32,8 @@ import {
   selectPhotonFeature,
 } from './keylessGeocoder.js';
 import { geocodeNavigationMode } from './locations.js';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Photon's real answer for "Hanoi", trimmed to the fields we consume. */
 const HANOI = {
@@ -287,4 +293,183 @@ test('accents and punctuation do not change what a name compares as', () => {
   assert.equal(normalizeToponym('Hạ Long Bay'), 'ha long bay');
   assert.equal(normalizeToponym("  St. John's-Ravenscourt  "), 'st john s ravenscourt');
   assert.equal(normalizeToponym(undefined), '');
+});
+
+// ── The seam inventory ───────────────────────────────────────────────────────
+//
+// A fallback is only worth having where the app actually geocodes, and the app
+// geocodes in more than one place: the LOCATION search box, the Radio layer's
+// "near <place>" lookup, and the annotation resolver. Fixing one and leaving
+// the others is the failure this pins — the first version of this work fixed
+// the search box alone, so a keyless install still threw on "play radio near
+// Hanoi" while the search box beside it worked.
+//
+// It reads the source rather than the behaviour on purpose. The defect is not
+// that a particular function is wrong; it is that a NEW call site can be added
+// without one, and no behavioural test of the existing three would notice.
+
+/** Client modules that forward-geocode a place name through Google. */
+const GOOGLE_FORWARD_GEOCODE = /maps\.googleapis\.com\/maps\/api\/geocode\/json\?address/;
+const CLIENT_SOURCES = fs.readdirSync(path.join(ROOT, 'src'), { recursive: true })
+  .filter((entry) => typeof entry === 'string' && entry.endsWith('.js'))
+  .map((entry) => ({ file: path.join('src', entry), body: fs.readFileSync(path.join(ROOT, 'src', entry), 'utf8') }));
+
+/**
+ * Every forward-geocode call site in the client, by file. Reverse geocoding
+ * (`?latlng=`) is deliberately absent: Google returns ranked
+ * `address_components` that the street-label reader consumes, and Photon's
+ * `/reverse` cannot reproduce that shape — an honest gap, not an oversight.
+ */
+const FORWARD_GEOCODE_SEAMS = Object.freeze({
+  'src/locations.js': 1,
+  'src/annotations/annotationResolver.js': 1,
+  'src/voice/gevActions.js': 1,
+});
+
+test('the seam inventory is exactly the call sites we know about', () => {
+  // Counted, not merely listed. A file-level check would pass a SECOND seam
+  // added to a file that already has a fallback — which is how the first
+  // version of this work shipped: the search box had one, and the two call
+  // sites beside it did not.
+  assert.ok(CLIENT_SOURCES.length > 50, `only ${CLIENT_SOURCES.length} client sources scanned`);
+  const found = {};
+  for (const { file, body } of CLIENT_SOURCES) {
+    const count = (body.match(new RegExp(GOOGLE_FORWARD_GEOCODE, 'g')) || []).length;
+    if (count) found[file] = count;
+  }
+  // A new seam is not a failure — it is a prompt to give it the same fallback
+  // and record it here.
+  assert.deepEqual(found, { ...FORWARD_GEOCODE_SEAMS });
+});
+
+test('every place that forward-geocodes through Google can also answer without a key', () => {
+  for (const { file, body } of CLIENT_SOURCES) {
+    if (!GOOGLE_FORWARD_GEOCODE.test(body)) continue;
+    assert.match(body, /geocodeKeyless/, `${file} geocodes through Google with no keyless fallback`);
+  }
+});
+
+test('a missing key is never a thrown error on the client', () => {
+  // It was one, in the Radio layer: a keyless install surfaced "play radio near
+  // Hanoi" as a failed voice turn rather than as a station it could not place.
+  for (const { file, body } of CLIENT_SOURCES) {
+    assert.doesNotMatch(body, /throw new Error\([^)]*No Google Maps API key/, `${file} throws on a missing key`);
+  }
+});
+
+// ── The shape the three call sites share ─────────────────────────────────────
+
+test('the normalized result carries the canonical name its callers need', () => {
+  // Two consumers want different halves of one answer: the search box shows
+  // `label`, while the annotation resolver matches OSM features on `name`
+  // alone — a canonical name beats a parsed label there, because "Hà Nội,
+  // Việt Nam" would let the country token win the footprint scoring.
+  const result = normalizePhotonFeature(HANOI);
+
+  assert.equal(result.name, 'Hà Nội');
+  assert.equal(result.label.startsWith('Hà Nội'), true);
+  assert.equal(result.label.includes(result.name), true, 'the label is built from the name, not beside it');
+});
+
+test('a feature with no name yields an empty string, never undefined', () => {
+  const bare = { geometry: { coordinates: [105.85, 21.03] }, properties: { osm_key: 'place', osm_value: 'city' } };
+  const result = normalizePhotonFeature(bare);
+
+  assert.equal(result.name, '');
+  assert.equal(typeof result.label, 'string');
+});
+
+test("Photon's own country name stays inside the label — it is not a field", () => {
+  // Photon answers in the feature's LANGUAGE: this fixture is the live service's
+  // real reply for "Hanoi", and it says "Việt Nam", not "Vietnam". Tokyo answers
+  // "日本", Moscow "Россия". Re-exporting that as a `country` field invites a
+  // consumer to match on it, and the one consumer that would — the Radio
+  // layer's `normalizeRadioCountryInput` — fails CLOSED on a name it cannot
+  // map, turning "radio near Ha Long" into an empty station list. The composed
+  // label is the only honest use for a localized country name.
+  assert.equal(HANOI.properties.country, 'Việt Nam');
+  const result = normalizePhotonFeature(HANOI);
+
+  assert.equal('country' in result, false, 'a localized country name must not become a matchable field');
+  assert.match(result.label, /Việt Nam$/);
+});
+
+// ── An answer and a silence are not the same miss ────────────────────────────
+//
+// Both arrive as `null`, and remembering the wrong one is the defect this app
+// has already had to repair once: the Overpass disk cache persisted refusals
+// with normal data TTLs, so an install that hit a bad minute kept serving the
+// refusal for a month. A geocoder that memoises a network blip does the same
+// thing for a session — every later keystroke replays it without asking.
+
+test('an unanswered request is never memoized, so the next attempt really retries', async () => {
+  let attempts = 0;
+  const offline = () => { attempts += 1; return Promise.reject(new Error('offline')); };
+  const online = () => {
+    attempts += 1;
+    return Promise.resolve({ ok: true, json: () => Promise.resolve({ features: [HANOI] }) });
+  };
+
+  assert.equal(await geocodeKeyless('blip probe', { fetchImpl: offline }), null);
+  assert.equal(attempts, 1);
+
+  const recovered = await geocodeKeyless('blip probe', { fetchImpl: online });
+  assert.equal(attempts, 2, 'the retry must reach the network, not a memoized blip');
+  assert.equal(recovered.name, 'Hà Nội');
+});
+
+test('an HTTP refusal counts as silence, not as "no such place"', async () => {
+  let attempts = 0;
+  const refusing = () => {
+    attempts += 1;
+    return Promise.resolve({ ok: false, status: 429, json: () => Promise.resolve({}) });
+  };
+
+  await geocodeKeyless('throttle probe', { fetchImpl: refusing });
+  await geocodeKeyless('throttle probe', { fetchImpl: refusing });
+  assert.equal(attempts, 2, 'a 429 must not be remembered as a verdict');
+});
+
+test('the outcome reports which of the two a null result was', async () => {
+  const answeredMiss = () => Promise.resolve({ ok: true, json: () => Promise.resolve({ features: [] }) });
+  const failure = () => Promise.reject(new Error('offline'));
+  const hit = () => Promise.resolve({ ok: true, json: () => Promise.resolve({ features: [HANOI] }) });
+
+  assert.deepEqual(
+    await geocodeKeylessWithOutcome('outcome probe a', { fetchImpl: answeredMiss }),
+    { place: null, answered: true },
+  );
+  assert.deepEqual(
+    await geocodeKeylessWithOutcome('outcome probe b', { fetchImpl: failure }),
+    { place: null, answered: false },
+  );
+
+  const found = await geocodeKeylessWithOutcome('outcome probe c', { fetchImpl: hit });
+  assert.equal(found.answered, true);
+  assert.equal(found.place.name, 'Hà Nội');
+
+  // A memo hit is by definition an answer — only answers are stored.
+  assert.deepEqual(
+    await geocodeKeylessWithOutcome('outcome probe a', { fetchImpl: failure }),
+    { place: null, answered: true },
+  );
+});
+
+test('a biased pass that never answered leaves the whole lookup unanswered', async () => {
+  // The unbiased retry can report an honest empty while the biased request that
+  // preceded it timed out. The lookup as a whole still rests on a request that
+  // never came back, so its null is not a verdict.
+  const urls = [];
+  const halfDown = (url) => {
+    urls.push(url);
+    return new URL(url).searchParams.has('lat')
+      ? Promise.reject(new Error('timeout'))
+      : Promise.resolve({ ok: true, json: () => Promise.resolve({ features: [] }) });
+  };
+
+  const outcome = await geocodeKeylessWithOutcome('half-down probe', {
+    bias: '30.20,-97.80|30.30,-97.70', fetchImpl: halfDown,
+  });
+  assert.deepEqual(outcome, { place: null, answered: false });
+  assert.equal(urls.length, 2);
 });

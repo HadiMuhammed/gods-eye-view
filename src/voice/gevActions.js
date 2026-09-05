@@ -17,6 +17,7 @@ import militaryAwarenessLayer, {
 import { initCameraVerbs, moveCamera, flyRoute, interruptCameraMotion, adjustOrbitRange } from '../cameraVerbs.js';
 import { cachedGroundFloor, warmGroundFloor } from '../data/groundFloor.js';
 import { isPickedWorldPosition } from '../data/scenePick.js';
+import { geocodeKeyless } from '../keylessGeocoder.js';
 import { resolveRegionRingForQuery } from '../annotations/annotationResolver.js';
 import { normalizeRadioCountryInput } from '../data/radioCountry.js';
 import { TR3B_CLASS } from '../data/tr3bRegistry.js';
@@ -1281,25 +1282,43 @@ async function resolveRadioLocation(args = {}, coordinates = radioCoordinatePair
   if (known) return known;
   if (!query) return null;
   const apiKey = window.__GOOGLE_MAPS_API_KEY__ || import.meta.env.GOOGLE_MAPS_API_KEY;
-  if (!apiKey) throw new Error('No Google Maps API key available for Radio location search');
   const controller = new AbortController();
   const cancelFromTurn = () => controller.abort();
   if (options.signal?.aborted) throw radioAbortError();
   options.signal?.addEventListener('abort', cancelFromTurn, { once: true });
   const timer = setTimeout(() => controller.abort(), 6000);
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`;
-    const response = await fetch(url, { signal: controller.signal });
-    const body = await response.json();
+    if (apiKey) {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`;
+      const response = await fetch(url, { signal: controller.signal });
+      const body = await response.json();
+      if (!radioActionIsCurrent(options)) throw radioAbortError();
+      const result = body.status === 'OK' ? body.results?.[0] : null;
+      if (result?.geometry?.location) {
+        return {
+          lat: result.geometry.location.lat,
+          lon: result.geometry.location.lng,
+          label: result.formatted_address || query,
+          country: '',
+        };
+      }
+    }
+    // Same fallback rule as the LOCATION search box: reached with no key, and
+    // also when a key exists but Google returned nothing. A missing key used to
+    // throw here, which surfaced as a failed voice turn rather than as a radio
+    // station that could not be placed.
+    // Unbiased, matching the Google call above: a radio location is named
+    // outright ("radio near Hanoi"), not relative to what the camera shows.
+    const keyless = await geocodeKeyless(query);
     if (!radioActionIsCurrent(options)) throw radioAbortError();
-    const result = body.status === 'OK' ? body.results?.[0] : null;
-    if (!result?.geometry?.location) return null;
-    return {
-      lat: result.geometry.location.lat,
-      lon: result.geometry.location.lng,
-      label: result.formatted_address || query,
-      country: '',
-    };
+    if (!keyless) return null;
+    // `country` stays empty, exactly as the Google branch above leaves it. Photon
+    // does report a country, but in the feature's own language ("Việt Nam",
+    // "日本"), and `normalizeRadioCountryInput` fails CLOSED on a name it cannot
+    // map — so forwarding it would turn "radio near Ha Long" into an empty
+    // station list rather than the nearest station. A keyless lookup must not
+    // apply a filter the keyed one never applies.
+    return { lat: keyless.lat, lon: keyless.lng, label: keyless.label || query, country: '' };
   } finally {
     clearTimeout(timer);
     options.signal?.removeEventListener('abort', cancelFromTurn);

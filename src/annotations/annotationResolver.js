@@ -2,6 +2,7 @@ import * as Cesium from 'cesium';
 import { lookupNeighborhoodRing } from '../data/neighborhoodPolygons.js';
 import { lookupNaturalRegionOutline, findNaturalRegion } from '../data/naturalEarthRegions.js';
 import { registerDynamicCredit, NATURAL_EARTH_CREDIT } from '../data/dataCredits.js';
+import { geocodeKeylessWithOutcome } from '../keylessGeocoder.js';
 import { isPickedWorldPosition } from '../data/scenePick.js';
 
 /**
@@ -603,16 +604,18 @@ function ringAreaM2(ring) {
 }
 
 /**
- * Forward-geocode a place name via Google Geocoding, biased to the current
- * viewport so "the marina" resolves near where the user is looking.
+ * Forward-geocode a place name, biased to the current viewport so "the marina"
+ * resolves near where the user is looking. Google first; Photon when there is
+ * no key, or when Google returns nothing.
  */
 async function geocodePlace(query, biasRect, signal) {
   const apiKey = window.__GOOGLE_MAPS_API_KEY__ || import.meta.env.GOOGLE_MAPS_API_KEY;
-  if (!apiKey) return null;
 
   const cacheKey = `${query.toLowerCase()}|${biasRect || ''}`;
   const cached = cacheRead(geocodeCache, cacheKey);
   if (cached !== undefined) return cached;
+
+  if (!apiKey) return keylessPlace(query, biasRect, cacheKey, signal, { googleConsulted: false });
 
   let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`;
   if (biasRect) url += `&bounds=${biasRect}`;
@@ -621,10 +624,13 @@ async function geocodePlace(query, biasRect, signal) {
     const response = await fetch(url, { signal });
     const data = await response.json();
     if (data.status !== 'OK' || !data.results?.length) {
-      // ZERO_RESULTS is a definitive not-found (cacheable); OVER_QUERY_LIMIT /
-      // REQUEST_DENIED / UNKNOWN_ERROR are transient → don't poison the cache.
-      negCache(geocodeCache, cacheKey, signal, data?.status === 'ZERO_RESULTS');
-      return null;
+      // Google found nothing, or declined. An unenabled Geocoding API answers
+      // HTTP 200 with REQUEST_DENIED, so this branch is also how a
+      // half-configured key looks — either way the keyless path is the answer.
+      return keylessPlace(query, biasRect, cacheKey, signal, {
+        googleConsulted: true,
+        googleSaysNoSuchPlace: data?.status === 'ZERO_RESULTS',
+      });
     }
     const result = data.results[0];
     const place = {
@@ -646,6 +652,64 @@ async function geocodePlace(query, biasRect, signal) {
     negCache(geocodeCache, cacheKey, signal, false); // network/abort — transient
     return null;
   }
+}
+
+/**
+ * Whether a combined Google+Photon not-found may be REMEMBERED as "no such
+ * place", or must be left open for the next attempt.
+ *
+ * One rule for both entry points: a miss is definitive only when EVERY source
+ * that was consulted returned a verdict. With no key Photon is the only source,
+ * so its answer decides. With a key, Google declining (REQUEST_DENIED on an
+ * unenabled API, OVER_QUERY_LIMIT) or Photon being unreachable each leave the
+ * question open — and Photon holds plenty of places Google does not, which is
+ * the reason this fallback exists at all. Caching either would keep an
+ * annotation unplaceable for the rest of the session on a network that has
+ * since recovered.
+ *
+ * Exported for the unit tests: the no-key branch cannot be driven from
+ * `node --test`, because the key expression reads `import.meta.env`.
+ * @param {{photonAnswered:boolean, googleConsulted:boolean,
+ *   googleSaysNoSuchPlace?:boolean}} sources
+ * @returns {boolean}
+ */
+export function geocodeMissIsDefinitive({ photonAnswered, googleConsulted, googleSaysNoSuchPlace = false }) {
+  if (!photonAnswered) return false;
+  return !googleConsulted || Boolean(googleSaysNoSuchPlace);
+}
+
+/**
+ * Photon fallback for `geocodePlace`, in the shape the annotation pipeline
+ * already consumes.
+ *
+ * `primaryName` is the feature's own name rather than a name extracted from a
+ * formatted address, which is what the OSM name-matching downstream wants —
+ * Photon reports it directly, so nothing has to be parsed back out of a label.
+ * @param {string} query Free-text place name.
+ * @param {?string} biasRect `"swLat,swLng|neLat,neLng"` viewport bias.
+ * @param {string} cacheKey Shared cache key, so both paths memoise together.
+ * @param {?AbortSignal} signal Caller's abort signal.
+ * @param {{googleConsulted:boolean, googleSaysNoSuchPlace?:boolean}} google What
+ *   the Google leg contributed: whether it ran at all, and whether it answered
+ *   ZERO_RESULTS rather than declining.
+ * @returns {Promise<?object>} Resolved place, or null.
+ */
+async function keylessPlace(query, biasRect, cacheKey, signal, google) {
+  const { place: keyless, answered } = await geocodeKeylessWithOutcome(query, { bias: biasRect || null });
+  if (!keyless) {
+    negCache(geocodeCache, cacheKey, signal, geocodeMissIsDefinitive({ ...google, photonAnswered: answered }));
+    return null;
+  }
+  const place = {
+    lat: keyless.lat,
+    lon: keyless.lng,
+    label: shortLabel(keyless.label),
+    primaryName: keyless.name || null,
+    types: keyless.types,
+    viewport: normalizeGeocodeViewport(keyless.viewport),
+  };
+  cacheWrite(geocodeCache, cacheKey, place);
+  return place;
 }
 
 /** Geocoding returns {southwest:{lat,lng},northeast:{lat,lng}}; normalize to the Places
