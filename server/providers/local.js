@@ -1,3 +1,23 @@
+export { isOverpassBoundaryQuery } from './overpass/query.js';
+export { simplifyOverpassPayloadBody } from './overpass/geometry.js';
+export { readOverpassDisk } from './overpass/cache.js';
+export { resolveOverpassPreflight } from './overpass/cache.js';
+export { overpassPayloadIsData } from './overpass/transport.js';
+export { fetchOverpassPayload } from './overpass/transport.js';
+import { overpassProxy } from './overpass.js';
+import { readRequestBody } from './common/request.js';
+export { MILITARY_INSTALLATION_ELEMENT_CAP } from './military-installations/constants.js';
+export { quantizeMilitaryInstallationBox } from './military-installations/query.js';
+export { militaryInstallationCacheKey } from './military-installations/query.js';
+export { resolveMilitaryInstallationTier } from './military-installations/cache.js';
+export { migrateMilitaryInstallationEntry } from './military-installations/cache.js';
+export { militaryInstallationDiskFresh } from './military-installations/cache.js';
+export { militaryInstallationDiskPath } from './military-installations/cache.js';
+export { readMilitaryInstallationDisk } from './military-installations/cache.js';
+export { writeMilitaryInstallationDisk } from './military-installations/cache.js';
+export { validMilitaryInstallationBox } from './military-installations/query.js';
+export { militaryInstallationFailureReason } from './military-installations/query.js';
+import { militaryInstallationsProxy } from './military-installations.js';
 import { cctvProxy } from './cctv.js';
 import { radioBrowserProxy } from './radio.js';
 export { CCTV_FRAME_FETCH_TIMEOUT_MS, fetchCctvImageFromUpstream } from './cctv.js';
@@ -115,16 +135,7 @@ const DEV_FRESH_EXTERNAL_KEYS_AT_BOOT = new Set(
 // Overpass API proxy constants and cache state
 // ---------------------------------------------------------------------------
 /** Ordered list of Overpass API mirrors; tried sequentially on failure/rate-limit. */
-const OVERPASS_UPSTREAMS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://lz4.overpass-api.de/api/interpreter',
-  // Community full-planet instance (privateforge nonprofit) — added 2026-07-30
-  // when all three mirrors above refused this IP (likely a dev-traffic rate
-  // ban; refused connections fail in ms, so healthy mirrors above still win).
-  // Verified: planet coverage (Texas query), CORS *, ~5-20 s cold latency.
-  'https://overpass.private.coffee/api/interpreter',
-];
+
 /**
  * TTL for FRESH cached Overpass responses (ms). Road geometry is static for
  * months — the original 45 s TTL forced a public-mirror round-trip on nearly
@@ -133,9 +144,9 @@ const OVERPASS_UPSTREAMS = [
  * "traffic takes forever to load"). 24 h in memory; the disk layer below
  * keeps 7 days and also survives dev-server restarts.
  */
-const OVERPASS_CACHE_MS = 86_400_000;
+
 /** Disk-cache TTL for Overpass responses (ms) — 7 days. */
-const OVERPASS_DISK_TTL_MS = 7 * 86_400_000;
+
 /**
  * Disk-cache TTL for BOUNDARY-class queries (is_in / admin-relation pivots) — 30
  * days. Admin boundaries change ≈never, and their pivots are the most expensive
@@ -143,17 +154,17 @@ const OVERPASS_DISK_TTL_MS = 7 * 86_400_000;
  * field test 2026-07-23: outline latency + the Sicily miss). Keeping them a month
  * means each boundary is fetched roughly once per machine, ever.
  */
-const OVERPASS_BOUNDARY_DISK_TTL_MS = 30 * 86_400_000;
+
 /** Disk-cache directory for Overpass responses. */
-const OVERPASS_DISK_DIR = path.join(process.cwd(), '.gev-cache', 'overpass');
+
 /** Per-upstream fetch timeout (ms). */
-const OVERPASS_TIMEOUT_MS = 22000;
+
 /** Max entries in the Overpass response cache (LRU-like, oldest evicted first). */
-const OVERPASS_CACHE_MAX_ENTRIES = 120;
+
 /** @type {Map<string,{status:number,body:string,contentType:string,endpoint:string,cachedAt:number}>} */
-const _overpassCache = new Map();
+
 /** @type {Map<string,Promise>} In-flight Overpass requests keyed by normalized query body. */
-const _overpassInFlight = new Map();
+
 
 /**
  * Whether a normalized Overpass query is BOUNDARY-class (admin `is_in` lookups
@@ -161,72 +172,17 @@ const _overpassInFlight = new Map();
  * 30-day disk TTL. The enclosing-compound sweep and road fetches keep the
  * default TTL. Exported for tests.
  */
-export function isOverpassBoundaryQuery(cacheKey) {
-  return /is_in\s*\(|\bpivot\b/i.test(String(cacheKey || ''));
-}
+
 
 /** Disk TTL for a query: boundary geometry keeps for a month, the rest 7 days. */
-function overpassDiskTtlMs(cacheKey) {
-  return isOverpassBoundaryQuery(cacheKey) ? OVERPASS_BOUNDARY_DISK_TTL_MS : OVERPASS_DISK_TTL_MS;
-}
+
 
 /** Iterative Douglas-Peucker on [{lat,lon},...] (planar-degree approx — fine at
  *  the ~44 m tolerance used here). Endpoints always kept. */
-function douglasPeucker(points, toleranceDeg) {
-  const n = points.length;
-  if (n <= 2) return points;
-  const keep = new Uint8Array(n);
-  keep[0] = 1;
-  keep[n - 1] = 1;
-  const stack = [[0, n - 1]];
-  while (stack.length) {
-    const [a, b] = stack.pop();
-    if (b - a < 2) continue;
-    const ax = points[a].lon;
-    const ay = points[a].lat;
-    const vx = points[b].lon - ax;
-    const vy = points[b].lat - ay;
-    const c2 = vx * vx + vy * vy;
-    let worst = -1;
-    let worstDist = toleranceDeg;
-    for (let i = a + 1; i < b; i++) {
-      const wx = points[i].lon - ax;
-      const wy = points[i].lat - ay;
-      let d;
-      if (c2 === 0) {
-        d = Math.hypot(wx, wy);
-      } else {
-        const t = Math.max(0, Math.min(1, (vx * wx + vy * wy) / c2));
-        d = Math.hypot(wx - t * vx, wy - t * vy);
-      }
-      if (d > worstDist) {
-        worstDist = d;
-        worst = i;
-      }
-    }
-    if (worst >= 0) {
-      keep[worst] = 1;
-      stack.push([a, worst], [worst, b]);
-    }
-  }
-  const out = [];
-  for (let i = 0; i < n; i++) if (keep[i]) out.push(points[i]);
-  return out;
-}
+
 
 /** Simplify one element's geometry array in place if it is big enough. */
-function simplifyElementGeometry(el, minPoints, toleranceDeg) {
-  if (Array.isArray(el?.geometry) && el.geometry.length >= minPoints) {
-    el.geometry = douglasPeucker(el.geometry, toleranceDeg);
-  }
-  if (Array.isArray(el?.members)) {
-    for (const member of el.members) {
-      if (Array.isArray(member?.geometry) && member.geometry.length >= minPoints) {
-        member.geometry = douglasPeucker(member.geometry, toleranceDeg);
-      }
-    }
-  }
-}
+
 
 /**
  * Server-side geometry simplification for large Overpass `out geom` payloads.
@@ -239,57 +195,20 @@ function simplifyElementGeometry(el, minPoints, toleranceDeg) {
  * @param {string} bodyText - Raw upstream JSON body.
  * @returns {string} Possibly-simplified JSON body.
  */
-export function simplifyOverpassPayloadBody(bodyText, opts = {}) {
-  const minBytes = opts.minBytes ?? OVERPASS_SIMPLIFY_MIN_BYTES;
-  const minPoints = opts.minPoints ?? OVERPASS_SIMPLIFY_MIN_POINTS;
-  const toleranceDeg = opts.toleranceDeg ?? OVERPASS_SIMPLIFY_TOLERANCE_DEG;
-  if (typeof bodyText !== 'string' || bodyText.length < minBytes) return bodyText;
-  let data;
-  try {
-    data = JSON.parse(bodyText);
-  } catch {
-    return bodyText;
-  }
-  if (!Array.isArray(data?.elements)) return bodyText;
-  for (const el of data.elements) simplifyElementGeometry(el, minPoints, toleranceDeg);
-  try {
-    return JSON.stringify(data);
-  } catch {
-    return bodyText;
-  }
-}
+
 
 /** Normalized Overpass query -> stable disk-cache file path. */
-function overpassDiskPath(cacheKey) {
-  return path.join(OVERPASS_DISK_DIR, `${createHash('sha1').update(cacheKey).digest('hex')}.json`);
-}
+
 
 /**
  * Read a disk-cached Overpass payload. maxAgeMs Infinity = any age (the
  * serve-stale path when every mirror is down).
  * @returns {Promise<?Object>} Payload with cachedAt, or null.
  */
-export async function readOverpassDisk(cacheKey, maxAgeMs) {
-  try {
-    const raw = await fsp.readFile(overpassDiskPath(cacheKey), 'utf8');
-    const payload = JSON.parse(raw);
-    if (!payload || typeof payload.body !== 'string' || !Number.isFinite(payload.cachedAt)) return null;
-    // Older versions persisted 4xx refusals with normal data TTLs. Ignore
-    // them on both fresh and stale reads so an upgrade can recover immediately.
-    if (!overpassPayloadIsData(payload)) return null;
-    if (Date.now() - payload.cachedAt > maxAgeMs) return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
+
 
 /** Fire-and-forget disk write for a successful Overpass payload. */
-function writeOverpassDisk(cacheKey, payload) {
-  fsp.mkdir(OVERPASS_DISK_DIR, { recursive: true })
-    .then(() => fsp.writeFile(overpassDiskPath(cacheKey), JSON.stringify(payload)))
-    .catch((err) => console.warn('[Overpass Proxy] disk cache write failed:', err?.message || err));
-}
+
 
 /**
  * Resolve every cache/coalescing layer before admitting a request to the local
@@ -307,38 +226,14 @@ function writeOverpassDisk(cacheKey, payload) {
  * @param {number} [options.cacheMs]
  * @returns {Promise<{source:'HIT'|'INFLIGHT'|'DISK'|'UPSTREAM'|'RATE_LIMITED', payload:object|null}>}
  */
-export async function resolveOverpassPreflight({
-  cacheKey,
-  memoryCache,
-  inFlight,
-  readDisk,
-  allowUpstream,
-  now = Date.now(),
-  cacheMs = OVERPASS_CACHE_MS,
-}) {
-  const cached = memoryCache.get(cacheKey);
-  if (overpassPayloadIsData(cached) && now - cached.cachedAt <= cacheMs) return { source: 'HIT', payload: cached };
 
-  const pending = inFlight.get(cacheKey);
-  if (pending) return { source: 'INFLIGHT', payload: await pending };
-
-  const disk = await readDisk();
-  if (overpassPayloadIsData(disk)) return { source: 'DISK', payload: disk };
-
-  return allowUpstream()
-    ? { source: 'UPSTREAM', payload: null }
-    : { source: 'RATE_LIMITED', payload: null };
-}
 
 /** Return only last-good Overpass data, regardless of its age. */
-async function readStaleOverpass(cacheKey) {
-  const cached = _overpassCache.get(cacheKey);
-  return overpassPayloadIsData(cached) ? cached : readOverpassDisk(cacheKey, Infinity);
-}
+
 
 // --- Abuse guards shared by the Overpass + route proxies --------------------
 /** Max accepted POST body for the Overpass proxy (Overpass QL queries are tiny). */
-const OVERPASS_MAX_BODY_BYTES = 24 * 1024; // 24 KB
+ // 24 KB
 /**
  * Hard cap on a single Overpass upstream response we will buffer into memory.
  * 32 MB (was 12 MB): a dense island/state admin boundary at full `out geom`
@@ -348,23 +243,23 @@ const OVERPASS_MAX_BODY_BYTES = 24 * 1024; // 24 KB
  * cached or sent (simplifyOverpassPayloadBody), so the raised cap does not
  * raise what clients receive or what the disk stores.
  */
-const OVERPASS_MAX_RESPONSE_BYTES = 32 * 1024 * 1024; // 32 MB
+ // 32 MB
 /** Only payloads at least this large go through geometry simplification. */
-const OVERPASS_SIMPLIFY_MIN_BYTES = 1_500_000;
+
 /** Only per-element geometry arrays with at least this many points are simplified. */
-const OVERPASS_SIMPLIFY_MIN_POINTS = 1200;
+
 /**
  * Douglas-Peucker tolerance (degrees, ≈44 m of latitude). Region/state boundary
  * rings are drawn at regional camera scale and the client simplifies again for
  * draw, so ~44 m fidelity is invisible; building footprints never reach the
  * point threshold above and pass through untouched.
  */
-const OVERPASS_SIMPLIFY_TOLERANCE_DEG = 0.0004;
+
 /** Max concurrent in-flight upstream Overpass fetches across all distinct queries. */
-const OVERPASS_MAX_CONCURRENT = 6;
-let _overpassConcurrent = 0;
-const _overpassRateLimiter = makeRateLimiter({ windowMs: 60_000, max: 90, globalMax: 300 });
-const _militaryInstallationsRateLimiter = makeRateLimiter({ windowMs: 60_000, max: 90, globalMax: 300 });
+
+
+
+
 // Built LAZILY on first request, NOT at module load: `.env` values are applied to process.env later
 // (the plugin config hook calls loadEnv → process.env, AFTER this module is imported), so reading
 // process.env here at import time would always see them unset and silently stay unlimited even when
@@ -398,23 +293,23 @@ function enforceOptInRateLimit(limiter, req, res) {
 }
 
 /** Server-side timeout ceiling (seconds) we allow inside an Overpass QL query. */
-const OVERPASS_MAX_QL_TIMEOUT = 30;
+
 /** Max `around:` radius (m) — every app caller uses <= 1800 m. */
-const OVERPASS_MAX_AROUND_M = 50000;
+
 /** Max bbox span (degrees) — app bboxes are small viewport tiles. */
-const OVERPASS_MAX_BBOX_DEG = 12;
+
 /**
  * Every Overpass element-type specifier, including the combined shortcuts
  * (nwr/nw/nr/wr) and `rel`. Shared by the selector + area-element-deny regexes so
  * they can't drift (a missing shortcut like `wr` was an area-scan bypass).
  */
-const OVERPASS_ELEMENT_TYPES = 'node|way|relation|nwr|nw|nr|wr|rel';
+
 /** Element-selector (incl. `area`) whose statements must be individually bounded. */
-const OVERPASS_SELECTOR_RE = new RegExp(`\\b(?:${OVERPASS_ELEMENT_TYPES}|area)\\b`);
+
 /** An element selector bounded BY an area — the country-scan abuse shape. */
-const OVERPASS_AREA_ELEMENT_RE = new RegExp(`\\b(?:${OVERPASS_ELEMENT_TYPES})\\s*\\(\\s*area\\b`, 'i');
+
 /** A single bbox 4-tuple `(s,w,n,e)` (non-global so it does not advance lastIndex). */
-const OVERPASS_BBOX_RE = /\(\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*\)/;
+
 
 /**
  * Validate + clamp an Overpass form body. Defends the generic proxy against
@@ -437,148 +332,12 @@ const OVERPASS_BBOX_RE = /\(\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+
  * Chained regex replaces get the ordering wrong (a quoted slash-slash would hide
  * the rest of the line), which is exactly the bypass this avoids.
  */
-function stripOverpassNoise(src) {
-  let out = '';
-  let i = 0;
-  const n = src.length;
-  while (i < n) {
-    const c = src[i];
-    if (c === '"' || c === "'") {
-      const quote = c;
-      i += 1;
-      while (i < n) {
-        if (src[i] === '\\') { i += 2; continue; } // escaped char
-        if (src[i] === quote) { i += 1; break; } // closing quote
-        i += 1;
-      }
-      out += quote + quote; // collapse the literal to empty quotes
-      continue;
-    }
-    if (c === '/' && src[i + 1] === '*') {
-      i += 2;
-      while (i < n && !(src[i] === '*' && src[i + 1] === '/')) i += 1;
-      i += 2;
-      out += ' ';
-      continue;
-    }
-    if (c === '/' && src[i + 1] === '/') {
-      i += 2;
-      while (i < n && src[i] !== '\n') i += 1;
-      out += ' ';
-      continue;
-    }
-    out += c;
-    i += 1;
-  }
-  return out;
-}
 
-function sanitizeOverpassBody(rawBody) {
-  let params;
-  try { params = new URLSearchParams(rawBody); } catch { return { ok: false, error: 'Malformed query body' }; }
-  const all = params.getAll('data');
-  if (all.length !== 1) return { ok: false, error: 'Exactly one data query is required' };
-  const data = all[0];
-  if (!data || !data.trim()) return { ok: false, error: 'Missing Overpass data query' };
 
-  // Blank quoted literals + strip comments in one lexer pass so a fake bound or a
-  // `//` inside a string can't hide an unbounded selector (or satisfy a bound).
-  const stripped = stripOverpassNoise(data);
 
-  // Reject oversized radii in EVERY around form — point `around:r,lat,lon` AND the
-  // input-set form `around.set:r` — and parse the full numeric token so scientific
-  // notation (`5e7`) can't slip a planet-scale radius past the cap.
-  for (const m of stripped.matchAll(/around(?:\.\w+)?:\s*([\d.eE+-]+)/gi)) {
-    const radius = Number(m[1]);
-    if (!Number.isFinite(radius) || radius > OVERPASS_MAX_AROUND_M) {
-      return { ok: false, error: 'Overpass around radius too large' };
-    }
-  }
-  // Reject world-sized / oversized bboxes.
-  for (const m of stripped.matchAll(/\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)/g)) {
-    const s = Number(m[1]); const w = Number(m[2]); const n = Number(m[3]); const e = Number(m[4]);
-    if (Math.abs(n - s) > OVERPASS_MAX_BBOX_DEG || Math.abs(e - w) > OVERPASS_MAX_BBOX_DEG) {
-      return { ok: false, error: 'Overpass bbox too large' };
-    }
-  }
-
-  // Reject control-flow constructs the app never uses — their set/bound semantics
-  // are hard to validate statically. The app only uses plain selectors + is_in /
-  // area / pivot / recursion, so this denylist closes loop/transform escape hatches.
-  if (/\b(?:foreach|complete|retro|compare|convert|make)\b/i.test(stripped)) {
-    return { ok: false, error: 'Unsupported Overpass construct' };
-  }
-  // `poly:` has unchecked extent and the app never uses it — reject outright
-  // (position-independent, so tag filters can't hide it).
-  if (/\bpoly\s*:/i.test(stripped)) {
-    return { ok: false, error: 'Overpass poly filter not allowed' };
-  }
-
-  // Every selector statement must be individually bounded, WITH set provenance: a
-  // set counts as a bound only if it was assigned (->.set) by an already-bounded
-  // statement. So `way[...]->.a` (global assigned to a set) is rejected, while the
-  // app's `is_in(...)->.a; area.a[...]` and `area(id)->.x; rel(pivot.x)` validate.
-  const boundedSets = new Set();
-  for (let stmt of stripped.split(';')) {
-    stmt = stmt.trim();
-    if (!stmt || stmt.startsWith('[') || /^out\b/.test(stmt)) continue;
-
-    // Strip output-set assignments (NOT input bounds), then strip bracket tag
-    // filters so a tag KEY/value (e.g. `way[is_in]`, `node[around]`) can never be
-    // misread as a spatial bound. Bounds live in (...) / function calls / set
-    // refs, never inside [...], so the probe loses nothing real.
-    const outSets = [];
-    const body = stmt.replace(/->\s*\.(\w+)/g, (_, name) => { outSets.push(name); return ' '; });
-    const probe = body.replace(/\[[^\]]*\]/g, ' ');
-
-    // Reject element-in-area scans on the TAG-STRIPPED probe, so a tag filter
-    // between the selector and the area filter (way["highway"](area.a)) can't hide
-    // it. An area has unbounded extent (could be a whole country); the app only
-    // SELECTS admin areas (area.set) and pivots (rel(pivot.x)), never node/way/
-    // relation(area...). The probe collapses tags so `way (area.a)` is caught.
-    if (OVERPASS_AREA_ELEMENT_RE.test(probe)) {
-      return { ok: false, error: 'Overpass area-bounded element selector not allowed' };
-    }
-
-    const hasSelector = OVERPASS_SELECTOR_RE.test(probe);
-    const inputSets = [...probe.matchAll(/(?<!\d)\.([a-z_]\w*)/gi)].map((m) => m[1]);
-    const directBound = /around:\s*\d/.test(probe)
-      || OVERPASS_BBOX_RE.test(probe)
-      || /is_in\s*\(/.test(probe)                 // is_in(lat,lon) — the function form only
-      || /\barea\s*\(/.test(probe);               // area(id) — bounded as a set definition
-
-    const setBound = inputSets.some((s) => boundedSets.has(s));
-    const bounded = directBound || setBound;
-
-    if (hasSelector && !bounded) {
-      return { ok: false, error: 'Overpass query has an unbounded selector' };
-    }
-    // Only a bounded statement can mark its output sets as bounded.
-    if (bounded) for (const name of outSets) boundedSets.add(name);
-  }
-
-  const clamped = data.replace(
-    /\[timeout:\s*(\d+)\s*\]/gi,
-    (_, n) => `[timeout:${Math.min(Number(n) || OVERPASS_MAX_QL_TIMEOUT, OVERPASS_MAX_QL_TIMEOUT)}]`,
-  );
-  return { ok: true, body: `data=${encodeURIComponent(clamped)}` };
-}
 
 /** Read a request body with a hard byte cap; throws { code:'BODY_TOO_LARGE' } past the cap. */
-async function readRequestBodyCapped(req, maxBytes) {
-  const chunks = [];
-  let total = 0;
-  for await (const chunk of req) {
-    total += chunk.length;
-    if (total > maxBytes) {
-      const err = new Error('Request body too large');
-      err.code = 'BODY_TOO_LARGE';
-      throw err;
-    }
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks);
-}
+
 
 // Sourced from the shared voice-model registry so the client's cost estimate
 // can never be computed against a different model than the session runs on.
@@ -602,34 +361,17 @@ const REALTIME_DEBUG_LOG_MAX_BYTES = 8 * 1024 * 1024;
  * @param {string} bodyText - Upstream response body.
  * @returns {boolean} True if the body looks rate-limited.
  */
-function overpassLooksRateLimited(bodyText) {
-  const text = String(bodyText || '').toLowerCase();
-  return text.includes('rate_limited')
-    || text.includes('quota of your ip address')
-    || text.includes('dispatcher_client::request_read_and_idx::rate_limited')
-    || text.includes('too many requests');
-}
+
 
 /**
  * Detect an Overpass HTTP-200 body that is actually a runtime FAILURE (server-side
  * timeout / out-of-memory) via its `remark`. These are transient upstream failures,
  * not authoritative empty results, so they must not be returned or cached.
  */
-function overpassLooksRuntimeError(bodyText) {
-  const text = String(bodyText || '').toLowerCase();
-  return text.includes('runtime error')
-    || text.includes('timed out')
-    || text.includes('out of memory');
-}
+
 
 /** Evict oldest Overpass cache entries until size is within the cap. */
-function trimOverpassCache() {
-  while (_overpassCache.size > OVERPASS_CACHE_MAX_ENTRIES) {
-    const oldestKey = _overpassCache.keys().next().value;
-    if (!oldestKey) break;
-    _overpassCache.delete(oldestKey);
-  }
-}
+
 
 /**
  * Write a completed Overpass payload to the HTTP response.
@@ -638,15 +380,7 @@ function trimOverpassCache() {
  * @param {{status:number,body:string,contentType:string,endpoint:string}} payload
  * @param {string} [cacheStatus='MISS'] - 'HIT', 'MISS', or 'INFLIGHT'.
  */
-function sendOverpassResponse(res, payload, cacheStatus = 'MISS') {
-  res.writeHead(payload.status, {
-    'Content-Type': payload.contentType || 'application/json',
-    'Cache-Control': 'public, max-age=15',
-    'X-Overpass-Cache': cacheStatus,
-    'X-Overpass-Upstream': payload.endpoint || 'unknown',
-  });
-  res.end(payload.body || '');
-}
+
 
 /**
  * True only for an upstream response that is actually Overpass data.
@@ -657,13 +391,7 @@ function sendOverpassResponse(res, payload, cacheStatus = 'MISS') {
  * @param {{status: number, rateLimited?: boolean, runtimeError?: boolean}} payload
  * @returns {boolean}
  */
-export function overpassPayloadIsData(payload) {
-  const status = Number(payload?.status);
-  return Number.isFinite(status)
-    && status >= 200 && status < 300
-    && !payload.rateLimited
-    && !payload.runtimeError;
-}
+
 
 /**
  * Try each mirror once, retaining response-size and per-mirror timeout caps.
@@ -674,84 +402,7 @@ export function overpassPayloadIsData(payload) {
  * @param {object} [options] Server-only endpoint and I/O overrides for tests.
  * @returns {Promise<{status:number,body:string,contentType:string,endpoint:string,rateLimited:boolean}>}
  */
-export async function fetchOverpassPayload(body, maxResponseBytes = OVERPASS_MAX_RESPONSE_BYTES, {
-  endpoints = OVERPASS_UPSTREAMS,
-  fetchImpl = fetch,
-  readBody = readResponseTextCapped,
-  simplify = simplifyOverpassPayloadBody,
-} = {}) {
-  let lastError = null;
-  let lastRateLimitPayload = null;
-  let lastRefusalPayload = null;
 
-  for (const endpoint of endpoints) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT_MS);
-
-    try {
-      const upstream = await fetchImpl(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'gods-eye-view-overpass-proxy/1.0',
-        },
-        body,
-        signal: controller.signal,
-      });
-
-      const responseBody = await readBody(upstream, maxResponseBytes);
-      const contentType = upstream.headers.get('content-type') || 'application/json';
-      const status = upstream.status;
-      const rateLimited = status === 429 || overpassLooksRateLimited(responseBody);
-      const runtimeError = overpassLooksRuntimeError(responseBody);
-      const payload = {
-        status,
-        body: responseBody,
-        contentType,
-        endpoint,
-        rateLimited,
-        runtimeError,
-      };
-
-      if (rateLimited) {
-        lastRateLimitPayload = payload;
-        continue;
-      }
-      // A 200 body carrying a runtime error / timeout is a transient upstream
-      // failure — skip to the next mirror rather than returning or caching it.
-      if (runtimeError) {
-        lastError = new Error(`Overpass runtime error (${endpoint})`);
-        continue;
-      }
-      // Anything but 2xx is this mirror declining, not an answer. Only 5xx used
-      // to rotate, so a 4xx ended the fan-out and was returned — and cached —
-      // as data: overpass-api.de and its lz4 alias answer 406 to this proxy's
-      // User-Agent while kumi.systems and private.coffee answer 200 to the very
-      // same request, so every Overpass-backed layer failed on an Apache error
-      // page with two healthy mirrors untried. The first refusal is kept so a
-      // genuinely bad query still reports what upstream said, but only after
-      // every mirror has had the chance to answer it.
-      if (status < 200 || status >= 300) {
-        if (!lastRefusalPayload) lastRefusalPayload = payload;
-        lastError = new Error(`Overpass upstream returned ${status} (${endpoint})`);
-        continue;
-      }
-
-      // Success: decimate giant boundary geometry before it reaches the cache,
-      // the disk, or the client (what makes the 32 MB read cap safe to hold).
-      payload.body = simplify(payload.body);
-      return payload;
-    } catch (error) {
-      lastError = error;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  }
-
-  if (lastRateLimitPayload) return lastRateLimitPayload;
-  if (lastRefusalPayload) return lastRefusalPayload;
-  throw lastError || new Error('All Overpass upstreams failed');
-}
 
 /**
  * Vite plugin: Overpass API proxy with response caching and request coalescing.
@@ -764,144 +415,7 @@ export async function fetchOverpassPayload(body, maxResponseBytes = OVERPASS_MAX
  *
  * @returns {import('vite').Plugin}
  */
-function overpassProxy() {
-  const installMiddleware = (server) => {
-      server.middlewares.use('/api/overpass', async (req, res) => {
-        // Hoisted out of the try so the catch's serve-stale lookup can see it
-        // (a body-read failure would otherwise hit an out-of-scope reference).
-        let cacheKey = null;
-        try {
-          if (req.method !== 'POST') {
-            res.writeHead(405, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-            return;
-          }
 
-          // Collect POST body with a hard byte cap (Overpass QL queries are small)
-          let body;
-          try {
-            body = (await readRequestBodyCapped(req, OVERPASS_MAX_BODY_BYTES)).toString();
-          } catch (err) {
-            if (err?.code === 'BODY_TOO_LARGE') {
-              res.writeHead(413, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'Overpass query too large' }));
-              return;
-            }
-            throw err;
-          }
-          if (!body) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Missing Overpass query body' }));
-            return;
-          }
-
-          // Validate + clamp the QL: reject unbounded/global queries and cap the
-          // server-side timeout so a tiny body can't request planet-scale work.
-          const sanitized = sanitizeOverpassBody(body);
-          if (!sanitized.ok) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: sanitized.error }));
-            return;
-          }
-          const safeBody = sanitized.body;
-
-          // Normalize whitespace so semantically identical Overpass QL queries share cache entries
-          cacheKey = safeBody.replace(/\s+/g, ' ').trim();
-          const preflight = await resolveOverpassPreflight({
-            cacheKey,
-            memoryCache: _overpassCache,
-            inFlight: _overpassInFlight,
-            // Fresh-enough disk entries survive restarts and skip the public
-            // mirrors; boundary-class queries keep their month-long TTL.
-            readDisk: () => readOverpassDisk(cacheKey, overpassDiskTtlMs(cacheKey)),
-            allowUpstream: () => _overpassRateLimiter(clientKey(req)),
-          });
-          if (preflight.source === 'RATE_LIMITED') {
-            res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '5' });
-            res.end(JSON.stringify({ error: 'Rate limit exceeded' }));
-            return;
-          }
-          if (preflight.source !== 'UPSTREAM') {
-            // A coalesced caller sees the same failure as the original request
-            // and must get the same last-good fallback, not the raw refusal.
-            if (!overpassPayloadIsData(preflight.payload)) {
-              const stale = await readStaleOverpass(cacheKey);
-              if (stale) {
-                sendOverpassResponse(res, stale, 'STALE');
-                return;
-              }
-            }
-            if (preflight.source === 'DISK') {
-              _overpassCache.set(cacheKey, preflight.payload);
-              trimOverpassCache();
-            }
-            sendOverpassResponse(res, preflight.payload, preflight.source);
-            return;
-          }
-
-          // From here onward the request is genuinely upstream-bound and has
-          // consumed one local limiter slot. Cache and dedupe hits above do not.
-          if (_overpassConcurrent >= OVERPASS_MAX_CONCURRENT) {
-            res.writeHead(503, { 'Content-Type': 'application/json', 'Retry-After': '2' });
-            res.end(JSON.stringify({ error: 'Overpass proxy busy — try again shortly' }));
-            return;
-          }
-          _overpassConcurrent += 1;
-          const requestPromise = fetchOverpassPayload(safeBody)
-            .then((payload) => {
-              // Only a 2xx is data. `< 500` cached every 4xx, so one mirror's
-              // refusal was written to memory AND disk — and boundary-class
-              // queries hold a month-long TTL, so a single 406 outlived the
-              // outage that caused it.
-              if (overpassPayloadIsData(payload)) {
-                const entry = { ...payload, cachedAt: Date.now() };
-                _overpassCache.set(cacheKey, entry);
-                trimOverpassCache();
-                writeOverpassDisk(cacheKey, entry);
-              }
-              return payload;
-            })
-            .finally(() => {
-              _overpassConcurrent -= 1;
-              _overpassInFlight.delete(cacheKey);
-            });
-
-          _overpassInFlight.set(cacheKey, requestPromise);
-          const payload = await requestPromise;
-          // Degraded upstream (rate-limited on every mirror / 5xx / runtime
-          // error): last-good roads beat an empty layer — serve stale from
-          // memory or disk at ANY age before surfacing the failure.
-          if (!overpassPayloadIsData(payload)) {
-            const stale = await readStaleOverpass(cacheKey);
-            if (stale) {
-              sendOverpassResponse(res, stale, 'STALE');
-              return;
-            }
-          }
-          sendOverpassResponse(res, payload, 'MISS');
-        } catch (e) {
-          // Every mirror threw (network-level). Same serve-stale rule.
-          const stale = cacheKey
-            ? await readStaleOverpass(cacheKey)
-            : null;
-          if (stale) {
-            sendOverpassResponse(res, stale, 'STALE');
-            return;
-          }
-          console.error('[Overpass Proxy]', e.message);
-          res.writeHead(502, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Overpass proxy error' }));
-        }
-      });
-
-      installRouteMiddleware(server.middlewares);
-    };
-  return {
-    name: 'overpass-proxy',
-    configureServer: installMiddleware,
-    configurePreviewServer: installMiddleware,
-  };
-}
 
 
 /**
@@ -1203,23 +717,7 @@ function toFiveWordHudSummary(value) {
     .join(' ');
 }
 
-function readRequestBody(req, maxBytes = 1024 * 1024) {
-  return new Promise((resolve, reject) => {
-    let total = 0;
-    const chunks = [];
-    req.on('data', (chunk) => {
-      total += chunk.length;
-      if (total > maxBytes) {
-        reject(new Error(`Request body exceeds ${maxBytes} bytes`));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', reject);
-  });
-}
+
 
 const GEV_REALTIME_TOOLS = [
   {
@@ -1851,16 +1349,16 @@ const GEV_REALTIME_TOOLS = [
 // This narrow endpoint deliberately does not expose arbitrary Overpass QL to
 // the browser. It returns only allow-listed mapped context and rejects global,
 // cross-dateline, or oversized requests before touching public OSM mirrors.
-const MILITARY_INSTALLATION_CACHE_MS = 5 * 60_000;
-const MILITARY_INSTALLATION_STALE_MS = 60 * 60_000;
-const MILITARY_INSTALLATION_MAX_CACHE = 80;
-const MILITARY_INSTALLATION_MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
+
+
+
+
 /**
  * Upstream element cap. A response that hits it exactly is SATURATED — Overpass
  * truncated, so off-viewport features from the snapped bbox may have crowded out
  * in-viewport ones. Callers re-ask for the exact viewport in that case.
  */
-export const MILITARY_INSTALLATION_ELEMENT_CAP = 700;
+
 /**
  * Disk-cache TTL for mapped installations (ms) — 30 days.
  *
@@ -1870,9 +1368,9 @@ export const MILITARY_INSTALLATION_ELEMENT_CAP = 700;
  * not a session one, so a month-old answer is still the right answer — the same
  * reasoning the Overpass proxy already applies to admin boundaries.
  */
-const MILITARY_INSTALLATION_DISK_TTL_MS = 30 * 86_400_000;
+
 /** Disk-cache directory for mapped installation payloads. */
-const MILITARY_INSTALLATION_DISK_DIR = path.join(process.cwd(), '.gev-cache', 'military-installations');
+
 /**
  * Cache-key grid step in degrees (~5.5 km).
  *
@@ -1881,9 +1379,9 @@ const MILITARY_INSTALLATION_DISK_DIR = path.join(process.cwd(), '.gev-cache', 'm
  * makes neighbouring viewports share one entry, and because the snap only ever
  * grows the box, the cached answer is always a superset of what was asked for.
  */
-const MILITARY_INSTALLATION_BBOX_STEP_DEG = 0.05;
-const _militaryInstallationCache = new Map();
-const _militaryInstallationInFlight = new Map();
+
+
+
 
 /**
  * Snap a request bbox outward onto the shared installation cache grid.
@@ -1891,20 +1389,7 @@ const _militaryInstallationInFlight = new Map();
  * @param {number} [stepDeg]
  * @returns {{south:number, west:number, north:number, east:number}}
  */
-export function quantizeMilitaryInstallationBox(box, stepDeg = MILITARY_INSTALLATION_BBOX_STEP_DEG) {
-  // Round the ratio first: 29.9999/0.05 lands a hair under an exact grid line
-  // in binary floating point, which would otherwise snap a whole cell too far.
-  const snap = (value, grow) => {
-    const cells = Number((value / stepDeg).toFixed(9));
-    return Number(((grow > 0 ? Math.ceil(cells) : Math.floor(cells)) * stepDeg).toFixed(6));
-  };
-  return {
-    south: Math.max(-90, snap(box.south, -1)),
-    west: Math.max(-180, snap(box.west, -1)),
-    north: Math.min(90, snap(box.north, 1)),
-    east: Math.min(180, snap(box.east, 1)),
-  };
-}
+
 
 /**
  * Stable disk/memory cache key for an installation bbox.
@@ -1918,11 +1403,7 @@ export function quantizeMilitaryInstallationBox(box, stepDeg = MILITARY_INSTALLA
  * @param {{south:number, west:number, north:number, east:number}} box
  * @param {number} [decimals]
  */
-export function militaryInstallationCacheKey(box, decimals = 3) {
-  return [box.south, box.west, box.north, box.east]
-    .map((value) => value.toFixed(decimals))
-    .join(',');
-}
+
 
 /**
  * Resolve the READ tiers for one installation request, in order: fresh memory,
@@ -1942,20 +1423,7 @@ export function militaryInstallationCacheKey(box, decimals = 3) {
  * @param {number} [options.cacheMs]
  * @returns {Promise<{source: 'HIT'|'DISK'|'UPSTREAM', entry: ?object}>}
  */
-export async function resolveMilitaryInstallationTier({
-  cacheKey,
-  memoryCache,
-  inFlight,
-  readDisk,
-  now = Date.now(),
-  cacheMs = MILITARY_INSTALLATION_CACHE_MS,
-}) {
-  const cached = memoryCache.get(cacheKey);
-  if (cached && now - cached.cachedAt <= cacheMs) return { source: 'HIT', entry: cached };
-  if (inFlight.has(cacheKey)) return { source: 'UPSTREAM', entry: null };
-  const disk = await readDisk();
-  return disk ? { source: 'DISK', entry: disk } : { source: 'UPSTREAM', entry: null };
-}
+
 
 /**
  * Bring a stored installation entry up to the current payload shape.
@@ -1969,51 +1437,20 @@ export async function resolveMilitaryInstallationTier({
  * @param {?{payload: object, cachedAt: number}} entry
  * @returns {?{payload: object, cachedAt: number}}
  */
-export function migrateMilitaryInstallationEntry(entry) {
-  if (!entry?.payload || typeof entry.payload.saturated === 'boolean') return entry;
-  const elements = Array.isArray(entry.payload.elements) ? entry.payload.elements : [];
-  return {
-    ...entry,
-    payload: {
-      ...entry.payload,
-      saturated: elements.length >= MILITARY_INSTALLATION_ELEMENT_CAP,
-    },
-  };
-}
+
 
 /** Whether a stored installation entry is still inside its TTL. */
-export function militaryInstallationDiskFresh(
-  entry,
-  maxAgeMs = MILITARY_INSTALLATION_DISK_TTL_MS,
-  now = Date.now(),
-) {
-  if (!entry || !Number.isFinite(entry.cachedAt) || !Array.isArray(entry.payload?.elements)) return false;
-  return now - entry.cachedAt <= maxAgeMs;
-}
+
 
 /** Cache key -> stable disk-cache file path. */
-export function militaryInstallationDiskPath(cacheKey, dir = MILITARY_INSTALLATION_DISK_DIR) {
-  return path.join(dir, `${createHash('sha1').update(cacheKey).digest('hex')}.json`);
-}
+
 
 /**
  * Read a disk-cached installation entry. maxAgeMs Infinity = any age (the
  * serve-stale path when Overpass is down).
  * @returns {Promise<?{payload: object, cachedAt: number}>}
  */
-export async function readMilitaryInstallationDisk(
-  cacheKey,
-  maxAgeMs,
-  dir = MILITARY_INSTALLATION_DISK_DIR,
-) {
-  try {
-    const entry = JSON.parse(await fsp.readFile(militaryInstallationDiskPath(cacheKey, dir), 'utf8'));
-    if (!militaryInstallationDiskFresh(entry, maxAgeMs)) return null;
-    return migrateMilitaryInstallationEntry(entry);
-  } catch {
-    return null;
-  }
-}
+
 
 /**
  * Persist one installation payload ATOMICALLY: serialize to a temp sibling,
@@ -2022,178 +1459,16 @@ export async function readMilitaryInstallationDisk(
  * and take serve-stale down with it, exactly when it is needed most.
  * @returns {Promise<boolean>} Whether the entry landed.
  */
-export async function writeMilitaryInstallationDisk(
-  cacheKey,
-  entry,
-  dir = MILITARY_INSTALLATION_DISK_DIR,
-) {
-  const target = militaryInstallationDiskPath(cacheKey, dir);
-  // Same directory, so the rename is atomic on POSIX rather than a cross-device copy.
-  const temp = `${target}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
-  try {
-    await fsp.mkdir(dir, { recursive: true });
-    await fsp.writeFile(temp, JSON.stringify(entry));
-    await fsp.rename(temp, target);
-    return true;
-  } catch (err) {
-    console.warn('[Installations Proxy] disk cache write failed:', err?.message || err);
-    await fsp.rm(temp, { force: true }).catch(() => {});
-    return false;
-  }
-}
 
-export function validMilitaryInstallationBox(params) {
-  const south = requiredFiniteQueryNumber(params, 'south');
-  const west = requiredFiniteQueryNumber(params, 'west');
-  const north = requiredFiniteQueryNumber(params, 'north');
-  const east = requiredFiniteQueryNumber(params, 'east');
-  if (![south, west, north, east].every(Number.isFinite)) return null;
-  if (south < -90 || north > 90 || west < -180 || east > 180 || south >= north || west >= east) return null;
-  if (north - south > 10 || east - west > 10) return null;
-  return { south, west, north, east };
-}
 
-function trimMilitaryInstallationCache() {
-  while (_militaryInstallationCache.size > MILITARY_INSTALLATION_MAX_CACHE) {
-    const oldest = _militaryInstallationCache.keys().next().value;
-    if (oldest === undefined) break;
-    _militaryInstallationCache.delete(oldest);
-  }
-}
+
+
+
 
 /** Safe, evidence-based reason for an installation upstream failure. */
-export function militaryInstallationFailureReason(error) {
-  if (['rate_limited', 'timeout', 'query_failed'].includes(error?.installationReason)) return error.installationReason;
-  return ['AbortError', 'TimeoutError'].includes(error?.name) ? 'timeout' : 'unavailable';
-}
 
-function militaryInstallationsProxy() {
-  async function refresh(box, key) {
-    const bbox = `${box.south},${box.west},${box.north},${box.east}`;
-    const ql = `[out:json][timeout:20];(nwr["military"~"^(airfield|naval_base|range|barracks|base)$"](${bbox});nwr["landuse"="military"](${bbox}););out center tags geom ${MILITARY_INSTALLATION_ELEMENT_CAP};`;
-    const upstream = await fetchOverpassPayload(
-      `data=${encodeURIComponent(ql)}`,
-      MILITARY_INSTALLATION_MAX_RESPONSE_BYTES,
-    );
-    if (upstream.status >= 400 || upstream.rateLimited || upstream.runtimeError) {
-      throw Object.assign(new Error('Mapped installation upstream unavailable'), {
-        installationReason: upstream.rateLimited ? 'rate_limited'
-          : upstream.status === 504 ? 'timeout'
-            : upstream.runtimeError ? 'query_failed' : 'unavailable',
-      });
-    }
-    const parsed = JSON.parse(upstream.body);
-    const elements = Array.isArray(parsed?.elements)
-      ? parsed.elements.slice(0, MILITARY_INSTALLATION_ELEMENT_CAP)
-      : [];
-    const payload = {
-      elements,
-      // Honest truncation flag — the client re-asks for its exact viewport so
-      // off-view features can never starve in-view ones. The cap travels with
-      // the payload so the client never has to hard-code it.
-      saturated: elements.length >= MILITARY_INSTALLATION_ELEMENT_CAP,
-      elementCap: MILITARY_INSTALLATION_ELEMENT_CAP,
-      retrievedAt: new Date().toISOString(),
-      status: 'ready',
-    };
-    const entry = { payload, cachedAt: Date.now() };
-    _militaryInstallationCache.set(key, entry);
-    trimMilitaryInstallationCache();
-    writeMilitaryInstallationDisk(key, entry);
-    return payload;
-  }
 
-  function install(middlewares) {
-    middlewares.use('/api/military-installations', async (req, res) => {
-      if (req.method !== 'GET') {
-        res.writeHead(405, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-        return;
-      }
-      if (!_militaryInstallationsRateLimiter(clientKey(req))) {
-        res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '5' });
-        res.end(JSON.stringify({ error: 'Rate limit exceeded' }));
-        return;
-      }
-      const url = new URL(req.url, 'http://localhost');
-      const requested = validMilitaryInstallationBox(url.searchParams);
-      if (!requested) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'A non-dateline bbox no larger than 10 degrees is required' }));
-        return;
-      }
-      // Query the SNAPPED box, not the raw viewport: neighbouring views then
-      // share one cache entry, and an outward snap always covers what was asked.
-      // `exact=1` opts out — the client sends it after a SATURATED snapped
-      // response, so a truncated tile can never starve the actual viewport. It
-      // is keyed separately so exact and snapped answers never collide.
-      const exact = url.searchParams.get('exact') === '1';
-      const box = exact ? requested : quantizeMilitaryInstallationBox(requested);
-      // Key at the precision the query actually uses (see militaryInstallationCacheKey).
-      const key = exact
-        ? `exact:${militaryInstallationCacheKey(box, 5)}`
-        : militaryInstallationCacheKey(box);
-      const now = Date.now();
-      const cached = _militaryInstallationCache.get(key);
-      const preflight = await resolveMilitaryInstallationTier({
-        cacheKey: key,
-        memoryCache: _militaryInstallationCache,
-        inFlight: _militaryInstallationInFlight,
-        readDisk: () => readMilitaryInstallationDisk(key, MILITARY_INSTALLATION_DISK_TTL_MS),
-        now,
-      });
-      if (preflight.source !== 'UPSTREAM') {
-        if (preflight.source === 'DISK') {
-          _militaryInstallationCache.set(key, preflight.entry);
-          trimMilitaryInstallationCache();
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60', 'X-Military-Installations': preflight.source });
-        res.end(JSON.stringify({ ...preflight.entry.payload, status: 'cached' }));
-        return;
-      }
-      const request = coalesceProxyRequest(
-        _militaryInstallationInFlight,
-        key,
-        () => refresh(box, key),
-      );
-      try {
-        const payload = await request.promise;
-        res.writeHead(200, {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=60',
-          'X-Military-Installations': request.shared ? 'INFLIGHT' : 'MISS',
-        });
-        res.end(JSON.stringify(payload));
-      } catch (error) {
-        if (cached && now - cached.cachedAt <= MILITARY_INSTALLATION_STALE_MS) {
-          res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Military-Installations': 'STALE' });
-          res.end(JSON.stringify({ ...cached.payload, status: 'stale' }));
-          return;
-        }
-        // Overpass is down: last-good mapped context at ANY age beats an empty
-        // layer (the same serve-stale rule the Overpass proxy applies).
-        const stale = await readMilitaryInstallationDisk(key, Infinity);
-        if (stale) {
-          res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Military-Installations': 'STALE-DISK' });
-          res.end(JSON.stringify({ ...stale.payload, status: 'stale' }));
-          return;
-        }
-        res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-        res.end(JSON.stringify({ error: 'Mapped installation context is temporarily unavailable', reason: militaryInstallationFailureReason(error) }));
-      }
-    });
-  }
 
-  return {
-    name: 'military-installations-proxy',
-    configureServer(server) {
-      install(server.middlewares);
-    },
-    configurePreviewServer(server) {
-      install(server.middlewares);
-    },
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Regional cockpit briefing proxy
