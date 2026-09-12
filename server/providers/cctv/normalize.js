@@ -39,7 +39,9 @@ export function escapeXml(text) {
  * @returns {string} Normalized feed type.
  */
 export function normalizeFeedType(value) {
-  const raw = String(value || '').trim().toLowerCase();
+  const raw = String(value || '')
+    .trim()
+    .toLowerCase();
   if (!raw) return 'image';
   if (raw === 'jpeg' || raw === 'jpg' || raw === 'png') return 'image';
   if (raw === 'mjpg') return 'mjpeg';
@@ -93,7 +95,9 @@ export function normalizeKey(text) {
  * @returns {{lat:number, lon:number}}
  */
 export function parsePointString(value) {
-  const match = String(value || '').match(/POINT\s*\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)/i);
+  const match = String(value || '').match(
+    /POINT\s*\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)/i,
+  );
   if (!match) return { lat: NaN, lon: NaN };
   return {
     lon: toFiniteNumber(match[1]),
@@ -123,11 +127,16 @@ export function coerceLatLon(value) {
 
   const lat = toFiniteNumber(
     value.latitude ?? value.lat ?? value.y ?? value.Latitude ?? value.Lat,
-    NaN
+    NaN,
   );
   const lon = toFiniteNumber(
-    value.longitude ?? value.lon ?? value.lng ?? value.x ?? value.Longitude ?? value.Lon,
-    NaN
+    value.longitude ??
+      value.lon ??
+      value.lng ??
+      value.x ??
+      value.Longitude ??
+      value.Lon,
+    NaN,
   );
   return { lat, lon };
 }
@@ -152,16 +161,24 @@ export function extractAustinCoords(record) {
   ];
   for (const candidate of candidates) {
     const parsed = coerceLatLon(candidate);
-    if (Number.isFinite(parsed.lat) && Number.isFinite(parsed.lon)) return parsed;
+    if (Number.isFinite(parsed.lat) && Number.isFinite(parsed.lon))
+      return parsed;
   }
 
   const lat = toFiniteNumber(
-    record.latitude ?? record.lat ?? record.camera_latitude ?? record.location_latitude,
-    NaN
+    record.latitude ??
+      record.lat ??
+      record.camera_latitude ??
+      record.location_latitude,
+    NaN,
   );
   const lon = toFiniteNumber(
-    record.longitude ?? record.lon ?? record.lng ?? record.camera_longitude ?? record.location_longitude,
-    NaN
+    record.longitude ??
+      record.lon ??
+      record.lng ??
+      record.camera_longitude ??
+      record.location_longitude,
+    NaN,
   );
   return { lat, lon };
 }
@@ -239,11 +256,19 @@ export function extractAustinName(record, cameraId) {
  * @returns {number} Heading in degrees [0..360), or NaN if unknown.
  */
 export function extractAustinHeading(record) {
-  const direct = toFiniteNumber(record.heading_deg ?? record.heading ?? record.bearing, NaN);
+  const direct = toFiniteNumber(
+    record.heading_deg ?? record.heading ?? record.bearing,
+    NaN,
+  );
   if (Number.isFinite(direct)) return ((direct % 360) + 360) % 360;
 
   // Dedicated direction fields: bare cardinal words ("West") are real facings.
-  const directionKeys = ['direction', 'travel_direction', 'facing', 'facing_direction'];
+  const directionKeys = [
+    'direction',
+    'travel_direction',
+    'facing',
+    'facing_direction',
+  ];
   for (const key of directionKeys) {
     const heading = directionToHeading(record[key], true);
     if (Number.isFinite(heading)) return heading;
@@ -260,7 +285,9 @@ export function extractAustinHeading(record) {
     record.cross_street,
     record.description,
     record.name,
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
   const inferred = directionToHeading(nameProbe);
   if (Number.isFinite(inferred)) return inferred;
 
@@ -276,7 +303,7 @@ export function extractAustinHeading(record) {
  */
 export function isLikelyAustinCoordinate(lat, lon) {
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
-  return lat >= 30.02 && lat <= 30.58 && lon >= -98.12 && lon <= -97.40;
+  return lat >= 30.02 && lat <= 30.58 && lon >= -98.12 && lon <= -97.4;
 }
 
 /**
@@ -324,18 +351,26 @@ export function rowArrayToObject(row, columns) {
 export function prioritizeSources(cameras, maxCount, anchors) {
   const list = Array.isArray(cameras) ? cameras : [];
   const anchorList = (Array.isArray(anchors) ? anchors : []).filter(
-    (a) => Number.isFinite(a?.lat) && Number.isFinite(a?.lon)
+    (a) => Number.isFinite(a?.lat) && Number.isFinite(a?.lon),
   );
-  if (!Number.isFinite(maxCount) || maxCount <= 0 || list.length <= maxCount || !anchorList.length) {
+  if (
+    !Number.isFinite(maxCount) ||
+    maxCount <= 0 ||
+    list.length <= maxCount ||
+    !anchorList.length
+  ) {
     return list;
   }
 
   const scored = list.map((camera, idx) => {
     const lat = Number(camera?.lat);
     const lon = Number(camera?.lon);
-    const distKm = Number.isFinite(lat) && Number.isFinite(lon)
-      ? Math.min(...anchorList.map((a) => haversineKm(lat, lon, a.lat, a.lon)))
-      : Number.POSITIVE_INFINITY;
+    const distKm =
+      Number.isFinite(lat) && Number.isFinite(lon)
+        ? Math.min(
+            ...anchorList.map((a) => haversineKm(lat, lon, a.lat, a.lon)),
+          )
+        : Number.POSITIVE_INFINITY;
     return { camera, idx, distKm };
   });
 
@@ -363,7 +398,9 @@ export function normalizeSourceItem(item) {
     lat: toFiniteNumber(item.lat),
     lon: toFiniteNumber(item.lon),
     headingDeg: toFiniteNumber(item.headingDeg),
-    headingConfidence: String(item.headingConfidence || item.headingSource || '').toLowerCase(),
+    headingConfidence: String(
+      item.headingConfidence || item.headingSource || '',
+    ).toLowerCase(),
     pitchDeg: toFiniteNumber(item.pitchDeg),
     fovDeg: toFiniteNumber(item.fovDeg),
     rangeM: toFiniteNumber(item.rangeM),

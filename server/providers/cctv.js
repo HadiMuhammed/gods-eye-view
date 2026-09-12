@@ -1,6 +1,14 @@
 import { createCctvCatalog } from './cctv/catalog.js';
-import { normalizeFeedType, isVideoFeedType, toFiniteNumber } from './cctv/normalize.js';
-import { buildSyntheticCctvSvg, proxyMediaResponse, fetchCctvImageFromUpstream } from './cctv/media.js';
+import {
+  normalizeFeedType,
+  isVideoFeedType,
+  toFiniteNumber,
+} from './cctv/normalize.js';
+import {
+  buildSyntheticCctvSvg,
+  proxyMediaResponse,
+  fetchCctvImageFromUpstream,
+} from './cctv/media.js';
 import { CCTV_FRAME_FETCH_TIMEOUT_MS } from './cctv/constants.js';
 import { googleServerApiKey } from './places/google-key.js';
 export { CCTV_FRAME_FETCH_TIMEOUT_MS, fetchCctvImageFromUpstream };
@@ -58,7 +66,8 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
         : null,
       frameUrl: `/api/cctv/frame/${encodeURIComponent(cameraId)}`,
       provider: source?.provider || '',
-      sourceKind: source?.sourceKind || (source?.url ? 'configured' : 'fallback'),
+      sourceKind:
+        source?.sourceKind || (source?.url ? 'configured' : 'fallback'),
     };
   };
 
@@ -71,14 +80,24 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
    */
   const streetViewFallback = async ({ lat, lon, heading, fov, pitch }) => {
     const streetViewKey = googleServerApiKey();
-    if (!streetViewKey || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    if (!streetViewKey || !Number.isFinite(lat) || !Number.isFinite(lon))
+      return null;
     try {
       const sv = new URL('https://maps.googleapis.com/maps/api/streetview');
       sv.searchParams.set('size', '960x540');
       sv.searchParams.set('location', `${lat},${lon}`);
-      sv.searchParams.set('heading', String(Number.isFinite(heading) ? heading : 0));
-      sv.searchParams.set('fov', String(Number.isFinite(fov) ? Math.max(20, Math.min(120, fov)) : 80));
-      sv.searchParams.set('pitch', String(Number.isFinite(pitch) ? Math.max(-40, Math.min(20, pitch)) : 0));
+      sv.searchParams.set(
+        'heading',
+        String(Number.isFinite(heading) ? heading : 0),
+      );
+      sv.searchParams.set(
+        'fov',
+        String(Number.isFinite(fov) ? Math.max(20, Math.min(120, fov)) : 80),
+      );
+      sv.searchParams.set(
+        'pitch',
+        String(Number.isFinite(pitch) ? Math.max(-40, Math.min(20, pitch)) : 0),
+      );
       sv.searchParams.set('source', 'outdoor');
       sv.searchParams.set('return_error_code', 'true');
       sv.searchParams.set('key', streetViewKey);
@@ -106,7 +125,9 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
       server.middlewares.use('/api/cctv', async (req, res) => {
         try {
           const sources = await getCctvSources();
-          const sourceById = new Map(sources.map((source) => [source.id, source]));
+          const sourceById = new Map(
+            sources.map((source) => [source.id, source]),
+          );
           const url = new URL(req.url || '/', 'http://localhost');
 
           if (url.pathname === '/sources') {
@@ -127,33 +148,47 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
                 mountHeightM: source.mountHeightM,
                 groundElevationM: source.groundElevationM,
                 feedType: normalizeFeedType(source.feedType),
-                sourceKind: source.sourceKind || (source.url ? 'configured' : 'fallback'),
+                sourceKind:
+                  source.sourceKind || (source.url ? 'configured' : 'fallback'),
                 poseSource: source.poseSource,
                 license: source.license,
               })),
             };
-            res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+            res.writeHead(200, {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store',
+            });
             res.end(JSON.stringify(body));
             return;
           }
 
           if (url.pathname === '/health') {
-            res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+            res.writeHead(200, {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store',
+            });
             res.end(JSON.stringify({ cameras: listHealth() }));
             return;
           }
 
           if (url.pathname.startsWith('/stream/')) {
-            const cameraId = decodeURIComponent(url.pathname.replace('/stream/', '').trim()) || 'camera';
+            const cameraId =
+              decodeURIComponent(url.pathname.replace('/stream/', '').trim()) ||
+              'camera';
             const source = sourceById.get(cameraId);
             const payload = buildStreamPayload(source, cameraId);
-            res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+            res.writeHead(200, {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store',
+            });
             res.end(JSON.stringify(payload));
             return;
           }
 
           if (url.pathname.startsWith('/media/')) {
-            const cameraId = decodeURIComponent(url.pathname.replace('/media/', '').trim()) || 'camera';
+            const cameraId =
+              decodeURIComponent(url.pathname.replace('/media/', '').trim()) ||
+              'camera';
             const source = sourceById.get(cameraId);
             const mediaUrl = source?.url || '';
             const feedType = normalizeFeedType(source?.feedType || 'image');
@@ -165,13 +200,22 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
                 label: source?.provider || 'No upstream URL',
                 message: 'No stream URL configured',
               });
-              res.writeHead(404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-              res.end(JSON.stringify({ error: 'No media URL configured for this camera' }));
+              res.writeHead(404, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-store',
+              });
+              res.end(
+                JSON.stringify({
+                  error: 'No media URL configured for this camera',
+                }),
+              );
               return;
             }
 
             try {
-              const upstreamHeaders = { 'User-Agent': 'gods-eye-view-cctv-proxy/1.0' };
+              const upstreamHeaders = {
+                'User-Agent': 'gods-eye-view-cctv-proxy/1.0',
+              };
               const requestRange = req.headers?.range;
               if (requestRange) upstreamHeaders.Range = requestRange;
               const upstream = await fetch(mediaUrl, {
@@ -185,12 +229,25 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
                   label: source?.provider || 'Configured source',
                   message: `Upstream HTTP ${upstream.status}`,
                 });
-                res.writeHead(upstream.status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-                res.end(JSON.stringify({ error: `Upstream returned ${upstream.status}` }));
+                res.writeHead(upstream.status, {
+                  'Content-Type': 'application/json',
+                  'Cache-Control': 'no-store',
+                });
+                res.end(
+                  JSON.stringify({
+                    error: `Upstream returned ${upstream.status}`,
+                  }),
+                );
                 return;
               }
 
-              if (isVideoFeedType(feedType) && !(contentType.startsWith('video/') || contentType.includes('mpegurl'))) {
+              if (
+                isVideoFeedType(feedType) &&
+                !(
+                  contentType.startsWith('video/') ||
+                  contentType.includes('mpegurl')
+                )
+              ) {
                 setHealth(cameraId, {
                   status: 'degraded',
                   sourceKind: 'upstream',
@@ -202,12 +259,16 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
                   status: 'ok',
                   sourceKind: isVideoFeedType(feedType) ? 'live' : 'snapshot',
                   label: source?.provider || 'Configured source',
-                  message: isVideoFeedType(feedType) ? 'Live stream connected' : 'Snapshot feed connected',
+                  message: isVideoFeedType(feedType)
+                    ? 'Live stream connected'
+                    : 'Snapshot feed connected',
                 });
               }
 
               await proxyMediaResponse(res, upstream, {
-                sourceHeader: isVideoFeedType(feedType) ? 'live-media' : 'upstream-image',
+                sourceHeader: isVideoFeedType(feedType)
+                  ? 'live-media'
+                  : 'upstream-image',
               });
               return;
             } catch (error) {
@@ -217,7 +278,10 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
                 label: source?.provider || 'Configured source',
                 message: error?.message || 'Media fetch failed',
               });
-              res.writeHead(502, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+              res.writeHead(502, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-store',
+              });
               res.end(JSON.stringify({ error: 'Media proxy failed' }));
               return;
             }
@@ -229,23 +293,33 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
             return;
           }
 
-          const cameraId = decodeURIComponent(url.pathname.replace('/frame/', '').trim()) || 'camera';
+          const cameraId =
+            decodeURIComponent(url.pathname.replace('/frame/', '').trim()) ||
+            'camera';
           const source = sourceById.get(cameraId);
-          const label = url.searchParams.get('label') || source?.name || cameraId;
+          const label =
+            url.searchParams.get('label') || source?.name || cameraId;
           const city = url.searchParams.get('city') || source?.city || '';
           const lat = Number(url.searchParams.get('lat') || source?.lat);
           const lon = Number(url.searchParams.get('lon') || source?.lon);
-          const heading = Number(url.searchParams.get('heading') || source?.headingDeg);
+          const heading = Number(
+            url.searchParams.get('heading') || source?.headingDeg,
+          );
           const fov = Number(url.searchParams.get('fov') || source?.fovDeg);
-          const pitch = Number(url.searchParams.get('pitch') || source?.pitchDeg);
+          const pitch = Number(
+            url.searchParams.get('pitch') || source?.pitchDeg,
+          );
 
           // Only use server-registered upstream URLs — never accept client-supplied URLs
           // (prevents SSRF via ?upstream= query parameter)
           const upstreamCandidate =
-            source?.snapshotUrl
-            || (!isVideoFeedType(normalizeFeedType(source?.feedType)) ? source?.url : '');
+            source?.snapshotUrl ||
+            (!isVideoFeedType(normalizeFeedType(source?.feedType))
+              ? source?.url
+              : '');
 
-          const upstreamImage = await fetchCctvImageFromUpstream(upstreamCandidate);
+          const upstreamImage =
+            await fetchCctvImageFromUpstream(upstreamCandidate);
           if (upstreamImage?.ok) {
             setHealth(cameraId, {
               status: 'ok',
@@ -262,7 +336,13 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
             return;
           }
 
-          const sv = await streetViewFallback({ lat, lon, heading, fov, pitch });
+          const sv = await streetViewFallback({
+            lat,
+            lon,
+            heading,
+            fov,
+            pitch,
+          });
           if (sv?.ok) {
             setHealth(cameraId, {
               status: 'degraded',
@@ -283,14 +363,18 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
             cameraId,
             label,
             city,
-            status: source?.url ? 'UPSTREAM UNAVAILABLE' : 'NO UPSTREAM CONFIGURED',
+            status: source?.url
+              ? 'UPSTREAM UNAVAILABLE'
+              : 'NO UPSTREAM CONFIGURED',
           });
 
           setHealth(cameraId, {
             status: 'degraded',
             sourceKind: 'synthetic',
             label: source?.provider || 'Synthetic fallback',
-            message: source?.url ? 'Upstream unavailable' : 'No source configured',
+            message: source?.url
+              ? 'Upstream unavailable'
+              : 'No source configured',
           });
 
           res.writeHead(200, {

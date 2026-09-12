@@ -1,6 +1,7 @@
 export const DEFAULT_CCTV_SOURCE_FILE = 'config/cctv_sources.austin.json';
 /** Austin Open Data portal endpoint for traffic camera records. */
-export const DEFAULT_AUSTIN_ROWS_URL = 'https://data.austintexas.gov/api/views/b4k4-adkb/rows.json?accessType=DOWNLOAD';
+export const DEFAULT_AUSTIN_ROWS_URL =
+  'https://data.austintexas.gov/api/views/b4k4-adkb/rows.json?accessType=DOWNLOAD';
 /** Default cap on Austin cameras after distance-based prioritization. */
 export const DEFAULT_AUSTIN_MAX_SOURCES = 250;
 /** Global cap on total CCTV sources served by the proxy. */
@@ -22,7 +23,8 @@ export const CALTRANS_ANCHORS = [
 ];
 /** TfL JamCams: one keyless list endpoint; frames live on a public S3 bucket. */
 export const TFL_JAMCAM_URL = 'https://api.tfl.gov.uk/Place/Type/JamCam';
-export const TFL_IMAGE_ORIGIN = 'https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/';
+export const TFL_IMAGE_ORIGIN =
+  'https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/';
 export const DEFAULT_TFL_MAX_SOURCES = 250;
 export const LONDON_CENTER = { lat: 51.5074, lon: -0.1278 };
 /** Camera CATALOGS change rarely; 15 min keeps multi-megabyte upstream list refetches (Austin rows.json + 4 Caltrans districts + TfL) infrequent. Frames are fetched per-request and are unaffected. */

@@ -1,5 +1,28 @@
-import { DEFAULT_AUSTIN_ROWS_URL, DEFAULT_AUSTIN_MAX_SOURCES, AUSTIN_DOWNTOWN, CALTRANS_CCTV_URL, DEFAULT_CALTRANS_DISTRICTS, DEFAULT_CALTRANS_MAX_SOURCES, CALTRANS_ANCHORS, TFL_JAMCAM_URL, TFL_IMAGE_ORIGIN, DEFAULT_TFL_MAX_SOURCES, LONDON_CENTER, CCTV_SOURCE_FETCH_TIMEOUT_MS } from './constants.js';
-import { toFiniteNumber, extractAustinCoords, extractAustinCameraId, extractAustinName, extractAustinHeading, isLikelyAustinCoordinate, fallbackHeadingFromId, rowArrayToObject, prioritizeSources } from './normalize.js';
+import {
+  DEFAULT_AUSTIN_ROWS_URL,
+  DEFAULT_AUSTIN_MAX_SOURCES,
+  AUSTIN_DOWNTOWN,
+  CALTRANS_CCTV_URL,
+  DEFAULT_CALTRANS_DISTRICTS,
+  DEFAULT_CALTRANS_MAX_SOURCES,
+  CALTRANS_ANCHORS,
+  TFL_JAMCAM_URL,
+  TFL_IMAGE_ORIGIN,
+  DEFAULT_TFL_MAX_SOURCES,
+  LONDON_CENTER,
+  CCTV_SOURCE_FETCH_TIMEOUT_MS,
+} from './constants.js';
+import {
+  toFiniteNumber,
+  extractAustinCoords,
+  extractAustinCameraId,
+  extractAustinName,
+  extractAustinHeading,
+  isLikelyAustinCoordinate,
+  fallbackHeadingFromId,
+  rowArrayToObject,
+  prioritizeSources,
+} from './normalize.js';
 import { directionToHeading } from '../../../src/data/directionText.js';
 /**
  * Fetch and parse Austin traffic camera records from the city Open Data portal.
@@ -14,13 +37,18 @@ import { directionToHeading } from '../../../src/data/directionText.js';
 export async function loadAustinSourcesFromOpenData() {
   const endpoint = process.env.CCTV_AUSTIN_ROWS_URL || DEFAULT_AUSTIN_ROWS_URL;
   try {
-    const resp = await fetch(endpoint, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(CCTV_SOURCE_FETCH_TIMEOUT_MS) });
+    const resp = await fetch(endpoint, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(CCTV_SOURCE_FETCH_TIMEOUT_MS),
+    });
     if (!resp.ok) {
       console.warn('[CCTV] Austin source download failed:', resp.status);
       return [];
     }
     const payload = await resp.json();
-    const columns = Array.isArray(payload?.meta?.view?.columns) ? payload.meta.view.columns : [];
+    const columns = Array.isArray(payload?.meta?.view?.columns)
+      ? payload.meta.view.columns
+      : [];
     const rows = Array.isArray(payload?.data) ? payload.data : [];
     if (!columns.length || !rows.length) return [];
 
@@ -35,7 +63,9 @@ export async function loadAustinSourcesFromOpenData() {
       // REMOVED and VOID rows whose frame URLs never resolve — those cameras
       // would render as permanent Street View / synthetic fallbacks. Tolerate
       // a missing column (keep the row) so a schema change fails open.
-      const status = String(record.camera_status || '').trim().toUpperCase();
+      const status = String(record.camera_status || '')
+        .trim()
+        .toUpperCase();
       if (status && status !== 'TURNED_ON') continue;
 
       const { lat, lon } = extractAustinCoords(record);
@@ -44,7 +74,9 @@ export async function loadAustinSourcesFromOpenData() {
 
       const extractedHeading = extractAustinHeading(record);
       const hasHeading = Number.isFinite(extractedHeading);
-      const headingDeg = hasHeading ? extractedHeading : fallbackHeadingFromId(cameraId);
+      const headingDeg = hasHeading
+        ? extractedHeading
+        : fallbackHeadingFromId(cameraId);
       cameras.push({
         id: cameraId,
         name: extractAustinName(record, cameraId),
@@ -68,18 +100,29 @@ export async function loadAustinSourcesFromOpenData() {
       });
     }
 
-    const unique = Array.from(new Map(cameras.map((camera) => [camera.id, camera])).values());
-    const maxRaw = Number(process.env.CCTV_AUSTIN_MAX_SOURCES || DEFAULT_AUSTIN_MAX_SOURCES);
-    const maxCount = Number.isFinite(maxRaw) ? Math.max(8, Math.min(300, Math.floor(maxRaw))) : DEFAULT_AUSTIN_MAX_SOURCES;
+    const unique = Array.from(
+      new Map(cameras.map((camera) => [camera.id, camera])).values(),
+    );
+    const maxRaw = Number(
+      process.env.CCTV_AUSTIN_MAX_SOURCES || DEFAULT_AUSTIN_MAX_SOURCES,
+    );
+    const maxCount = Number.isFinite(maxRaw)
+      ? Math.max(8, Math.min(300, Math.floor(maxRaw)))
+      : DEFAULT_AUSTIN_MAX_SOURCES;
     const prioritized = prioritizeSources(unique, maxCount, [AUSTIN_DOWNTOWN]);
     if (prioritized.length < unique.length) {
-      console.log(`[CCTV] Loaded Austin camera sources: ${unique.length} (using nearest ${prioritized.length})`);
+      console.log(
+        `[CCTV] Loaded Austin camera sources: ${unique.length} (using nearest ${prioritized.length})`,
+      );
     } else {
       console.log('[CCTV] Loaded Austin camera sources:', prioritized.length);
     }
     return prioritized;
   } catch (error) {
-    console.warn('[CCTV] Austin source download error:', error?.message || error);
+    console.warn(
+      '[CCTV] Austin source download error:',
+      error?.message || error,
+    );
     return [];
   }
 }
@@ -96,7 +139,8 @@ export async function loadAustinSourcesFromOpenData() {
  * @returns {Promise<Array<object>>} Normalized camera source objects.
  */
 export async function loadCaltransSourcesFromOpenData() {
-  const districtsRaw = process.env.CCTV_CALTRANS_DISTRICTS ?? DEFAULT_CALTRANS_DISTRICTS;
+  const districtsRaw =
+    process.env.CCTV_CALTRANS_DISTRICTS ?? DEFAULT_CALTRANS_DISTRICTS;
   const districts = String(districtsRaw)
     .split(',')
     .map((token) => Number(token.trim()))
@@ -105,18 +149,24 @@ export async function loadCaltransSourcesFromOpenData() {
 
   const settled = await Promise.allSettled(
     districts.map(async (district) => {
-      const resp = await fetch(CALTRANS_CCTV_URL(district), { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(CCTV_SOURCE_FETCH_TIMEOUT_MS) });
+      const resp = await fetch(CALTRANS_CCTV_URL(district), {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(CCTV_SOURCE_FETCH_TIMEOUT_MS),
+      });
       if (!resp.ok) throw new Error(`D${district} HTTP ${resp.status}`);
       const payload = await resp.json();
       const rows = Array.isArray(payload?.data) ? payload.data : [];
       return { district, rows };
-    })
+    }),
   );
 
   const cameras = [];
   for (const result of settled) {
     if (result.status !== 'fulfilled') {
-      console.warn('[CCTV] Caltrans district fetch failed:', result.reason?.message || result.reason);
+      console.warn(
+        '[CCTV] Caltrans district fetch failed:',
+        result.reason?.message || result.reason,
+      );
       continue;
     }
     const { district, rows } = result.value;
@@ -135,13 +185,17 @@ export async function loadCaltransSourcesFromOpenData() {
       const locationName = String(loc.locationName || '').trim();
       // Leading token of locationName is the stable camera code ("TV102 -- I-580 : …").
       const codeMatch = /^([A-Za-z0-9_-]+)\s*--/.exec(locationName);
-      const code = (codeMatch ? codeMatch[1] : `x${cameras.length}`).toLowerCase();
+      const code = (
+        codeMatch ? codeMatch[1] : `x${cameras.length}`
+      ).toLowerCase();
       const cameraId = `ca-d${district}-${code}`;
 
       // loc.direction is a dedicated field ("West", "South") → allow bare words.
       const heading = directionToHeading(loc.direction, true);
       const hasHeading = Number.isFinite(heading);
-      const label = locationName.replace(/^([A-Za-z0-9_-]+)\s*--\s*/, '') || `Caltrans D${district} ${code}`;
+      const label =
+        locationName.replace(/^([A-Za-z0-9_-]+)\s*--\s*/, '') ||
+        `Caltrans D${district} ${code}`;
       cameras.push({
         id: cameraId,
         name: loc.nearbyPlace ? `${label} (${loc.nearbyPlace})` : label,
@@ -168,7 +222,9 @@ export async function loadCaltransSourcesFromOpenData() {
         // so it must be right-ish on its own.
         groundElevationM: (() => {
           const ft = toFiniteNumber(loc.elevation, NaN);
-          return Number.isFinite(ft) ? Math.max(-100, Math.min(4000, ft * 0.3048)) : 150;
+          return Number.isFinite(ft)
+            ? Math.max(-100, Math.min(4000, ft * 0.3048))
+            : 150;
         })(),
         feedType: 'image',
         url: imageUrl,
@@ -179,10 +235,16 @@ export async function loadCaltransSourcesFromOpenData() {
     }
   }
 
-  const maxRaw = Number(process.env.CCTV_CALTRANS_MAX_SOURCES || DEFAULT_CALTRANS_MAX_SOURCES);
-  const maxCount = Number.isFinite(maxRaw) ? Math.max(8, Math.min(600, Math.floor(maxRaw))) : DEFAULT_CALTRANS_MAX_SOURCES;
+  const maxRaw = Number(
+    process.env.CCTV_CALTRANS_MAX_SOURCES || DEFAULT_CALTRANS_MAX_SOURCES,
+  );
+  const maxCount = Number.isFinite(maxRaw)
+    ? Math.max(8, Math.min(600, Math.floor(maxRaw)))
+    : DEFAULT_CALTRANS_MAX_SOURCES;
   const prioritized = prioritizeSources(cameras, maxCount, CALTRANS_ANCHORS);
-  console.log(`[CCTV] Loaded Caltrans camera sources: ${cameras.length} inService (using nearest ${prioritized.length})`);
+  console.log(
+    `[CCTV] Loaded Caltrans camera sources: ${cameras.length} inService (using nearest ${prioritized.length})`,
+  );
   return prioritized;
 }
 
@@ -199,8 +261,13 @@ export async function loadCaltransSourcesFromOpenData() {
 export async function loadTflSourcesFromOpenData() {
   try {
     const appKey = String(process.env.TFL_APP_KEY || '').trim();
-    const url = appKey ? `${TFL_JAMCAM_URL}?app_key=${encodeURIComponent(appKey)}` : TFL_JAMCAM_URL;
-    const resp = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(CCTV_SOURCE_FETCH_TIMEOUT_MS) });
+    const url = appKey
+      ? `${TFL_JAMCAM_URL}?app_key=${encodeURIComponent(appKey)}`
+      : TFL_JAMCAM_URL;
+    const resp = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(CCTV_SOURCE_FETCH_TIMEOUT_MS),
+    });
     if (!resp.ok) {
       console.warn('[CCTV] TfL JamCam download failed:', resp.status);
       return [];
@@ -251,10 +318,16 @@ export async function loadTflSourcesFromOpenData() {
       });
     }
 
-    const maxRaw = Number(process.env.CCTV_TFL_MAX_SOURCES || DEFAULT_TFL_MAX_SOURCES);
-    const maxCount = Number.isFinite(maxRaw) ? Math.max(8, Math.min(600, Math.floor(maxRaw))) : DEFAULT_TFL_MAX_SOURCES;
+    const maxRaw = Number(
+      process.env.CCTV_TFL_MAX_SOURCES || DEFAULT_TFL_MAX_SOURCES,
+    );
+    const maxCount = Number.isFinite(maxRaw)
+      ? Math.max(8, Math.min(600, Math.floor(maxRaw)))
+      : DEFAULT_TFL_MAX_SOURCES;
     const prioritized = prioritizeSources(cameras, maxCount, [LONDON_CENTER]);
-    console.log(`[CCTV] Loaded TfL JamCam sources: ${cameras.length} available (using nearest ${prioritized.length})`);
+    console.log(
+      `[CCTV] Loaded TfL JamCam sources: ${cameras.length} available (using nearest ${prioritized.length})`,
+    );
     return prioritized;
   } catch (error) {
     console.warn('[CCTV] TfL JamCam download error:', error?.message || error);

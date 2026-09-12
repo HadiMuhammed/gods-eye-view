@@ -97,8 +97,13 @@ export function toReadable(body) {
  * @param {object} [opts]
  * @param {string} [opts.sourceHeader='upstream'] - Value for X-CCTV-Source header.
  */
-export async function proxyMediaResponse(res, upstream, { sourceHeader = 'upstream' } = {}) {
-  const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
+export async function proxyMediaResponse(
+  res,
+  upstream,
+  { sourceHeader = 'upstream' } = {},
+) {
+  const contentType =
+    upstream.headers.get('content-type') || 'application/octet-stream';
   const cacheControl = upstream.headers.get('cache-control') || 'no-store';
   const contentLength = upstream.headers.get('content-length');
   const contentRange = upstream.headers.get('content-range');
@@ -116,10 +121,20 @@ export async function proxyMediaResponse(res, upstream, { sourceHeader = 'upstre
   // Live MJPEG/HLS streams are unbounded by design and send no content-length,
   // so they pipe normally (piping streams to the client, never buffering).
   const MEDIA_DECLARED_CAP_BYTES = 64 * 1024 * 1024;
-  if (Number.isFinite(Number(contentLength)) && Number(contentLength) > MEDIA_DECLARED_CAP_BYTES) {
-    res.writeHead(502, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+  if (
+    Number.isFinite(Number(contentLength)) &&
+    Number(contentLength) > MEDIA_DECLARED_CAP_BYTES
+  ) {
+    res.writeHead(502, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+    });
     res.end(JSON.stringify({ error: 'Upstream media exceeds size cap' }));
-    try { await upstream.body?.cancel(); } catch { /* no-op */ }
+    try {
+      await upstream.body?.cancel();
+    } catch {
+      /* no-op */
+    }
     return;
   }
 
@@ -151,14 +166,16 @@ export async function proxyMediaResponse(res, upstream, { sourceHeader = 'upstre
  * @param {number} [options.timeoutMs=CCTV_FRAME_FETCH_TIMEOUT_MS] - Abort timeout.
  * @returns {Promise<{ok:true,body:Buffer,contentType:string}|null>}
  */
-export async function fetchCctvImageFromUpstream(url, {
-  fetchImpl = fetch,
-  timeoutMs = CCTV_FRAME_FETCH_TIMEOUT_MS,
-} = {}) {
+export async function fetchCctvImageFromUpstream(
+  url,
+  { fetchImpl = fetch, timeoutMs = CCTV_FRAME_FETCH_TIMEOUT_MS } = {},
+) {
   if (!url || !/^https?:\/\//i.test(url)) return null;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
-    controller.abort(new DOMException('CCTV upstream frame fetch timed out', 'TimeoutError'));
+    controller.abort(
+      new DOMException('CCTV upstream frame fetch timed out', 'TimeoutError'),
+    );
   }, timeoutMs);
   try {
     const upstream = await fetchImpl(url, {
