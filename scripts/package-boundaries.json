@@ -316,5 +316,19 @@
       "src/voice/voiceCost.js"
     ],
     "external": []
+  },
+  "standalone-key-setup": {
+    "runtime": "node",
+    "exports": [
+      "./server/standalone/key-setup"
+    ],
+    "modules": [
+      "scripts/pinokio-environment.mjs",
+      "server/providers/common/source-root.js",
+      "server/standalone/key-setup.js",
+      "src/keySetupCore.mjs",
+      "src/keySetupHardening.mjs"
+    ],
+    "external": []
   }
 }

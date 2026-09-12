@@ -114,6 +114,9 @@
     },
     "./server/providers/openai": {
       "node": "./server/providers/openai.js"
+    },
+    "./server/standalone/key-setup": {
+      "node": "./server/standalone/key-setup.js"
     }
   }
 }
