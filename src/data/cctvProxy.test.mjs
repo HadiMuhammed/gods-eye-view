@@ -212,3 +212,50 @@ test('CCTV upstream frame fetch refuses a body it cannot stream instead of buffe
   });
   assert.equal(result, null);
 });
+
+test('reader-only snapshots release their lock on success, overflow and read failure', async () => {
+  for (const mode of ['success', 'overflow', 'failure']) {
+    const body = new ReadableStream({
+      pull(controller) {
+        if (mode === 'failure') controller.error(new Error('read failed'));
+        else { controller.enqueue(new Uint8Array(4)); controller.close(); }
+      },
+    });
+    Object.defineProperty(body, Symbol.asyncIterator, { value: undefined });
+    const result = await fetchCctvImageFromUpstream('https://example.com/frame.jpg', {
+      maxBytes: mode === 'overflow' ? 2 : 8,
+      fetchImpl: async () => ({ ok: true, headers: new Headers({ 'content-type': 'image/jpeg' }), body }),
+    });
+    assert.equal(body.locked, false, mode);
+    assert.equal(result?.body.length ?? null, mode === 'success' ? 4 : null);
+  }
+});
+
+test('the snapshot deadline remains active after headers while reading a stalled body', async () => {
+  let signal;
+  const result = await fetchCctvImageFromUpstream('https://example.com/frame.jpg', {
+    timeoutMs: 20,
+    fetchImpl: async (_url, init) => {
+      signal = init.signal;
+      return new Response(new ReadableStream({ start(controller) {
+        signal.addEventListener('abort', () => controller.error(signal.reason), { once: true });
+      }}), { headers: { 'content-type': 'image/jpeg' } });
+    },
+  });
+  assert.equal(result, null);
+  assert.equal(signal.aborted, true);
+});
+
+test('rejected snapshot responses abort the upstream download', async () => {
+  for (const [status, contentType] of [[503, 'image/jpeg'], [200, 'text/html']]) {
+    let signal;
+    const result = await fetchCctvImageFromUpstream('https://example.com/frame.jpg', {
+      fetchImpl: async (_url, init) => {
+        signal = init.signal;
+        return new Response('rejected', { status, headers: { 'content-type': contentType } });
+      },
+    });
+    assert.equal(result, null);
+    assert.equal(signal.aborted, true);
+  }
+});

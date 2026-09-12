@@ -21,6 +21,7 @@ function googleRateLimiter() {
   return _googleRateLimiter;
 }
 
+/** Validate raw lat/lon presence and WGS84 bounds before consuming request quota. */
 export function validatePlacesCoordinates(searchParams) {
   const rawLat = searchParams.get('lat');
   const rawLon = searchParams.get('lon');

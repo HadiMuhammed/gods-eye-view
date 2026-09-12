@@ -157,19 +157,7 @@ export async function proxyMediaResponse(
   stream.pipe(res);
 }
 
-/**
- * Fetch one upstream CCTV image within the frame-refresh budget.
- *
- * A timeout is treated like every other upstream miss so the caller can
- * continue through the Street View and synthetic fallback chain. `fetchImpl`
- * and `timeoutMs` are injectable only to keep the timeout contract unit-testable.
- *
- * @param {string} url - Server-registered upstream image URL.
- * @param {object} [options]
- * @param {typeof fetch} [options.fetchImpl=fetch] - Fetch implementation.
- * @param {number} [options.timeoutMs=CCTV_FRAME_FETCH_TIMEOUT_MS] - Abort timeout.
- * @returns {Promise<{ok:true,body:Buffer,contentType:string}|null>}
- */
+/** Read a snapshot incrementally, retaining at most maxBytes of owned chunks. */
 async function readCappedResponseBytes(upstream, maxBytes) {
   const declared = Number(upstream.headers.get('content-length'));
   if (Number.isFinite(declared) && declared > maxBytes) {
@@ -213,21 +201,26 @@ async function readCappedResponseBytes(upstream, maxBytes) {
       ? upstream.body.getReader()
       : null;
   if (!reader) return null;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!keep(value)) {
-      try {
-        await reader.cancel();
-      } catch {
-        /* no-op */
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!keep(value)) {
+        try {
+          await reader.cancel();
+        } catch {
+          /* already closed */
+        }
+        return null;
       }
-      return null;
     }
+    return Buffer.concat(chunks, total);
+  } finally {
+    reader.releaseLock();
   }
-  return Buffer.concat(chunks, total);
 }
 
+/** Open registered media within a header deadline; leave timely live bodies running. */
 export async function fetchCctvMediaUpstream(
   url,
   {
@@ -245,14 +238,26 @@ export async function fetchCctvMediaUpstream(
   }
 }
 
+/**
+ * Fetch one upstream CCTV image within the frame-refresh budget.
+ *
+ * A timeout is treated like every other upstream miss so the caller can
+ * continue through the Street View and synthetic fallback chain. `fetchImpl`
+ * and `timeoutMs` are injectable only to keep the timeout contract unit-testable.
+ *
+ * @param {string} url - Server-registered upstream image URL.
+ * @param {object} [options]
+ * @param {typeof fetch} [options.fetchImpl=fetch] - Fetch implementation.
+ * @param {number} [options.timeoutMs=CCTV_FRAME_FETCH_TIMEOUT_MS] - Abort timeout.
+ * @param {number} [options.maxBytes=CCTV_FRAME_MAX_BODY_BYTES] - Snapshot byte cap.
+ * @returns {Promise<{ok:true,body:Buffer,contentType:string}|null>}
+ */
 export async function fetchCctvImageFromUpstream(
   url,
   {
     fetchImpl = fetch,
     timeoutMs = CCTV_FRAME_FETCH_TIMEOUT_MS,
     maxBytes = CCTV_FRAME_MAX_BODY_BYTES,
-    CCTV_MEDIA_FETCH_TIMEOUT_MS,
-    CCTV_MEDIA_MAX_BODY_BYTES,
   } = {},
 ) {
   if (!url || !/^https?:\/\//i.test(url)) return null;
@@ -268,7 +273,10 @@ export async function fetchCctvImageFromUpstream(
       signal: controller.signal,
     });
     const contentType = upstream.headers.get('content-type') || '';
-    if (!upstream.ok || !contentType.startsWith('image/')) return null;
+    if (!upstream.ok || !contentType.startsWith('image/')) {
+      controller.abort();
+      return null;
+    }
     const body = await readCappedResponseBytes(upstream, maxBytes);
     if (!body) return null;
     return { ok: true, body, contentType };
@@ -276,5 +284,6 @@ export async function fetchCctvImageFromUpstream(
     return null;
   } finally {
     clearTimeout(timeoutId);
+    controller.abort();
   }
 }

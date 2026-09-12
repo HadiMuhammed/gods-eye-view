@@ -89,3 +89,18 @@ test('both Places routes answer bad coordinates with a 400 before the limiter an
     else process.env.GEV_RATELIMIT_GOOGLE_PER_MIN = previousLimit;
   }
 });
+
+test('preview validates both Places routes and keeps the keyless response', async () => {
+  for (const key of ['', 'test-key']) {
+    const routes = new Map();
+    googlePlacesContextProxy({ resolveApiKey: () => key }).configurePreviewServer({
+      middlewares: { use: (path, handler) => routes.set(path, handler) },
+    });
+    for (const name of ['nearby-places', 'text-search']) {
+      const result = await invokeRoute(routes.get(`/api/google/${name}`), { url: '/?q=capitol&lat=&lon=', remoteAddress: 'preview-test' });
+      assert.equal(result.statusCode, key ? 400 : 200);
+      assert.deepEqual(result.body.places, []);
+      if (!key) assert.equal(result.body.configured, false);
+    }
+  }
+});
