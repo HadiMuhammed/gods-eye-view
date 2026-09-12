@@ -13,6 +13,9 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ## [Unreleased]
 
+- Restore data-provider routes under local build preview and return JSON 404s
+  for unmatched API requests. Credential editing remains development-only.
+
 - Extract CCTV catalog/media and Radio Browser directory providers into focused
   Node modules, preserving their routes and policies and isolating CCTV catalogs
   by provider instance and application root.

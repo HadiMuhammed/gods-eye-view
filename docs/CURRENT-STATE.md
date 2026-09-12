@@ -1,5 +1,17 @@
 # God's Eye View Current State
 
+## Local build preview
+
+After `npm run build`, `npm run preview` serves the built app with the same data
+provider routes as development, including aircraft, satellites, terrain, traffic,
+FIRMS, GBFS, Overpass and CCTV/media. Unmatched `/api` requests return a JSON 404
+in both modes instead of the application HTML. Browser routes retain SPA fallback.
+Credential editing (`/api/setup/*` and Provider Settings) is development-only;
+preview returns JSON 404 for those endpoints. Server credentials come from the
+local environment; browser keys are captured at build time. Rebuild after changing
+a browser key. Preview is for local build verification, not a production server.
+
+
 ## CCTV and radio provider modules
 
 CCTV catalog acquisition, source normalization and frame/media delivery now live

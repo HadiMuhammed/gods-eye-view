@@ -81,5 +81,7 @@
   "server/providers/radio/constants.js",
   "server/providers/radio/stations.js",
   "server/providers/radio/transport.js",
-  "src/tooling/mediaProviders.test.mjs"
+  "src/tooling/mediaProviders.test.mjs",
+  "server/standalone/api-not-found.js",
+  "src/tooling/previewServing.test.mjs"
 ]
