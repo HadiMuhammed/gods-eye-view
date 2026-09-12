@@ -273,5 +273,26 @@
       "server/providers/overpass/transport.js"
     ],
     "external": []
+  },
+  "regional-provider": {
+    "runtime": "node",
+    "exports": [
+      "./server/providers/regional"
+    ],
+    "modules": [
+      "server/providers/common/http.js",
+      "server/providers/common/query.js",
+      "server/providers/common/rate-limit.js",
+      "server/providers/regional.js",
+      "server/providers/regional/briefing.js",
+      "server/providers/regional/http.js",
+      "server/providers/regional/news.js",
+      "server/providers/regional/place.js",
+      "server/providers/regional/query.js",
+      "server/providers/regional/weather-effects.js",
+      "server/providers/regional/weather.js",
+      "src/data/regionalBrief.js"
+    ],
+    "external": []
   }
 }

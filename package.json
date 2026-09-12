@@ -108,6 +108,9 @@
     },
     "./server/providers/military-installations": {
       "node": "./server/providers/military-installations.js"
+    },
+    "./server/providers/regional": {
+      "node": "./server/providers/regional.js"
     }
   }
 }
