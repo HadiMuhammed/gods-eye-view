@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream';
 import { hashSeed, escapeXml } from './normalize.js';
-import { CCTV_FRAME_FETCH_TIMEOUT_MS } from './constants.js';
+import { CCTV_FRAME_FETCH_TIMEOUT_MS, CCTV_FRAME_MAX_BODY_BYTES } from './constants.js';
 /**
  * Generate a synthetic SVG billboard image for a CCTV camera placeholder.
  *
@@ -166,9 +166,32 @@ export async function proxyMediaResponse(
  * @param {number} [options.timeoutMs=CCTV_FRAME_FETCH_TIMEOUT_MS] - Abort timeout.
  * @returns {Promise<{ok:true,body:Buffer,contentType:string}|null>}
  */
+async function readCappedResponseBytes(upstream, maxBytes) {
+  const declared = Number(upstream.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    try { await upstream.body?.cancel(); } catch { /* no-op */ }
+    return null;
+  }
+  if (!upstream.body || typeof upstream.body[Symbol.asyncIterator] !== 'function') {
+    const buffered = Buffer.from(await upstream.arrayBuffer());
+    return buffered.length > maxBytes ? null : buffered;
+  }
+  const chunks = [];
+  let total = 0;
+  for await (const chunk of upstream.body) {
+    total += chunk.length;
+    if (total > maxBytes) {
+      try { await upstream.body.cancel(); } catch { /* no-op */ }
+      return null;
+    }
+    chunks.push(Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength));
+  }
+  return Buffer.concat(chunks, total);
+}
+
 export async function fetchCctvImageFromUpstream(
   url,
-  { fetchImpl = fetch, timeoutMs = CCTV_FRAME_FETCH_TIMEOUT_MS } = {},
+  { fetchImpl = fetch, timeoutMs = CCTV_FRAME_FETCH_TIMEOUT_MS, maxBytes = CCTV_FRAME_MAX_BODY_BYTES } = {},
 ) {
   if (!url || !/^https?:\/\//i.test(url)) return null;
   const controller = new AbortController();
@@ -184,11 +207,9 @@ export async function fetchCctvImageFromUpstream(
     });
     const contentType = upstream.headers.get('content-type') || '';
     if (!upstream.ok || !contentType.startsWith('image/')) return null;
-    return {
-      ok: true,
-      body: Buffer.from(await upstream.arrayBuffer()),
-      contentType,
-    };
+    const body = await readCappedResponseBytes(upstream, maxBytes);
+    if (!body) return null;
+    return { ok: true, body, contentType };
   } catch {
     return null;
   } finally {
