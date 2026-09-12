@@ -1,0 +1,68 @@
+name: Bug report
+description: Something is broken, fails to install, or renders wrong.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Issues without reproduction steps and logs get closed, so please fill in every required field. Redact API keys before pasting anything.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Fresh clone, `npm ci`, `npm run dev`
+        2. Open http://localhost:4173, click LOCATION, type "London"
+        3. See "Search failed" toast
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you installed
+      options:
+        - Pinokio one-click
+        - Terminal (git clone + npm)
+        - Docker
+        - Other (say what in the description)
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: OS, Node version, browser
+      placeholder: "Windows 11, Node 24.14.0, Chrome 151"
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Version or commit
+      description: Output of `git rev-parse --short HEAD`, or the release tag.
+      placeholder: "aacfa06"
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `npm run doctor`
+      description: It reports which providers are configured without printing key values.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Server log and browser console
+      description: Terminal output from the dev server (or the Pinokio log) plus browser console errors. Redact keys.
+      render: text
+    validations:
+      required: true
