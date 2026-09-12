@@ -75,9 +75,11 @@ See [component ownership and adoption](CODE-BOUNDARIES.md).
 Local Places nearby/text search and the CCTV Street View fallback prefer
 `GOOGLE_MAPS_SERVER_API_KEY`, falling back to `GOOGLE_MAPS_API_KEY` when the
 server key is blank or absent. Only the browser key is injected into client
-code. Both are optional and configured in the same ignored root `.env`, or
-Pinokio's ignored `pinokio/ENVIRONMENT`, through Provider Settings or manual
-editing. `.env.example` and `pinokio/_ENVIRONMENT` document the two entries.
+code. POWER UP presents one Google Maps entry for the browser key. The optional
+server key is configured manually in the same ignored root `.env`, or Pinokio's
+ignored `pinokio/ENVIRONMENT`; it is omitted from Provider Settings and its
+missing-key count. Existing server keys and the single-key fallback remain
+supported. `.env.example` and `pinokio/_ENVIRONMENT` document both entries.
 The Street View headings tool uses the same server-first selection after
 resolving environment overrides per variable; its explicit `--key` wins.
 
