@@ -13,8 +13,8 @@
  *
  * Every touched file is restored on exit, including on failure.
  *
- * NOTE: two mutations edit server/providers/openai/instructions.js, and a running dev server watches that
- * file and restarts on every write. Writes are therefore content-guarded below
+ * NOTE: two mutations edit the server voice tools/instructions, and a running dev server watches those
+ * files and restarts on every write. Writes are therefore content-guarded below
  * so the file is touched exactly twice per mutation instead of on every
  * iteration — enough that a dev server survives, but expect it to restart. If
  * you are mid-QA on a live server, run this before or after, not during.
@@ -460,8 +460,8 @@ const MUTATIONS = [
   {
     defect: 'the instruction mapping is dropped, so voice cannot reach the modes',
     file: 'voiceInstructions',
-    from: "            'NAMED VIEWS are shorthand",
-    to: "            // 'NAMED VIEWS are shorthand",
+    from: "    'NAMED VIEWS are shorthand",
+    to: "    // 'NAMED VIEWS are shorthand",
   },
 ];
 
