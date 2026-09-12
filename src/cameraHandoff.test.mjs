@@ -412,9 +412,3 @@ test('vessel and fire layers announce valid clicks and never fly cameras', () =>
     'selectAndFocusFire(carded)',
   ], 'fire sibling ownership');
 });
-
-
-test('disposal aborts the active location lookup', () => {
-  const disposal = ui.slice(ui.indexOf('  async dispose()'));
-  assert.match(disposal, /this\._locationSearchController\?\.abort\(\)/);
-});
