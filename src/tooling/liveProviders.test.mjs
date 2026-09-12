@@ -230,3 +230,62 @@ test('AIS preview route ingests through the socket, returns tracks and disposes 
   for (let i = 0; i < 100 && sockets.length < 2; i++) await delay(10);
   assert.equal(sockets.length, 2);
 });
+
+test('military aircraft route serves stale cache on an upstream 429 and cools down for Retry-After', async (t) => {
+  let now = Date.now();
+  let calls = 0;
+  t.mock.method(Date, 'now', () => now);
+  t.mock.method(console, 'warn', () => {});
+  t.mock.method(globalThis, 'fetch', async () => {
+    calls += 1;
+    if (calls === 1) return Response.json({ ac: [{ hex: 'abc123' }] });
+    return new Response(JSON.stringify({ error: 'rate limited' }), {
+      status: 429,
+      headers: { 'Retry-After': '20' },
+    });
+  });
+  const request = install(providers.adsbLolProxy());
+  const first = await request('/api/adsblol/mil');
+  assert.equal(first.statusCode, 200);
+  now += 13_000;
+  const limited = await request('/api/adsblol/mil');
+  assert.equal(calls, 2);
+  assert.equal(
+    limited.statusCode,
+    200,
+    'a 429 with a cached body is never relayed',
+  );
+  assert.equal(limited.body, first.body);
+  assert.equal(limited.headers['x-ads-b-cache'], 'STALE');
+  assert.equal(limited.headers['x-ads-b-upstream-status'], '429');
+  now += 5_000;
+  const cooling = await request('/api/adsblol/mil');
+  assert.equal(calls, 2, 'no upstream call inside the Retry-After window');
+  assert.equal(cooling.headers['x-ads-b-cache'], 'STALE');
+  now += 16_000;
+  await request('/api/adsblol/mil');
+  assert.equal(calls, 3, 'upstream is retried once Retry-After elapses');
+});
+
+test('military aircraft route relays an upstream 429 when nothing is cached', async (t) => {
+  t.mock.method(console, 'warn', () => {});
+  let calls = 0;
+  t.mock.method(globalThis, 'fetch', async () => {
+    calls += 1;
+    return new Response('{"error":"rate limited"}', { status: 429 });
+  });
+  const request = install(providers.adsbLolProxy());
+  const limited = await request('/api/adsblol/mil');
+  assert.equal(limited.statusCode, 429);
+  const again = await request('/api/adsblol/mil');
+  assert.equal(again.statusCode, 429);
+  assert.equal(
+    calls,
+    1,
+    'the cooldown still protects upstream with nothing cached',
+  );
+  assert.ok(
+    again.headers['retry-after'],
+    'a cooling-down miss carries Retry-After',
+  );
+});
