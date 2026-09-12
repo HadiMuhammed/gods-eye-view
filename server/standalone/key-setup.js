@@ -1,4 +1,11 @@
-import { knownKeySetupEnvVars, admitKeySetupRequest, isKeySetupExternallyManaged, keySetupStatus, validateKeySetupUpdates, upsertDotenvValues } from '../../src/keySetupCore.mjs';
+import {
+  knownKeySetupEnvVars,
+  admitKeySetupRequest,
+  isKeySetupExternallyManaged,
+  keySetupStatus,
+  validateKeySetupUpdates,
+  upsertDotenvValues,
+} from '../../src/keySetupCore.mjs';
 import { defaultSourceRoot } from '../providers/common/source-root.js';
 import path from 'node:path';
 import { readEnvironmentSource as readPinokioEnvironmentSource } from '../../scripts/pinokio-environment.mjs';
@@ -23,9 +30,15 @@ const LAUNCHER_AT_BOOT = process.env.GEV_LAUNCHER;
  * Recomputing the snapshot there would classify the panel's own keys as
  * external (read-only) until the whole process is relaunched.
  */
-const PROVIDER_ENV_AT_BOOT = globalThis.__GEV_PROVIDER_ENV_AT_BOOT ??= Object.freeze(Object.fromEntries(
-  [...knownKeySetupEnvVars()].map((name) => [name, String(process.env[name] ?? '').trim()]),
-));
+const PROVIDER_ENV_AT_BOOT = (globalThis.__GEV_PROVIDER_ENV_AT_BOOT ??=
+  Object.freeze(
+    Object.fromEntries(
+      [...knownKeySetupEnvVars()].map((name) => [
+        name,
+        String(process.env[name] ?? '').trim(),
+      ]),
+    ),
+  ));
 
 /**
  * `dev-fresh.sh` resolves dotenv and Keychain values before it starts Vite, so
@@ -79,8 +92,13 @@ function keySetupEndpoint({ sourceRoot = defaultSourceRoot } = {}) {
   // `GEV_LAUNCHER=pinokio` line in someone's .env would silently redirect a
   // plain `npm run dev` to write the Pinokio store it never loaded.
   const pinokioManaged = () => LAUNCHER_AT_BOOT === 'pinokio';
-  const storeName = () => (pinokioManaged() ? 'pinokio-environment' : 'env-file');
-  const storePath = () => path.join(sourceRoot, ...(pinokioManaged() ? ['pinokio', 'ENVIRONMENT'] : ['.env']));
+  const storeName = () =>
+    pinokioManaged() ? 'pinokio-environment' : 'env-file';
+  const storePath = () =>
+    path.join(
+      sourceRoot,
+      ...(pinokioManaged() ? ['pinokio', 'ENVIRONMENT'] : ['.env']),
+    );
   // Read the store, distinguishing "no store yet" from "cannot read this
   // store". Only ENOENT means empty. Every other failure — a permission error,
   // an I/O fault, an undecodable file — must ABORT the save: upserting into a
@@ -97,7 +115,9 @@ function keySetupEndpoint({ sourceRoot = defaultSourceRoot } = {}) {
       return fs.readFileSync(storePath(), 'utf8');
     } catch (error) {
       if (error?.code === 'ENOENT') return ''; // The first saved key births the file.
-      const unreadable = new Error('the existing configuration could not be read, so nothing was changed');
+      const unreadable = new Error(
+        'the existing configuration could not be read, so nothing was changed',
+      );
       unreadable.code = 'GEV_STORE_UNREADABLE';
       throw unreadable;
     }
@@ -114,16 +134,17 @@ function keySetupEndpoint({ sourceRoot = defaultSourceRoot } = {}) {
   };
   // The gate itself is pure and unit-tested (admitKeySetupRequest in
   // src/keySetupCore.mjs) — this just feeds it the request.
-  const admit = (req) => admitKeySetupRequest({
-    method: req.method,
-    remoteAddress: req.socket?.remoteAddress,
-    hostHeader: req.headers?.host,
-    protocol: req.socket?.encrypted ? 'https:' : 'http:',
-    origin: req.headers?.origin,
-    contentType: req.headers?.['content-type'],
-    proxyHeaders: req.headers || {},
-    env: process.env,
-  });
+  const admit = (req) =>
+    admitKeySetupRequest({
+      method: req.method,
+      remoteAddress: req.socket?.remoteAddress,
+      hostHeader: req.headers?.host,
+      protocol: req.socket?.encrypted ? 'https:' : 'http:',
+      origin: req.headers?.origin,
+      contentType: req.headers?.['content-type'],
+      proxyHeaders: req.headers || {},
+      env: process.env,
+    });
   // Is this env var supplied by a workflow OTHER than this panel's store? Boot
   // provenance closes the equal-value ambiguity: an exported X remains
   // external even when the editable store independently contains X.
@@ -147,7 +168,9 @@ function keySetupEndpoint({ sourceRoot = defaultSourceRoot } = {}) {
       // offered); 'external' = supplied by env/Keychain/another workflow
       // (read-only — the panel must never rewrite or delete it).
       key.managed = key.set
-        ? (key.envVars.some((name) => isExternallyManaged(name, inStore)) ? 'external' : 'file')
+        ? key.envVars.some((name) => isExternallyManaged(name, inStore))
+          ? 'external'
+          : 'file'
         : null;
     }
     return { ...status, store: storeName() };
@@ -161,7 +184,9 @@ function keySetupEndpoint({ sourceRoot = defaultSourceRoot } = {}) {
     // Never write THROUGH a symlink into a credential path.
     try {
       if (fs.lstatSync(filepath).isSymbolicLink()) {
-        throw new Error('refusing to write a credential store that is a symlink');
+        throw new Error(
+          'refusing to write a credential store that is a symlink',
+        );
       }
     } catch (error) {
       if (error.code !== 'ENOENT') throw error; // absent is fine — first save.
@@ -183,7 +208,9 @@ function keySetupEndpoint({ sourceRoot = defaultSourceRoot } = {}) {
       // hardening failure aborts with the previous store fully intact and the
       // secret never on disk unprotected — no rollback path to get wrong.
       if (!hardenCredentialFile(tmp)) {
-        const error = new Error('could not restrict the credential file to your account; nothing was saved');
+        const error = new Error(
+          'could not restrict the credential file to your account; nothing was saved',
+        );
         error.code = 'GEV_HARDEN_FAILED';
         throw error;
       }
@@ -215,18 +242,23 @@ function keySetupEndpoint({ sourceRoot = defaultSourceRoot } = {}) {
     // only install via configureServer (never configurePreviewServer), so they
     // are absent from preview today — but pinning apply here makes that a
     // guarantee rather than an accident of which hook a future edit uses.
-    apply: (_config, { command, isPreview }) => command === 'serve' && !isPreview,
+    apply: (_config, { command, isPreview }) =>
+      command === 'serve' && !isPreview,
     configureServer(server) {
       server.middlewares.use('/api/setup/status', (req, res) => {
-        if (req.method !== 'GET') return respond(res, 405, { error: 'Method not allowed' });
+        if (req.method !== 'GET')
+          return respond(res, 405, { error: 'Method not allowed' });
         const admission = admit(req);
-        if (!admission.ok) return respond(res, admission.status, { error: admission.error });
+        if (!admission.ok)
+          return respond(res, admission.status, { error: admission.error });
         respond(res, 200, providerStatus());
       });
       server.middlewares.use('/api/setup/keys', (req, res) => {
-        if (req.method !== 'POST') return respond(res, 405, { error: 'Method not allowed' });
+        if (req.method !== 'POST')
+          return respond(res, 405, { error: 'Method not allowed' });
         const admission = admit(req);
-        if (!admission.ok) return respond(res, admission.status, { error: admission.error });
+        if (!admission.ok)
+          return respond(res, admission.status, { error: admission.error });
         let body = '';
         let overflowed = false;
         req.on('data', (chunk) => {
@@ -237,7 +269,8 @@ function keySetupEndpoint({ sourceRoot = defaultSourceRoot } = {}) {
           }
         });
         req.on('end', () => {
-          if (overflowed) return respond(res, 413, { error: 'Request too large' });
+          if (overflowed)
+            return respond(res, 413, { error: 'Request too large' });
           let parsed;
           try {
             parsed = JSON.parse(body || '{}');
@@ -266,10 +299,17 @@ function keySetupEndpoint({ sourceRoot = defaultSourceRoot } = {}) {
             // "saved world-readable" must never be reported as a generic write
             // error. Everything else returns a fixed message (a raw filesystem
             // error can carry an absolute path; that stays in the server log).
-            if (error?.code === 'GEV_HARDEN_FAILED' || error?.code === 'GEV_STORE_UNREADABLE') {
-              return respond(res, 500, { error: `The key was not saved: ${error.message}` });
+            if (
+              error?.code === 'GEV_HARDEN_FAILED' ||
+              error?.code === 'GEV_STORE_UNREADABLE'
+            ) {
+              return respond(res, 500, {
+                error: `The key was not saved: ${error.message}`,
+              });
             }
-            return respond(res, 500, { error: `Could not write the ${storeName()} store` });
+            return respond(res, 500, {
+              error: `Could not write the ${storeName()} store`,
+            });
           }
           // Live for the server-side proxies immediately; the restart below is
           // what re-injects the client-exposed defines (Google, Cesium ion).
@@ -289,7 +329,10 @@ function keySetupEndpoint({ sourceRoot = defaultSourceRoot } = {}) {
           // .env watcher may fire too; a second queued restart is harmless.
           setTimeout(() => {
             server.restart().catch((error) => {
-              console.warn('[KeySetup] Dev-server restart failed:', error?.message || error);
+              console.warn(
+                '[KeySetup] Dev-server restart failed:',
+                error?.message || error,
+              );
             });
           }, 250);
         });

@@ -1,4 +1,3 @@
-
 /** Read a request body with a hard byte cap; throws { code:'BODY_TOO_LARGE' } past the cap. */
 async function readRequestBodyCapped(req, maxBytes) {
   const chunks = [];

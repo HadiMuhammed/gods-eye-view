@@ -18,7 +18,11 @@ const _regionalBriefCache = new Map();
 
 const _regionalBriefInFlight = new Map();
 
-const _regionalBriefRateLimiter = makeRateLimiter({ windowMs: 60_000, max: 30, globalMax: 90 });
+const _regionalBriefRateLimiter = makeRateLimiter({
+  windowMs: 60_000,
+  max: 30,
+  globalMax: 90,
+});
 
 function trimRegionalBriefCache() {
   while (_regionalBriefCache.size > REGIONAL_BRIEF_MAX_CACHE) {
@@ -40,13 +44,15 @@ function regionalBriefProxy() {
       fetchRegionalWeather(point),
     ]);
     const place = placeResult.status === 'fulfilled' ? placeResult.value : null;
-    const weather = weatherResult.status === 'fulfilled' ? weatherResult.value : null;
+    const weather =
+      weatherResult.status === 'fulfilled' ? weatherResult.value : null;
     const news = await fetchRegionalNews(place);
     if (!regionalBriefHasAnySource({ place, weather, news })) {
       throw new Error('All regional briefing sources unavailable');
     }
     const payload = {
-      status: place && weather && news.status !== 'unavailable' ? 'ready' : 'partial',
+      status:
+        place && weather && news.status !== 'unavailable' ? 'ready' : 'partial',
       retrievedAt: new Date().toISOString(),
       coordinates: point,
       place,
@@ -71,7 +77,10 @@ function regionalBriefProxy() {
         return;
       }
       if (!_regionalBriefRateLimiter(clientKey(req))) {
-        res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '10' });
+        res.writeHead(429, {
+          'Content-Type': 'application/json',
+          'Retry-After': '10',
+        });
         res.end(JSON.stringify({ error: 'Rate limit exceeded' }));
         return;
       }
@@ -79,18 +88,28 @@ function regionalBriefProxy() {
       const point = validRegionalPoint(url.searchParams);
       if (!point) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Valid latitude and longitude are required' }));
+        res.end(
+          JSON.stringify({
+            error: 'Valid latitude and longitude are required',
+          }),
+        );
         return;
       }
       const key = `${(Math.round(point.latitude * 10) / 10).toFixed(1)},${(Math.round(point.longitude * 10) / 10).toFixed(1)}`;
       const now = Date.now();
       const cached = _regionalBriefCache.get(key);
       if (cached && now - cached.cachedAt <= REGIONAL_BRIEF_CACHE_MS) {
-        res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60', 'X-Regional-Brief': 'HIT' });
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=60',
+          'X-Regional-Brief': 'HIT',
+        });
         res.end(JSON.stringify({ ...cached.payload, status: 'cached' }));
         return;
       }
-      const request = coalesceProxyRequest(_regionalBriefInFlight, key, () => refresh(point, key));
+      const request = coalesceProxyRequest(_regionalBriefInFlight, key, () =>
+        refresh(point, key),
+      );
       try {
         const payload = await request.promise;
         res.writeHead(200, {
@@ -101,12 +120,23 @@ function regionalBriefProxy() {
         res.end(JSON.stringify(payload));
       } catch {
         if (cached && now - cached.cachedAt <= REGIONAL_BRIEF_STALE_MS) {
-          res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Regional-Brief': 'STALE' });
+          res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+            'X-Regional-Brief': 'STALE',
+          });
           res.end(JSON.stringify({ ...cached.payload, status: 'stale' }));
           return;
         }
-        res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-        res.end(JSON.stringify({ error: 'Regional briefing is temporarily unavailable' }));
+        res.writeHead(503, {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        });
+        res.end(
+          JSON.stringify({
+            error: 'Regional briefing is temporarily unavailable',
+          }),
+        );
       }
     });
   }

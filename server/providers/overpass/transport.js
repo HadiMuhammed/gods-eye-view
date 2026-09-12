@@ -1,4 +1,8 @@
-import { OVERPASS_MAX_RESPONSE_BYTES, OVERPASS_UPSTREAMS, OVERPASS_TIMEOUT_MS } from './constants.js';
+import {
+  OVERPASS_MAX_RESPONSE_BYTES,
+  OVERPASS_UPSTREAMS,
+  OVERPASS_TIMEOUT_MS,
+} from './constants.js';
 import { readResponseTextCapped } from '../common/http.js';
 import { simplifyOverpassPayloadBody } from './geometry.js';
 
@@ -13,10 +17,12 @@ import { simplifyOverpassPayloadBody } from './geometry.js';
  */
 function overpassLooksRateLimited(bodyText) {
   const text = String(bodyText || '').toLowerCase();
-  return text.includes('rate_limited')
-    || text.includes('quota of your ip address')
-    || text.includes('dispatcher_client::request_read_and_idx::rate_limited')
-    || text.includes('too many requests');
+  return (
+    text.includes('rate_limited') ||
+    text.includes('quota of your ip address') ||
+    text.includes('dispatcher_client::request_read_and_idx::rate_limited') ||
+    text.includes('too many requests')
+  );
 }
 
 /**
@@ -26,9 +32,11 @@ function overpassLooksRateLimited(bodyText) {
  */
 function overpassLooksRuntimeError(bodyText) {
   const text = String(bodyText || '').toLowerCase();
-  return text.includes('runtime error')
-    || text.includes('timed out')
-    || text.includes('out of memory');
+  return (
+    text.includes('runtime error') ||
+    text.includes('timed out') ||
+    text.includes('out of memory')
+  );
 }
 
 /**
@@ -42,10 +50,13 @@ function overpassLooksRuntimeError(bodyText) {
  */
 function overpassPayloadIsData(payload) {
   const status = Number(payload?.status);
-  return Number.isFinite(status)
-    && status >= 200 && status < 300
-    && !payload.rateLimited
-    && !payload.runtimeError;
+  return (
+    Number.isFinite(status) &&
+    status >= 200 &&
+    status < 300 &&
+    !payload.rateLimited &&
+    !payload.runtimeError
+  );
 }
 
 /**
@@ -57,12 +68,16 @@ function overpassPayloadIsData(payload) {
  * @param {object} [options] Server-only endpoint and I/O overrides for tests.
  * @returns {Promise<{status:number,body:string,contentType:string,endpoint:string,rateLimited:boolean}>}
  */
-async function fetchOverpassPayload(body, maxResponseBytes = OVERPASS_MAX_RESPONSE_BYTES, {
-  endpoints = OVERPASS_UPSTREAMS,
-  fetchImpl = fetch,
-  readBody = readResponseTextCapped,
-  simplify = simplifyOverpassPayloadBody,
-} = {}) {
+async function fetchOverpassPayload(
+  body,
+  maxResponseBytes = OVERPASS_MAX_RESPONSE_BYTES,
+  {
+    endpoints = OVERPASS_UPSTREAMS,
+    fetchImpl = fetch,
+    readBody = readResponseTextCapped,
+    simplify = simplifyOverpassPayloadBody,
+  } = {},
+) {
   let lastError = null;
   let lastRateLimitPayload = null;
   let lastRefusalPayload = null;
@@ -83,9 +98,11 @@ async function fetchOverpassPayload(body, maxResponseBytes = OVERPASS_MAX_RESPON
       });
 
       const responseBody = await readBody(upstream, maxResponseBytes);
-      const contentType = upstream.headers.get('content-type') || 'application/json';
+      const contentType =
+        upstream.headers.get('content-type') || 'application/json';
       const status = upstream.status;
-      const rateLimited = status === 429 || overpassLooksRateLimited(responseBody);
+      const rateLimited =
+        status === 429 || overpassLooksRateLimited(responseBody);
       const runtimeError = overpassLooksRuntimeError(responseBody);
       const payload = {
         status,
@@ -116,7 +133,9 @@ async function fetchOverpassPayload(body, maxResponseBytes = OVERPASS_MAX_RESPON
       // every mirror has had the chance to answer it.
       if (status < 200 || status >= 300) {
         if (!lastRefusalPayload) lastRefusalPayload = payload;
-        lastError = new Error(`Overpass upstream returned ${status} (${endpoint})`);
+        lastError = new Error(
+          `Overpass upstream returned ${status} (${endpoint})`,
+        );
         continue;
       }
 

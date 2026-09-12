@@ -1,4 +1,11 @@
-import { OVERPASS_MAX_AROUND_M, OVERPASS_MAX_BBOX_DEG, OVERPASS_AREA_ELEMENT_RE, OVERPASS_SELECTOR_RE, OVERPASS_BBOX_RE, OVERPASS_MAX_QL_TIMEOUT } from './constants.js';
+import {
+  OVERPASS_MAX_AROUND_M,
+  OVERPASS_MAX_BBOX_DEG,
+  OVERPASS_AREA_ELEMENT_RE,
+  OVERPASS_SELECTOR_RE,
+  OVERPASS_BBOX_RE,
+  OVERPASS_MAX_QL_TIMEOUT,
+} from './constants.js';
 
 /**
  * Whether a normalized Overpass query is BOUNDARY-class (admin `is_in` lookups
@@ -41,8 +48,14 @@ function stripOverpassNoise(src) {
       const quote = c;
       i += 1;
       while (i < n) {
-        if (src[i] === '\\') { i += 2; continue; } // escaped char
-        if (src[i] === quote) { i += 1; break; } // closing quote
+        if (src[i] === '\\') {
+          i += 2;
+          continue;
+        } // escaped char
+        if (src[i] === quote) {
+          i += 1;
+          break;
+        } // closing quote
         i += 1;
       }
       out += quote + quote; // collapse the literal to empty quotes
@@ -69,11 +82,17 @@ function stripOverpassNoise(src) {
 
 function sanitizeOverpassBody(rawBody) {
   let params;
-  try { params = new URLSearchParams(rawBody); } catch { return { ok: false, error: 'Malformed query body' }; }
+  try {
+    params = new URLSearchParams(rawBody);
+  } catch {
+    return { ok: false, error: 'Malformed query body' };
+  }
   const all = params.getAll('data');
-  if (all.length !== 1) return { ok: false, error: 'Exactly one data query is required' };
+  if (all.length !== 1)
+    return { ok: false, error: 'Exactly one data query is required' };
   const data = all[0];
-  if (!data || !data.trim()) return { ok: false, error: 'Missing Overpass data query' };
+  if (!data || !data.trim())
+    return { ok: false, error: 'Missing Overpass data query' };
 
   // Blank quoted literals + strip comments in one lexer pass so a fake bound or a
   // `//` inside a string can't hide an unbounded selector (or satisfy a bound).
@@ -89,9 +108,17 @@ function sanitizeOverpassBody(rawBody) {
     }
   }
   // Reject world-sized / oversized bboxes.
-  for (const m of stripped.matchAll(/\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)/g)) {
-    const s = Number(m[1]); const w = Number(m[2]); const n = Number(m[3]); const e = Number(m[4]);
-    if (Math.abs(n - s) > OVERPASS_MAX_BBOX_DEG || Math.abs(e - w) > OVERPASS_MAX_BBOX_DEG) {
+  for (const m of stripped.matchAll(
+    /\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)/g,
+  )) {
+    const s = Number(m[1]);
+    const w = Number(m[2]);
+    const n = Number(m[3]);
+    const e = Number(m[4]);
+    if (
+      Math.abs(n - s) > OVERPASS_MAX_BBOX_DEG ||
+      Math.abs(e - w) > OVERPASS_MAX_BBOX_DEG
+    ) {
       return { ok: false, error: 'Overpass bbox too large' };
     }
   }
@@ -122,7 +149,10 @@ function sanitizeOverpassBody(rawBody) {
     // misread as a spatial bound. Bounds live in (...) / function calls / set
     // refs, never inside [...], so the probe loses nothing real.
     const outSets = [];
-    const body = stmt.replace(/->\s*\.(\w+)/g, (_, name) => { outSets.push(name); return ' '; });
+    const body = stmt.replace(/->\s*\.(\w+)/g, (_, name) => {
+      outSets.push(name);
+      return ' ';
+    });
     const probe = body.replace(/\[[^\]]*\]/g, ' ');
 
     // Reject element-in-area scans on the TAG-STRIPPED probe, so a tag filter
@@ -131,15 +161,21 @@ function sanitizeOverpassBody(rawBody) {
     // SELECTS admin areas (area.set) and pivots (rel(pivot.x)), never node/way/
     // relation(area...). The probe collapses tags so `way (area.a)` is caught.
     if (OVERPASS_AREA_ELEMENT_RE.test(probe)) {
-      return { ok: false, error: 'Overpass area-bounded element selector not allowed' };
+      return {
+        ok: false,
+        error: 'Overpass area-bounded element selector not allowed',
+      };
     }
 
     const hasSelector = OVERPASS_SELECTOR_RE.test(probe);
-    const inputSets = [...probe.matchAll(/(?<!\d)\.([a-z_]\w*)/gi)].map((m) => m[1]);
-    const directBound = /around:\s*\d/.test(probe)
-      || OVERPASS_BBOX_RE.test(probe)
-      || /is_in\s*\(/.test(probe)                 // is_in(lat,lon) — the function form only
-      || /\barea\s*\(/.test(probe);               // area(id) — bounded as a set definition
+    const inputSets = [...probe.matchAll(/(?<!\d)\.([a-z_]\w*)/gi)].map(
+      (m) => m[1],
+    );
+    const directBound =
+      /around:\s*\d/.test(probe) ||
+      OVERPASS_BBOX_RE.test(probe) ||
+      /is_in\s*\(/.test(probe) || // is_in(lat,lon) — the function form only
+      /\barea\s*\(/.test(probe); // area(id) — bounded as a set definition
 
     const setBound = inputSets.some((s) => boundedSets.has(s));
     const bounded = directBound || setBound;
@@ -153,7 +189,8 @@ function sanitizeOverpassBody(rawBody) {
 
   const clamped = data.replace(
     /\[timeout:\s*(\d+)\s*\]/gi,
-    (_, n) => `[timeout:${Math.min(Number(n) || OVERPASS_MAX_QL_TIMEOUT, OVERPASS_MAX_QL_TIMEOUT)}]`,
+    (_, n) =>
+      `[timeout:${Math.min(Number(n) || OVERPASS_MAX_QL_TIMEOUT, OVERPASS_MAX_QL_TIMEOUT)}]`,
   );
   return { ok: true, body: `data=${encodeURIComponent(clamped)}` };
 }

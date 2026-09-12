@@ -1,12 +1,18 @@
-import { readResponseJsonCapped, readResponseTextCapped } from '../common/http.js';
+import {
+  readResponseJsonCapped,
+  readResponseTextCapped,
+} from '../common/http.js';
 
 const REGIONAL_MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 
-async function fetchRegionalJson(url, {
-  headers = {},
-  timeoutMs = 9000,
-  maxBytes = REGIONAL_MAX_RESPONSE_BYTES,
-} = {}) {
+async function fetchRegionalJson(
+  url,
+  {
+    headers = {},
+    timeoutMs = 9000,
+    maxBytes = REGIONAL_MAX_RESPONSE_BYTES,
+  } = {},
+) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -18,11 +24,14 @@ async function fetchRegionalJson(url, {
   }
 }
 
-async function fetchRegionalText(url, {
-  headers = {},
-  timeoutMs = 9000,
-  maxBytes = REGIONAL_MAX_RESPONSE_BYTES,
-} = {}) {
+async function fetchRegionalText(
+  url,
+  {
+    headers = {},
+    timeoutMs = 9000,
+    maxBytes = REGIONAL_MAX_RESPONSE_BYTES,
+  } = {},
+) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {

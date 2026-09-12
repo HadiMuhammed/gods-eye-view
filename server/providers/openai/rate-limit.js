@@ -9,7 +9,10 @@ let _openAiRateLimiter;
 
 /** OpenAI cost endpoints (realtime/token + hud-summary). Null = unlimited (default). */
 function openAiRateLimiter() {
-  if (_openAiRateLimiter === undefined) _openAiRateLimiter = makeOptInRateLimiter(process.env.GEV_RATELIMIT_OPENAI_PER_MIN);
+  if (_openAiRateLimiter === undefined)
+    _openAiRateLimiter = makeOptInRateLimiter(
+      process.env.GEV_RATELIMIT_OPENAI_PER_MIN,
+    );
   return _openAiRateLimiter;
 }
 

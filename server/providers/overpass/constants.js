@@ -97,12 +97,38 @@ const OVERPASS_MAX_BBOX_DEG = 12;
 const OVERPASS_ELEMENT_TYPES = 'node|way|relation|nwr|nw|nr|wr|rel';
 
 /** Element-selector (incl. `area`) whose statements must be individually bounded. */
-const OVERPASS_SELECTOR_RE = new RegExp(`\\b(?:${OVERPASS_ELEMENT_TYPES}|area)\\b`);
+const OVERPASS_SELECTOR_RE = new RegExp(
+  `\\b(?:${OVERPASS_ELEMENT_TYPES}|area)\\b`,
+);
 
 /** An element selector bounded BY an area — the country-scan abuse shape. */
-const OVERPASS_AREA_ELEMENT_RE = new RegExp(`\\b(?:${OVERPASS_ELEMENT_TYPES})\\s*\\(\\s*area\\b`, 'i');
+const OVERPASS_AREA_ELEMENT_RE = new RegExp(
+  `\\b(?:${OVERPASS_ELEMENT_TYPES})\\s*\\(\\s*area\\b`,
+  'i',
+);
 
 /** A single bbox 4-tuple `(s,w,n,e)` (non-global so it does not advance lastIndex). */
-const OVERPASS_BBOX_RE = /\(\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*\)/;
+const OVERPASS_BBOX_RE =
+  /\(\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*\)/;
 
-export { OVERPASS_BOUNDARY_DISK_TTL_MS, OVERPASS_DISK_TTL_MS, OVERPASS_DISK_DIR, OVERPASS_CACHE_MS, OVERPASS_CACHE_MAX_ENTRIES, OVERPASS_MAX_BODY_BYTES, OVERPASS_MAX_CONCURRENT, OVERPASS_MAX_AROUND_M, OVERPASS_MAX_BBOX_DEG, OVERPASS_AREA_ELEMENT_RE, OVERPASS_SELECTOR_RE, OVERPASS_BBOX_RE, OVERPASS_MAX_QL_TIMEOUT, OVERPASS_SIMPLIFY_MIN_BYTES, OVERPASS_SIMPLIFY_MIN_POINTS, OVERPASS_SIMPLIFY_TOLERANCE_DEG, OVERPASS_MAX_RESPONSE_BYTES, OVERPASS_UPSTREAMS, OVERPASS_TIMEOUT_MS };
+export {
+  OVERPASS_BOUNDARY_DISK_TTL_MS,
+  OVERPASS_DISK_TTL_MS,
+  OVERPASS_DISK_DIR,
+  OVERPASS_CACHE_MS,
+  OVERPASS_CACHE_MAX_ENTRIES,
+  OVERPASS_MAX_BODY_BYTES,
+  OVERPASS_MAX_CONCURRENT,
+  OVERPASS_MAX_AROUND_M,
+  OVERPASS_MAX_BBOX_DEG,
+  OVERPASS_AREA_ELEMENT_RE,
+  OVERPASS_SELECTOR_RE,
+  OVERPASS_BBOX_RE,
+  OVERPASS_MAX_QL_TIMEOUT,
+  OVERPASS_SIMPLIFY_MIN_BYTES,
+  OVERPASS_SIMPLIFY_MIN_POINTS,
+  OVERPASS_SIMPLIFY_TOLERANCE_DEG,
+  OVERPASS_MAX_RESPONSE_BYTES,
+  OVERPASS_UPSTREAMS,
+  OVERPASS_TIMEOUT_MS,
+};

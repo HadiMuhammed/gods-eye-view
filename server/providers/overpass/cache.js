@@ -1,5 +1,11 @@
 import { isOverpassBoundaryQuery } from './query.js';
-import { OVERPASS_BOUNDARY_DISK_TTL_MS, OVERPASS_DISK_TTL_MS, OVERPASS_DISK_DIR, OVERPASS_CACHE_MS, OVERPASS_CACHE_MAX_ENTRIES } from './constants.js';
+import {
+  OVERPASS_BOUNDARY_DISK_TTL_MS,
+  OVERPASS_DISK_TTL_MS,
+  OVERPASS_DISK_DIR,
+  OVERPASS_CACHE_MS,
+  OVERPASS_CACHE_MAX_ENTRIES,
+} from './constants.js';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { promises as fsp } from 'node:fs';
@@ -10,12 +16,17 @@ const _overpassCache = new Map();
 
 /** Disk TTL for a query: boundary geometry keeps for a month, the rest 7 days. */
 function overpassDiskTtlMs(cacheKey) {
-  return isOverpassBoundaryQuery(cacheKey) ? OVERPASS_BOUNDARY_DISK_TTL_MS : OVERPASS_DISK_TTL_MS;
+  return isOverpassBoundaryQuery(cacheKey)
+    ? OVERPASS_BOUNDARY_DISK_TTL_MS
+    : OVERPASS_DISK_TTL_MS;
 }
 
 /** Normalized Overpass query -> stable disk-cache file path. */
 function overpassDiskPath(cacheKey) {
-  return path.join(OVERPASS_DISK_DIR, `${createHash('sha1').update(cacheKey).digest('hex')}.json`);
+  return path.join(
+    OVERPASS_DISK_DIR,
+    `${createHash('sha1').update(cacheKey).digest('hex')}.json`,
+  );
 }
 
 /**
@@ -27,7 +38,12 @@ async function readOverpassDisk(cacheKey, maxAgeMs) {
   try {
     const raw = await fsp.readFile(overpassDiskPath(cacheKey), 'utf8');
     const payload = JSON.parse(raw);
-    if (!payload || typeof payload.body !== 'string' || !Number.isFinite(payload.cachedAt)) return null;
+    if (
+      !payload ||
+      typeof payload.body !== 'string' ||
+      !Number.isFinite(payload.cachedAt)
+    )
+      return null;
     // Older versions persisted 4xx refusals with normal data TTLs. Ignore
     // them on both fresh and stale reads so an upgrade can recover immediately.
     if (!overpassPayloadIsData(payload)) return null;
@@ -40,9 +56,17 @@ async function readOverpassDisk(cacheKey, maxAgeMs) {
 
 /** Fire-and-forget disk write for a successful Overpass payload. */
 function writeOverpassDisk(cacheKey, payload) {
-  fsp.mkdir(OVERPASS_DISK_DIR, { recursive: true })
-    .then(() => fsp.writeFile(overpassDiskPath(cacheKey), JSON.stringify(payload)))
-    .catch((err) => console.warn('[Overpass Proxy] disk cache write failed:', err?.message || err));
+  fsp
+    .mkdir(OVERPASS_DISK_DIR, { recursive: true })
+    .then(() =>
+      fsp.writeFile(overpassDiskPath(cacheKey), JSON.stringify(payload)),
+    )
+    .catch((err) =>
+      console.warn(
+        '[Overpass Proxy] disk cache write failed:',
+        err?.message || err,
+      ),
+    );
 }
 
 /**
@@ -71,7 +95,8 @@ async function resolveOverpassPreflight({
   cacheMs = OVERPASS_CACHE_MS,
 }) {
   const cached = memoryCache.get(cacheKey);
-  if (overpassPayloadIsData(cached) && now - cached.cachedAt <= cacheMs) return { source: 'HIT', payload: cached };
+  if (overpassPayloadIsData(cached) && now - cached.cachedAt <= cacheMs)
+    return { source: 'HIT', payload: cached };
 
   const pending = inFlight.get(cacheKey);
   if (pending) return { source: 'INFLIGHT', payload: await pending };
@@ -87,7 +112,9 @@ async function resolveOverpassPreflight({
 /** Return only last-good Overpass data, regardless of its age. */
 async function readStaleOverpass(cacheKey) {
   const cached = _overpassCache.get(cacheKey);
-  return overpassPayloadIsData(cached) ? cached : readOverpassDisk(cacheKey, Infinity);
+  return overpassPayloadIsData(cached)
+    ? cached
+    : readOverpassDisk(cacheKey, Infinity);
 }
 
 /** Evict oldest Overpass cache entries until size is within the cap. */
@@ -99,4 +126,12 @@ function trimOverpassCache() {
   }
 }
 
-export { readOverpassDisk, resolveOverpassPreflight, _overpassCache, overpassDiskTtlMs, readStaleOverpass, trimOverpassCache, writeOverpassDisk };
+export {
+  readOverpassDisk,
+  resolveOverpassPreflight,
+  _overpassCache,
+  overpassDiskTtlMs,
+  readStaleOverpass,
+  trimOverpassCache,
+  writeOverpassDisk,
+};

@@ -9,13 +9,22 @@ import { createRealtimeTokenHandler } from './openai/realtime.js';
  * Keeps OPENAI_API_KEY server-side while the browser connects to the
  * Realtime API over WebRTC with a short-lived secret.
  */
-function openAiRealtimeProxy({ sourceRoot = defaultSourceRoot, annotationGuidance } = {}) {
+function openAiRealtimeProxy({
+  sourceRoot = defaultSourceRoot,
+  annotationGuidance,
+} = {}) {
   function install(middlewares) {
     middlewares.use('/api/openai/hud-summary', handleHudSummary);
 
-    middlewares.use('/api/realtime/debug-log', createDebugLogHandler({ sourceRoot }));
+    middlewares.use(
+      '/api/realtime/debug-log',
+      createDebugLogHandler({ sourceRoot }),
+    );
 
-    middlewares.use('/api/realtime/token', createRealtimeTokenHandler({ annotationGuidance }));
+    middlewares.use(
+      '/api/realtime/token',
+      createRealtimeTokenHandler({ annotationGuidance }),
+    );
   }
 
   return {

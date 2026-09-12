@@ -1,4 +1,8 @@
-import { OVERPASS_SIMPLIFY_MIN_BYTES, OVERPASS_SIMPLIFY_MIN_POINTS, OVERPASS_SIMPLIFY_TOLERANCE_DEG } from './constants.js';
+import {
+  OVERPASS_SIMPLIFY_MIN_BYTES,
+  OVERPASS_SIMPLIFY_MIN_POINTS,
+  OVERPASS_SIMPLIFY_TOLERANCE_DEG,
+} from './constants.js';
 
 /** Iterative Douglas-Peucker on [{lat,lon},...] (planar-degree approx — fine at
  *  the ~44 m tolerance used here). Endpoints always kept. */
@@ -51,7 +55,10 @@ function simplifyElementGeometry(el, minPoints, toleranceDeg) {
   }
   if (Array.isArray(el?.members)) {
     for (const member of el.members) {
-      if (Array.isArray(member?.geometry) && member.geometry.length >= minPoints) {
+      if (
+        Array.isArray(member?.geometry) &&
+        member.geometry.length >= minPoints
+      ) {
         member.geometry = douglasPeucker(member.geometry, toleranceDeg);
       }
     }
@@ -73,7 +80,8 @@ function simplifyOverpassPayloadBody(bodyText, opts = {}) {
   const minBytes = opts.minBytes ?? OVERPASS_SIMPLIFY_MIN_BYTES;
   const minPoints = opts.minPoints ?? OVERPASS_SIMPLIFY_MIN_POINTS;
   const toleranceDeg = opts.toleranceDeg ?? OVERPASS_SIMPLIFY_TOLERANCE_DEG;
-  if (typeof bodyText !== 'string' || bodyText.length < minBytes) return bodyText;
+  if (typeof bodyText !== 'string' || bodyText.length < minBytes)
+    return bodyText;
   let data;
   try {
     data = JSON.parse(bodyText);
@@ -81,7 +89,8 @@ function simplifyOverpassPayloadBody(bodyText, opts = {}) {
     return bodyText;
   }
   if (!Array.isArray(data?.elements)) return bodyText;
-  for (const el of data.elements) simplifyElementGeometry(el, minPoints, toleranceDeg);
+  for (const el of data.elements)
+    simplifyElementGeometry(el, minPoints, toleranceDeg);
   try {
     return JSON.stringify(data);
   } catch {

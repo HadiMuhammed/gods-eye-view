@@ -13,7 +13,11 @@ const _weatherEffectsCache = new Map();
 
 const _weatherEffectsInFlight = new Map();
 
-const _weatherEffectsRateLimiter = makeRateLimiter({ windowMs: 60_000, max: 45, globalMax: 120 });
+const _weatherEffectsRateLimiter = makeRateLimiter({
+  windowMs: 60_000,
+  max: 45,
+  globalMax: 120,
+});
 
 function trimWeatherEffectsCache() {
   while (_weatherEffectsCache.size > WEATHER_EFFECTS_MAX_CACHE) {
@@ -46,7 +50,10 @@ function weatherEffectsProxy() {
         return;
       }
       if (!_weatherEffectsRateLimiter(clientKey(req))) {
-        res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '10' });
+        res.writeHead(429, {
+          'Content-Type': 'application/json',
+          'Retry-After': '10',
+        });
         res.end(JSON.stringify({ error: 'Rate limit exceeded' }));
         return;
       }
@@ -54,7 +61,11 @@ function weatherEffectsProxy() {
       const point = validRegionalPoint(url.searchParams);
       if (!point) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Valid latitude and longitude are required' }));
+        res.end(
+          JSON.stringify({
+            error: 'Valid latitude and longitude are required',
+          }),
+        );
         return;
       }
       const key = `${(Math.round(point.latitude * 10) / 10).toFixed(1)},${(Math.round(point.longitude * 10) / 10).toFixed(1)}`;
@@ -69,7 +80,9 @@ function weatherEffectsProxy() {
         res.end(JSON.stringify({ ...cached.payload, status: 'cached' }));
         return;
       }
-      const request = coalesceProxyRequest(_weatherEffectsInFlight, key, () => refresh(point, key));
+      const request = coalesceProxyRequest(_weatherEffectsInFlight, key, () =>
+        refresh(point, key),
+      );
       try {
         const payload = await request.promise;
         res.writeHead(200, {
@@ -88,8 +101,15 @@ function weatherEffectsProxy() {
           res.end(JSON.stringify({ ...cached.payload, status: 'stale' }));
           return;
         }
-        res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-        res.end(JSON.stringify({ error: 'Weather effects are temporarily unavailable' }));
+        res.writeHead(503, {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        });
+        res.end(
+          JSON.stringify({
+            error: 'Weather effects are temporarily unavailable',
+          }),
+        );
       }
     });
   }

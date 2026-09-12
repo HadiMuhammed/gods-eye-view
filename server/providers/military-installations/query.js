@@ -7,12 +7,17 @@ import { requiredFiniteQueryNumber } from '../common/query.js';
  * @param {number} [stepDeg]
  * @returns {{south:number, west:number, north:number, east:number}}
  */
-function quantizeMilitaryInstallationBox(box, stepDeg = MILITARY_INSTALLATION_BBOX_STEP_DEG) {
+function quantizeMilitaryInstallationBox(
+  box,
+  stepDeg = MILITARY_INSTALLATION_BBOX_STEP_DEG,
+) {
   // Round the ratio first: 29.9999/0.05 lands a hair under an exact grid line
   // in binary floating point, which would otherwise snap a whole cell too far.
   const snap = (value, grow) => {
     const cells = Number((value / stepDeg).toFixed(9));
-    return Number(((grow > 0 ? Math.ceil(cells) : Math.floor(cells)) * stepDeg).toFixed(6));
+    return Number(
+      ((grow > 0 ? Math.ceil(cells) : Math.floor(cells)) * stepDeg).toFixed(6),
+    );
   };
   return {
     south: Math.max(-90, snap(box.south, -1)),
@@ -46,15 +51,35 @@ function validMilitaryInstallationBox(params) {
   const north = requiredFiniteQueryNumber(params, 'north');
   const east = requiredFiniteQueryNumber(params, 'east');
   if (![south, west, north, east].every(Number.isFinite)) return null;
-  if (south < -90 || north > 90 || west < -180 || east > 180 || south >= north || west >= east) return null;
+  if (
+    south < -90 ||
+    north > 90 ||
+    west < -180 ||
+    east > 180 ||
+    south >= north ||
+    west >= east
+  )
+    return null;
   if (north - south > 10 || east - west > 10) return null;
   return { south, west, north, east };
 }
 
 /** Safe, evidence-based reason for an installation upstream failure. */
 function militaryInstallationFailureReason(error) {
-  if (['rate_limited', 'timeout', 'query_failed'].includes(error?.installationReason)) return error.installationReason;
-  return ['AbortError', 'TimeoutError'].includes(error?.name) ? 'timeout' : 'unavailable';
+  if (
+    ['rate_limited', 'timeout', 'query_failed'].includes(
+      error?.installationReason,
+    )
+  )
+    return error.installationReason;
+  return ['AbortError', 'TimeoutError'].includes(error?.name)
+    ? 'timeout'
+    : 'unavailable';
 }
 
-export { validMilitaryInstallationBox, quantizeMilitaryInstallationBox, militaryInstallationCacheKey, militaryInstallationFailureReason };
+export {
+  validMilitaryInstallationBox,
+  quantizeMilitaryInstallationBox,
+  militaryInstallationCacheKey,
+  militaryInstallationFailureReason,
+};

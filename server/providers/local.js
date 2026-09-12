@@ -59,35 +59,44 @@ import { keySetupEndpoint } from '../standalone/key-setup.js';
 /** Construct the local provider plugins in their established order. */
 function localProviderPlugins() {
   return [
-      openSkyProxy(),
-      celestrakProxy(),
-      tomtomProxy(),
-      firmsProxy(),
-      noaaHazardsProxy(),
-      rocketLaunchesProxy(),
-      terrainHeightsProxy(),
-      adsbdbProxy(),
-      overpassProxy(),
-      militaryInstallationsProxy(),
-      regionalBriefProxy(),
-      weatherEffectsProxy(),
-      cctvProxy({ sourceRoot: defaultSourceRoot }),
-      radioBrowserProxy(),
-      gbfsProxy(),
-      adsbLolProxy(),
-      aisLiveProxy(),
-      trackBackfillProxies(),
-      openAiRealtimeProxy(),
-      googlePlacesContextProxy(),
-      keySetupEndpoint(),
+    openSkyProxy(),
+    celestrakProxy(),
+    tomtomProxy(),
+    firmsProxy(),
+    noaaHazardsProxy(), // Your NWS hazard alerts layer
+    rocketLaunchesProxy(),
+    terrainHeightsProxy(),
+    adsbdbProxy(),
+    overpassProxy(),
+    militaryInstallationsProxy(),
+    regionalBriefProxy(),
+    weatherEffectsProxy(),
+    cctvProxy({ sourceRoot: defaultSourceRoot }),
+    radioBrowserProxy(),
+    gbfsProxy(),
+    adsbLolProxy(),
+    aisLiveProxy(),
+    trackBackfillProxies(),
+    openAiRealtimeProxy(),
+    googlePlacesContextProxy(),
+    keySetupEndpoint(),
   ];
 }
 
 // --- Exports (Deduplicated & Fully Preserved) ---
 export { localProviderPlugins };
 
-export { CCTV_FRAME_FETCH_TIMEOUT_MS, fetchCctvImageFromUpstream } from './cctv.js';
-export { createRadioProxyMiddleware, isPublicRadioAddress, normalizeRadioBrowserStation, publicRadioStation, publicRadioHttpsUrl } from './radio.js';
+export {
+  CCTV_FRAME_FETCH_TIMEOUT_MS,
+  fetchCctvImageFromUpstream,
+} from './cctv.js';
+export {
+  createRadioProxyMiddleware,
+  isPublicRadioAddress,
+  normalizeRadioBrowserStation,
+  publicRadioStation,
+  publicRadioHttpsUrl,
+} from './radio.js';
 export { LL2_CACHE_TTL_MS, launchLibraryRequestHeaders } from './space.js';
 export { googlePlacesContextProxy, googleServerApiKey, keylessGooglePlacesResponse } from './places.js';
 export { adsbLolFallbackAnchor } from './aircraft/opensky.js';

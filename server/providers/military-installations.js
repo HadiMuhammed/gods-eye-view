@@ -1,11 +1,31 @@
 import { makeRateLimiter, clientKey } from './common/rate-limit.js';
-import { MILITARY_INSTALLATION_ELEMENT_CAP, MILITARY_INSTALLATION_MAX_RESPONSE_BYTES, MILITARY_INSTALLATION_DISK_TTL_MS, MILITARY_INSTALLATION_STALE_MS } from './military-installations/constants.js';
+import {
+  MILITARY_INSTALLATION_ELEMENT_CAP,
+  MILITARY_INSTALLATION_MAX_RESPONSE_BYTES,
+  MILITARY_INSTALLATION_DISK_TTL_MS,
+  MILITARY_INSTALLATION_STALE_MS,
+} from './military-installations/constants.js';
 import { fetchOverpassPayload } from './overpass/transport.js';
-import { _militaryInstallationCache, trimMilitaryInstallationCache, writeMilitaryInstallationDisk, resolveMilitaryInstallationTier, readMilitaryInstallationDisk } from './military-installations/cache.js';
-import { validMilitaryInstallationBox, quantizeMilitaryInstallationBox, militaryInstallationCacheKey, militaryInstallationFailureReason } from './military-installations/query.js';
+import {
+  _militaryInstallationCache,
+  trimMilitaryInstallationCache,
+  writeMilitaryInstallationDisk,
+  resolveMilitaryInstallationTier,
+  readMilitaryInstallationDisk,
+} from './military-installations/cache.js';
+import {
+  validMilitaryInstallationBox,
+  quantizeMilitaryInstallationBox,
+  militaryInstallationCacheKey,
+  militaryInstallationFailureReason,
+} from './military-installations/query.js';
 import { coalesceProxyRequest } from './common/http.js';
 
-const _militaryInstallationsRateLimiter = makeRateLimiter({ windowMs: 60_000, max: 90, globalMax: 300 });
+const _militaryInstallationsRateLimiter = makeRateLimiter({
+  windowMs: 60_000,
+  max: 90,
+  globalMax: 300,
+});
 
 const _militaryInstallationInFlight = new Map();
 
@@ -17,12 +37,23 @@ function militaryInstallationsProxy() {
       `data=${encodeURIComponent(ql)}`,
       MILITARY_INSTALLATION_MAX_RESPONSE_BYTES,
     );
-    if (upstream.status >= 400 || upstream.rateLimited || upstream.runtimeError) {
-      throw Object.assign(new Error('Mapped installation upstream unavailable'), {
-        installationReason: upstream.rateLimited ? 'rate_limited'
-          : upstream.status === 504 ? 'timeout'
-            : upstream.runtimeError ? 'query_failed' : 'unavailable',
-      });
+    if (
+      upstream.status >= 400 ||
+      upstream.rateLimited ||
+      upstream.runtimeError
+    ) {
+      throw Object.assign(
+        new Error('Mapped installation upstream unavailable'),
+        {
+          installationReason: upstream.rateLimited
+            ? 'rate_limited'
+            : upstream.status === 504
+              ? 'timeout'
+              : upstream.runtimeError
+                ? 'query_failed'
+                : 'unavailable',
+        },
+      );
     }
     const parsed = JSON.parse(upstream.body);
     const elements = Array.isArray(parsed?.elements)
@@ -53,7 +84,10 @@ function militaryInstallationsProxy() {
         return;
       }
       if (!_militaryInstallationsRateLimiter(clientKey(req))) {
-        res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '5' });
+        res.writeHead(429, {
+          'Content-Type': 'application/json',
+          'Retry-After': '5',
+        });
         res.end(JSON.stringify({ error: 'Rate limit exceeded' }));
         return;
       }
@@ -61,7 +95,11 @@ function militaryInstallationsProxy() {
       const requested = validMilitaryInstallationBox(url.searchParams);
       if (!requested) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'A non-dateline bbox no larger than 10 degrees is required' }));
+        res.end(
+          JSON.stringify({
+            error: 'A non-dateline bbox no larger than 10 degrees is required',
+          }),
+        );
         return;
       }
       // Query the SNAPPED box, not the raw viewport: neighbouring views then
@@ -70,7 +108,9 @@ function militaryInstallationsProxy() {
       // response, so a truncated tile can never starve the actual viewport. It
       // is keyed separately so exact and snapped answers never collide.
       const exact = url.searchParams.get('exact') === '1';
-      const box = exact ? requested : quantizeMilitaryInstallationBox(requested);
+      const box = exact
+        ? requested
+        : quantizeMilitaryInstallationBox(requested);
       // Key at the precision the query actually uses (see militaryInstallationCacheKey).
       const key = exact
         ? `exact:${militaryInstallationCacheKey(box, 5)}`
@@ -81,7 +121,8 @@ function militaryInstallationsProxy() {
         cacheKey: key,
         memoryCache: _militaryInstallationCache,
         inFlight: _militaryInstallationInFlight,
-        readDisk: () => readMilitaryInstallationDisk(key, MILITARY_INSTALLATION_DISK_TTL_MS),
+        readDisk: () =>
+          readMilitaryInstallationDisk(key, MILITARY_INSTALLATION_DISK_TTL_MS),
         now,
       });
       if (preflight.source !== 'UPSTREAM') {
@@ -89,8 +130,14 @@ function militaryInstallationsProxy() {
           _militaryInstallationCache.set(key, preflight.entry);
           trimMilitaryInstallationCache();
         }
-        res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60', 'X-Military-Installations': preflight.source });
-        res.end(JSON.stringify({ ...preflight.entry.payload, status: 'cached' }));
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=60',
+          'X-Military-Installations': preflight.source,
+        });
+        res.end(
+          JSON.stringify({ ...preflight.entry.payload, status: 'cached' }),
+        );
         return;
       }
       const request = coalesceProxyRequest(
@@ -108,7 +155,11 @@ function militaryInstallationsProxy() {
         res.end(JSON.stringify(payload));
       } catch (error) {
         if (cached && now - cached.cachedAt <= MILITARY_INSTALLATION_STALE_MS) {
-          res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Military-Installations': 'STALE' });
+          res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+            'X-Military-Installations': 'STALE',
+          });
           res.end(JSON.stringify({ ...cached.payload, status: 'stale' }));
           return;
         }
@@ -116,12 +167,24 @@ function militaryInstallationsProxy() {
         // layer (the same serve-stale rule the Overpass proxy applies).
         const stale = await readMilitaryInstallationDisk(key, Infinity);
         if (stale) {
-          res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Military-Installations': 'STALE-DISK' });
+          res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+            'X-Military-Installations': 'STALE-DISK',
+          });
           res.end(JSON.stringify({ ...stale.payload, status: 'stale' }));
           return;
         }
-        res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-        res.end(JSON.stringify({ error: 'Mapped installation context is temporarily unavailable', reason: militaryInstallationFailureReason(error) }));
+        res.writeHead(503, {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        });
+        res.end(
+          JSON.stringify({
+            error: 'Mapped installation context is temporarily unavailable',
+            reason: militaryInstallationFailureReason(error),
+          }),
+        );
       }
     });
   }

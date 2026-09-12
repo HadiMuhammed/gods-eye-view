@@ -18,12 +18,16 @@ function fetchRegionalPlace(point) {
       addressdetails: '1',
       'accept-language': 'en',
     });
-    const payload = await fetchRegionalJson(`https://nominatim.openstreetmap.org/reverse?${params}`, {
-      headers: {
-        'User-Agent': 'GodsEyeView/0.1 (+https://github.com/bilawalsidhu/gods-eye-view)',
-        Referer: 'https://github.com/bilawalsidhu/gods-eye-view',
+    const payload = await fetchRegionalJson(
+      `https://nominatim.openstreetmap.org/reverse?${params}`,
+      {
+        headers: {
+          'User-Agent':
+            'GodsEyeView/0.1 (+https://github.com/bilawalsidhu/gods-eye-view)',
+          Referer: 'https://github.com/bilawalsidhu/gods-eye-view',
+        },
       },
-    });
+    );
     return normalizeRegionalPlace(payload);
   });
   _nominatimQueue = task.catch(() => null);

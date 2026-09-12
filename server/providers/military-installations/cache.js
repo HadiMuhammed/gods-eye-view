@@ -1,4 +1,10 @@
-import { MILITARY_INSTALLATION_CACHE_MS, MILITARY_INSTALLATION_ELEMENT_CAP, MILITARY_INSTALLATION_DISK_TTL_MS, MILITARY_INSTALLATION_DISK_DIR, MILITARY_INSTALLATION_MAX_CACHE } from './constants.js';
+import {
+  MILITARY_INSTALLATION_CACHE_MS,
+  MILITARY_INSTALLATION_ELEMENT_CAP,
+  MILITARY_INSTALLATION_DISK_TTL_MS,
+  MILITARY_INSTALLATION_DISK_DIR,
+  MILITARY_INSTALLATION_MAX_CACHE,
+} from './constants.js';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { promises as fsp } from 'node:fs';
@@ -32,10 +38,13 @@ async function resolveMilitaryInstallationTier({
   cacheMs = MILITARY_INSTALLATION_CACHE_MS,
 }) {
   const cached = memoryCache.get(cacheKey);
-  if (cached && now - cached.cachedAt <= cacheMs) return { source: 'HIT', entry: cached };
+  if (cached && now - cached.cachedAt <= cacheMs)
+    return { source: 'HIT', entry: cached };
   if (inFlight.has(cacheKey)) return { source: 'UPSTREAM', entry: null };
   const disk = await readDisk();
-  return disk ? { source: 'DISK', entry: disk } : { source: 'UPSTREAM', entry: null };
+  return disk
+    ? { source: 'DISK', entry: disk }
+    : { source: 'UPSTREAM', entry: null };
 }
 
 /**
@@ -51,8 +60,11 @@ async function resolveMilitaryInstallationTier({
  * @returns {?{payload: object, cachedAt: number}}
  */
 function migrateMilitaryInstallationEntry(entry) {
-  if (!entry?.payload || typeof entry.payload.saturated === 'boolean') return entry;
-  const elements = Array.isArray(entry.payload.elements) ? entry.payload.elements : [];
+  if (!entry?.payload || typeof entry.payload.saturated === 'boolean')
+    return entry;
+  const elements = Array.isArray(entry.payload.elements)
+    ? entry.payload.elements
+    : [];
   return {
     ...entry,
     payload: {
@@ -68,13 +80,24 @@ function militaryInstallationDiskFresh(
   maxAgeMs = MILITARY_INSTALLATION_DISK_TTL_MS,
   now = Date.now(),
 ) {
-  if (!entry || !Number.isFinite(entry.cachedAt) || !Array.isArray(entry.payload?.elements)) return false;
+  if (
+    !entry ||
+    !Number.isFinite(entry.cachedAt) ||
+    !Array.isArray(entry.payload?.elements)
+  )
+    return false;
   return now - entry.cachedAt <= maxAgeMs;
 }
 
 /** Cache key -> stable disk-cache file path. */
-function militaryInstallationDiskPath(cacheKey, dir = MILITARY_INSTALLATION_DISK_DIR) {
-  return path.join(dir, `${createHash('sha1').update(cacheKey).digest('hex')}.json`);
+function militaryInstallationDiskPath(
+  cacheKey,
+  dir = MILITARY_INSTALLATION_DISK_DIR,
+) {
+  return path.join(
+    dir,
+    `${createHash('sha1').update(cacheKey).digest('hex')}.json`,
+  );
 }
 
 /**
@@ -88,7 +111,9 @@ async function readMilitaryInstallationDisk(
   dir = MILITARY_INSTALLATION_DISK_DIR,
 ) {
   try {
-    const entry = JSON.parse(await fsp.readFile(militaryInstallationDiskPath(cacheKey, dir), 'utf8'));
+    const entry = JSON.parse(
+      await fsp.readFile(militaryInstallationDiskPath(cacheKey, dir), 'utf8'),
+    );
     if (!militaryInstallationDiskFresh(entry, maxAgeMs)) return null;
     return migrateMilitaryInstallationEntry(entry);
   } catch {
@@ -117,7 +142,10 @@ async function writeMilitaryInstallationDisk(
     await fsp.rename(temp, target);
     return true;
   } catch (err) {
-    console.warn('[Installations Proxy] disk cache write failed:', err?.message || err);
+    console.warn(
+      '[Installations Proxy] disk cache write failed:',
+      err?.message || err,
+    );
     await fsp.rm(temp, { force: true }).catch(() => {});
     return false;
   }
@@ -131,4 +159,13 @@ function trimMilitaryInstallationCache() {
   }
 }
 
-export { _militaryInstallationCache, trimMilitaryInstallationCache, writeMilitaryInstallationDisk, resolveMilitaryInstallationTier, readMilitaryInstallationDisk, migrateMilitaryInstallationEntry, militaryInstallationDiskFresh, militaryInstallationDiskPath };
+export {
+  _militaryInstallationCache,
+  trimMilitaryInstallationCache,
+  writeMilitaryInstallationDisk,
+  resolveMilitaryInstallationTier,
+  readMilitaryInstallationDisk,
+  migrateMilitaryInstallationEntry,
+  militaryInstallationDiskFresh,
+  militaryInstallationDiskPath,
+};
