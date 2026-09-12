@@ -183,7 +183,8 @@ export function googlePlacesContextProxy({
       if (
         !textQuery ||
         !Number.isFinite(latitude) ||
-        !Number.isFinite(longitude)
+        !Number.isFinite(longitude) ||
+        latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180
       ) {
         res.statusCode = 400;
         res.setHeader('Content-Type', 'application/json');
