@@ -1,6 +1,11 @@
 import { Readable } from 'node:stream';
 import { hashSeed, escapeXml } from './normalize.js';
-import { CCTV_FRAME_FETCH_TIMEOUT_MS, CCTV_FRAME_MAX_BODY_BYTES } from './constants.js';
+import {
+  CCTV_FRAME_FETCH_TIMEOUT_MS,
+  CCTV_FRAME_MAX_BODY_BYTES,
+  CCTV_MEDIA_FETCH_TIMEOUT_MS,
+  CCTV_MEDIA_MAX_BODY_BYTES,
+} from './constants.js';
 /**
  * Generate a synthetic SVG billboard image for a CCTV camera placeholder.
  *
@@ -120,10 +125,9 @@ export async function proxyMediaResponse(
   // Cheap defense: reject an upstream that DECLARES an oversized fixed body.
   // Live MJPEG/HLS streams are unbounded by design and send no content-length,
   // so they pipe normally (piping streams to the client, never buffering).
-  const MEDIA_DECLARED_CAP_BYTES = 64 * 1024 * 1024;
   if (
     Number.isFinite(Number(contentLength)) &&
-    Number(contentLength) > MEDIA_DECLARED_CAP_BYTES
+    Number(contentLength) > CCTV_MEDIA_MAX_BODY_BYTES
   ) {
     res.writeHead(502, {
       'Content-Type': 'application/json',
@@ -169,29 +173,87 @@ export async function proxyMediaResponse(
 async function readCappedResponseBytes(upstream, maxBytes) {
   const declared = Number(upstream.headers.get('content-length'));
   if (Number.isFinite(declared) && declared > maxBytes) {
-    try { await upstream.body?.cancel(); } catch { /* no-op */ }
+    try {
+      await upstream.body?.cancel();
+    } catch {
+      /* no-op */
+    }
     return null;
   }
-  if (!upstream.body || typeof upstream.body[Symbol.asyncIterator] !== 'function') {
-    const buffered = Buffer.from(await upstream.arrayBuffer());
-    return buffered.length > maxBytes ? null : buffered;
-  }
+  if (!upstream.body) return null;
   const chunks = [];
   let total = 0;
-  for await (const chunk of upstream.body) {
-    total += chunk.length;
-    if (total > maxBytes) {
-      try { await upstream.body.cancel(); } catch { /* no-op */ }
+  // Every retained chunk is an OWNED copy: a chunk can be a small view over a
+  // much larger backing ArrayBuffer, and keeping the view would retain that
+  // whole allocation while the byte accounting only counted the view.
+  const keep = (chunk) => {
+    total += chunk.byteLength;
+    if (total > maxBytes) return false;
+    chunks.push(Buffer.from(chunk));
+    return true;
+  };
+  if (typeof upstream.body[Symbol.asyncIterator] === 'function') {
+    for await (const chunk of upstream.body) {
+      if (!keep(chunk)) {
+        try {
+          await upstream.body.cancel();
+        } catch {
+          /* no-op */
+        }
+        return null;
+      }
+    }
+    return Buffer.concat(chunks, total);
+  }
+  // No async iterator: stream through a reader so the cap still applies while
+  // reading. A body that cannot be streamed at all is refused rather than
+  // buffered uncapped — the helper's whole contract is the cap.
+  const reader =
+    typeof upstream.body.getReader === 'function'
+      ? upstream.body.getReader()
+      : null;
+  if (!reader) return null;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!keep(value)) {
+      try {
+        await reader.cancel();
+      } catch {
+        /* no-op */
+      }
       return null;
     }
-    chunks.push(Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength));
   }
   return Buffer.concat(chunks, total);
 }
 
+export async function fetchCctvMediaUpstream(
+  url,
+  {
+    headers = {},
+    fetchImpl = fetch,
+    timeoutMs = CCTV_MEDIA_FETCH_TIMEOUT_MS,
+  } = {},
+) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetchImpl(url, { headers, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export async function fetchCctvImageFromUpstream(
   url,
-  { fetchImpl = fetch, timeoutMs = CCTV_FRAME_FETCH_TIMEOUT_MS, maxBytes = CCTV_FRAME_MAX_BODY_BYTES } = {},
+  {
+    fetchImpl = fetch,
+    timeoutMs = CCTV_FRAME_FETCH_TIMEOUT_MS,
+    maxBytes = CCTV_FRAME_MAX_BODY_BYTES,
+    CCTV_MEDIA_FETCH_TIMEOUT_MS,
+    CCTV_MEDIA_MAX_BODY_BYTES,
+  } = {},
 ) {
   if (!url || !/^https?:\/\//i.test(url)) return null;
   const controller = new AbortController();

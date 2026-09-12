@@ -1,5 +1,27 @@
 # God's Eye View Current State
 
+## Places and CCTV request bounds
+
+With a Google key configured, nearby and text search reject missing, blank,
+non-numeric and out-of-range coordinates before the opt-in limiter and upstream
+request. Text search also requires a nonblank query. Keyless requests retain
+their `configured: false` response.
+
+CCTV media waits at most 15 seconds for upstream response headers and returns
+504 on timeout. Its timer stops when headers arrive, so live bodies can continue
+streaming; body idle deadlines are separate from this header deadline. Error
+responses are cancelled. Buffered snapshots have a 16 MiB streaming cap; an
+oversized image remains an upstream miss and uses the normal fallback chain.
+The existing declared media size ceiling remains 64 MiB.
+
+
+## GBFS upstream bounds
+
+GBFS refuses upstream redirects and enforces its 5 MiB response cap while
+streaming. The 12-second deadline includes reading the body, and rejected or
+stalled downloads are cancelled. Development and preview use the same handler.
+
+
 ## Remaining local service modules
 
 Overpass query validation, geometry simplification, disk caching and upstream

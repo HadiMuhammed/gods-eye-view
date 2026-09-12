@@ -13,6 +13,14 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ## [Unreleased]
 
+### Security
+
+- Validate configured Google Places coordinates and text queries before rate
+  limiting or upstream requests; preserve the keyless capability response.
+- Bound CCTV media response headers to 15 seconds and cancel error bodies.
+  Cap buffered snapshot downloads at 16 MiB while streaming.
+
+
 - Cancel the active location lookup when its controls are disposed.
 
 
