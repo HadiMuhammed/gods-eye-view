@@ -216,9 +216,17 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
             };
             const requestRange = req.headers?.range;
             if (requestRange) upstreamHeaders.Range = requestRange;
-            const upstream = await fetch(mediaUrl, {
-              headers: upstreamHeaders,
-            });
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15_000);
+            let upstream;
+            try {
+              upstream = await fetch(mediaUrl, {
+                headers: upstreamHeaders,
+                signal: controller.signal,
+              });
+            } finally {
+              clearTimeout(timeoutId);
+            }
             const contentType = upstream.headers.get('content-type') || '';
             if (!upstream.ok) {
               setHealth(cameraId, {
@@ -270,17 +278,18 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
             });
             return;
           } catch (error) {
+            const timedOut = error?.name === 'AbortError' || error?.name === 'TimeoutError';
             setHealth(cameraId, {
               status: 'degraded',
               sourceKind: 'upstream',
               label: source?.provider || 'Configured source',
               message: error?.message || 'Media fetch failed',
             });
-            res.writeHead(502, {
+            res.writeHead(timedOut ? 504 : 502, {
               'Content-Type': 'application/json',
               'Cache-Control': 'no-store',
             });
-            res.end(JSON.stringify({ error: 'Media proxy failed' }));
+            res.end(JSON.stringify({ error: timedOut ? 'Upstream media timeout' : 'Media proxy failed' }));
             return;
           }
         }
