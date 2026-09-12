@@ -13,6 +13,10 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ## [Unreleased]
 
+- Extract CCTV catalog/media and Radio Browser directory providers into focused
+  Node modules, preserving their routes and policies and isolating CCTV catalogs
+  by provider instance and application root.
+
 - Simplify POWER UP to one Google Maps entry. Keep the optional server key
   available through environment configuration without a second setup row or
   missing-key reminder.
