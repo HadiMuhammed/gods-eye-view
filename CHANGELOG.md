@@ -13,6 +13,15 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ## [Unreleased]
 
+- Cancel the active location lookup when its controls are disposed.
+
+
+### Fixed
+
+- GBFS rejects upstream redirects, caps streamed responses at 5 MiB, and keeps
+  its deadline active through body reads. Rejected downloads are cancelled.
+
+
 - Split Overpass/installation search, regional briefing/weather, local voice
   handlers and standalone key setup into focused modules. Preserve routes,
   source behavior, tool schemas and credential restrictions.
@@ -211,11 +220,9 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
   resolved feature's canonical name, so locality words in the request cannot
   pull the outline onto a neighbouring building.
 
-<<<<<<< HEAD
 - Refresh vulnerable transitive dependencies and update browser/image tooling
   to Puppeteer 25.10.0 and Sharp 0.35.4. Cesium remains on 1.138.0.
   Browser QA awaits the new asynchronous executable-path lookup.
-=======
 ### Security
 
 - The GBFS proxy no longer follows upstream redirects. It validated the host
@@ -230,7 +237,6 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
   previously trusted `Content-Length`, then materialized the whole body before
   measuring, so a chunked or mislabeled response could grow memory without
   bound before the check ever ran (#31).
->>>>>>> db35b49 (fix: gbfs - refuse upstream redirects and enforce cap while streaming. extract network step into fetch so test can stand in. Pass redirect 'manual,' reject and 3xx w/ a 502. Log target host serverside. Replace read then measure cap w/ readResponseTextCapped. Cancels stream if over 5mb. Closes #30 and #31)
 
 ## [0.1.1] — 2026-09-01 — Installation and live-data fixes
 

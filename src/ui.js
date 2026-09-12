@@ -10310,6 +10310,7 @@ export class StyleManager {
     this._globalStatusNotice = null;
     if (this._globalLoadingStatus) this._globalLoadingStatus.hidden = true;
     this._disposed = true;
+    this._locationSearchController?.abort();
     this._cancelMapSourceFocus?.();
     // Revoke persistence/hash authority before teardown can emit manager changes.
     this._layerStateCoordinator?.destroy();
