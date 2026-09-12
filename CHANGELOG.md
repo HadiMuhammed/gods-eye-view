@@ -13,6 +13,10 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ## [Unreleased]
 
+- Split Overpass/installation search, regional briefing/weather, local voice
+  handlers and standalone key setup into focused modules. Preserve routes,
+  source behavior, tool schemas and credential restrictions.
+
 - Restore data-provider routes under local build preview and return JSON 404s
   for unmatched API requests. Credential editing remains development-only.
 

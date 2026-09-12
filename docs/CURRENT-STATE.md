@@ -1,5 +1,26 @@
 # God's Eye View Current State
 
+## Remaining local service modules
+
+Overpass query validation, geometry simplification, disk caching and upstream
+transport now have separate modules; military-installation search reuses that
+transport. Regional briefing combines separate place, news and weather sources,
+while weather effects uses only the weather source. Existing process-scoped
+caches, rate limits, stale fallbacks and route ordering are preserved.
+
+Local voice has separate HUD-summary, debug-log and Realtime-token handlers,
+with tool definitions and instructions in dedicated files. The factory accepts
+an optional `annotationGuidance` paragraph; its default instructions and all 28
+tool definitions remain unchanged. `sourceRoot` resolves debug logs against the
+application directory. Standalone key setup accepts the same directory option
+for its environment store and preserves boot provenance, loopback/origin guards,
+atomic credential writes and development-only registration.
+
+Node-only package entries expose Overpass, military installations, regional
+services, local voice and standalone key setup. Importing them starts no network
+acquisition. Browser layer lifecycle, rendering and voice execution stay in their
+existing modules.
+
 ## Local build preview
 
 After `npm run build`, `npm run preview` serves the built app with the same data
@@ -55,10 +76,10 @@ access. Callers retain validation, transport and response policy.
 
 `vite.config.js` delegates to `server/standalone/vite.config.js`, which loads
 this checkout's environment and constructs the local providers in their existing
-order. `server/providers/local.js` holds the existing middleware and process
-state; its named exports remain available through the root compatibility entry.
+order. `server/providers/local.js` is the composition and compatibility entry;
+provider families own their middleware and process state in focused modules.
 Provider URLs, key selection, cache behavior, setup restrictions and routes are
-unchanged. Individual provider families remain to be split into smaller modules.
+unchanged.
 
 `gods-eye-view/build/vite` is a Node-only export for explicit browser build
 settings: Cesium assets, caller-supplied plugins, browser key defines, server
