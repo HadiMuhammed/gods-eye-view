@@ -78,7 +78,7 @@ try {
     }),
   );
   promptValue = '<b>QA shot</b>';
-  await page.click('.scene-shot-label', { clickCount: 2 });
+  await page.click('.scene-shot-label', { count: 2 });
   await page.waitForFunction(
     () =>
       document.querySelector('.scene-shot-label')?.textContent ===
@@ -189,7 +189,7 @@ try {
         document.getElementById('scene-capture-btn').disabled &&
         document.getElementById('scene-start-btn').disabled &&
         !document.getElementById('scene-stop-btn').disabled &&
-        window.__godsEyeView.styleManager.getViewState().recording,
+        window.__godsEyeView.styleManager.getControlState().recording,
     ),
   );
   await page.keyboard.press('Escape');
@@ -205,7 +205,7 @@ try {
         !document.getElementById('scene-start-btn').disabled &&
         document.getElementById('scene-stop-btn').disabled &&
         !document.getElementById('scene-download-btn').disabled &&
-        !window.__godsEyeView.styleManager.getViewState().recording,
+        !window.__godsEyeView.styleManager.getControlState().recording,
     ),
   );
   await page.click('#scene-download-btn');
