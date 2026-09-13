@@ -19,7 +19,7 @@ function fixture() {
       this.children = [];
       this.parentNode = null;
       this.scrollTop = 0;
-      this.classList = { toggle() {} };
+      this.classList = { toggle() {}, remove() {} };
     }
     append(node) {
       node.remove();
@@ -177,6 +177,25 @@ test('disposal restores groups and revokes mode listeners and queued focus work'
     assert.equal(f.frames.size, 0);
     assert.equal(f.focusCalls, 0);
     assert.equal(f.layouts, 1);
+  } finally {
+    f.restore();
+  }
+});
+
+test('a stopped portal waits for cleanup without running queued focus work', () => {
+  const f = fixture();
+  try {
+    const owner = f.create();
+    owner.setActive(true);
+    const queued = [...f.frames.values()];
+    owner.stop();
+    queued.forEach((callback) => callback());
+    owner.setActive(false);
+    assert.equal(f.group.parentNode, f.slot);
+    assert.equal(f.frames.size, 0);
+    assert.equal(f.focusCalls, 0);
+    owner.destroy();
+    assert.deepEqual(f.standard.children, [f.group, f.sibling]);
   } finally {
     f.restore();
   }

@@ -6,6 +6,7 @@ export class CockpitDisplayPortal {
     this.layout = layout;
     this.active = false;
     this.destroyed = false;
+    this.stopped = false;
     this.restoreOwner = null;
     this.generation = 0;
     this.frames = new Set();
@@ -49,7 +50,7 @@ export class CockpitDisplayPortal {
   _frame(generation, callback) {
     const frame = requestAnimationFrame(() => {
       this.frames.delete(frame);
-      if (!this.destroyed && generation === this.generation) callback();
+      if (!this.stopped && generation === this.generation) callback();
     });
     this.frames.add(frame);
   }
@@ -61,7 +62,7 @@ export class CockpitDisplayPortal {
   }
 
   setActive(active, { settle = true } = {}) {
-    if (this.destroyed) return;
+    if (this.stopped) return;
     const nextActive = active === true;
     if (this.active === nextActive) return;
     this._cancelFrames();
@@ -102,13 +103,25 @@ export class CockpitDisplayPortal {
     this.layout();
   }
 
-  destroy() {
-    if (this.destroyed) return;
-    this.setActive(false, { settle: false });
-    this.destroyed = true;
+  stop() {
+    if (this.stopped) return;
+    this.stopped = true;
     this._cancelFrames();
     this.listeners.abort();
-    for (const record of this.records) record.anchor.remove();
+  }
+
+  destroy() {
+    if (this.destroyed) return;
+    this.stop();
+    this.destroyed = true;
+    this.active = false;
+    for (const record of this.records) {
+      if (record.anchor.parentNode) record.anchor.after(record.group);
+      record.anchor.remove();
+    }
+    this.cockpitPanel?.classList.remove('uses-shared-display-controls');
+    if (this.standardPanel)
+      this.standardPanel.scrollTop = this.standardScrollTop;
     this.records = [];
     this.restoreOwner = null;
   }

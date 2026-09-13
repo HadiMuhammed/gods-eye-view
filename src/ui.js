@@ -5131,6 +5131,8 @@ export class StyleManager {
     this._locationControls?.destroy();
     this._cctvControls?.destroy();
     this._radioControls?.destroy();
+    this.cockpitView?.stop();
+    this._cockpitDisplayPortal?.stop();
     this._visualEffects.stop();
     this._styleParameters?.destroy();
     for (const control of this._panelDisclosureControls || []) control.destroy();

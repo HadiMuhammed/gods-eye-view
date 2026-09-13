@@ -63,6 +63,7 @@ export class CockpitViewController {
     this.viewer = viewer;
     this.services = services;
     this.destroyed = false;
+    this.disposed = false;
     this.active = false;
     this.trackedEntity = null;
     this.trackedEntityWasShown = true;
@@ -407,10 +408,10 @@ export class CockpitViewController {
     return handleSignalClick.call(this, event);
   }
 
-  dispose() {
+  /** Revoke new work before the shell awaits layer restoration. */
+  stop() {
     if (this.destroyed) return;
     this.destroyed = true;
-    this.exit({ restoreTracking: false });
     this.regionalBriefAbort?.abort();
     this.regionalBriefAbort = null;
     this.regionalBriefRequestToken += 1;
@@ -420,5 +421,12 @@ export class CockpitViewController {
     this.contextLayoutFrame = null;
     for (const removeListener of this._listenerRemovers.splice(0))
       removeListener?.();
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.stop();
+    this.exit({ restoreTracking: false });
   }
 }

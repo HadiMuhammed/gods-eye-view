@@ -141,3 +141,26 @@ test('an obsolete regional briefing cannot publish after Cockpit disposal', asyn
     env.restore();
   }
 });
+
+test('stopping Cockpit revokes camera actions before deferred disposal releases rendering', () => {
+  const env = environment();
+  try {
+    const released = [];
+    const owner = new CockpitViewController(env.viewer, {
+      services: {
+        releaseContinuousRender: (reason) => released.push(reason),
+      },
+    });
+    owner.active = true;
+    owner.stop();
+    assert.equal(env.callbacks.size, 0);
+    assert.equal(owner.update(), false);
+    assert.equal(owner.navigateContext(1), false);
+    assert.deepEqual(released, []);
+    owner.dispose();
+    assert.deepEqual(released, ['cockpit']);
+    assert.equal(owner.active, false);
+  } finally {
+    env.restore();
+  }
+});

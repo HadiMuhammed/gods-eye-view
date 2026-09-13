@@ -653,7 +653,7 @@ test('Cockpit Display portals shared HUD, Detection, Parameters, and 3D controls
   );
   assert.match(
     CockpitDisplayPortal.prototype.destroy.toString(),
-    /setActive\(false, \{ settle: false \}\)[\s\S]*?listeners\.abort\(\)[\s\S]*?record\.anchor\.remove\(\)/,
+    /this\.stop\(\)[\s\S]*?record\.anchor\.after\(record\.group\)[\s\S]*?record\.anchor\.remove\(\)/,
   );
   assert.doesNotMatch(ui, /_cycleCockpitHud|_cockpitModels3dToggle|_cockpitDetectionToggle/);
   assert.equal((html.match(/id="style-buttons"/g) || []).length, 1);

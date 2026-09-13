@@ -20,6 +20,7 @@ export function scheduleContextLayout() {
     return;
   this.contextLayoutFrame = requestAnimationFrame(() => {
     this.contextLayoutFrame = null;
+    if (this.destroyed) return;
     this.syncContextLayout();
     this.syncSignalLayout();
   });

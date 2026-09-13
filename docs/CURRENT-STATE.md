@@ -7,7 +7,9 @@ layer, terrain and rendering operations are supplied by composition, retaining
 the same tracked identity, ground acquisition, motion correction and cadence.
 The Display portal owns group anchors, focus/scroll restoration and listeners.
 Superseded portal frames cannot repaint old state or steal focus after disposal;
-retained Cockpit actions cannot restart a disposed controller.
+retained Cockpit actions cannot restart a disposed controller. Input, subscriptions
+and queued panel work stop before asynchronous layer restoration; final camera
+and portal cleanup follows that restoration.
 
 
 ## Context coordination

@@ -247,7 +247,7 @@ export function exit({ restoreTracking = true } = {}) {
       ? this.entry
       : this.entry || this.entryFocusOrigin;
   this.entryFocusOrigin = null;
-  if (restoreTarget?.isConnected && !restoreTarget.hidden) {
+  if (!this.destroyed && restoreTarget?.isConnected && !restoreTarget.hidden) {
     restoreTarget.focus({ preventScroll: true });
   }
   return true;
