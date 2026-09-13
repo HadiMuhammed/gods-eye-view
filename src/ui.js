@@ -3332,7 +3332,6 @@ export class StyleManager {
   _initMapStackControl() {
     if (!this.mapStackController) return;
     this._mapSourceControls?.destroy();
-    this._clearLayersControl?.destroy();
     this._mapSourceControls = createMapSourceControls({
       container: this._mapStackChips,
       statusElement: this._mapStackStatus,

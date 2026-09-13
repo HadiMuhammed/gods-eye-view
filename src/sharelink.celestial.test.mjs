@@ -692,6 +692,7 @@ test('visual input listeners are revoked before asynchronous UI teardown', () =>
   assert.match(synchronous, /this\._applicationShortcuts\?\.destroy\(\)/);
   assert.match(synchronous, /this\._visualEffects\.stop\(\)/);
   assert.match(synchronous, /this\._mapSourceControls\?\.destroy\(\)/);
+  assert.match(synchronous, /this\._clearLayersControl\?\.destroy\(\)/);
   assert.match(synchronous, /this\._displayControls\?\.destroy\(\)/);
   assert.match(synchronous, /this\._styleParameters\?\.destroy\(\)/);
 });
