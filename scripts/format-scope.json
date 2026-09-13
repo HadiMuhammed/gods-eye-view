@@ -136,5 +136,17 @@
   "src/ui/visualInput.test.mjs",
   "scripts/qa-visual-input.mjs",
   "src/ui/displayControls.js",
-  "src/ui/displayControls.test.mjs"
+  "src/ui/displayControls.test.mjs",
+  "src/ui/effects.js",
+  "src/ui/visualEffects.js",
+  "src/ui/visualPresets.js",
+  "src/ui/visualEffects.test.mjs",
+  "src/bloom.js",
+  "src/styles/retro.js",
+  "src/styles/surveillance.js",
+  "src/styles/thermal.js",
+  "src/styles/anime.js",
+  "src/styles/noir.js",
+  "src/styles/snow.js",
+  "scripts/qa-visual-effects.mjs"
 ]

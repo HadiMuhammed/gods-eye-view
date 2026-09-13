@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { VisualEffects } from './visualEffects.js';
-import { GLOBAL_POST_DEFAULTS, STYLE_PRESET_DEFAULTS, MILITARY_DETECTION_PRESET } from './visualPresets.js';
+import {
+  GLOBAL_POST_DEFAULTS,
+  STYLE_PRESET_DEFAULTS,
+  MILITARY_DETECTION_PRESET,
+} from './visualPresets.js';
 
 function fixture() {
   let time = 0;
@@ -10,15 +14,40 @@ function fixture() {
   const stages = new Set();
   const holds = new Set();
   const requests = [];
-  const bloom = { enabled: true, uniforms: { glowOnly: true, contrast: 3, brightness: 4, delta: 5, sigma: 6, stepSize: 7 } };
+  const bloom = {
+    enabled: true,
+    uniforms: {
+      glowOnly: true,
+      contrast: 3,
+      brightness: 4,
+      delta: 5,
+      sigma: 6,
+      stepSize: 7,
+    },
+  };
   const originalBloom = structuredClone(bloom);
-  const pipeline = { bloom, add(stage) { stages.add(stage); }, remove(stage) { return stages.delete(stage); } };
+  const pipeline = {
+    bloom,
+    add(stage) {
+      stages.add(stage);
+    },
+    remove(stage) {
+      return stages.delete(stage);
+    },
+  };
   const effects = new VisualEffects({
     viewer: { scene: { postProcessStages: pipeline } },
     requestRender: (reason) => requests.push(reason),
-    holdRender: (reason) => holds.add(reason), releaseRender: (reason) => holds.delete(reason),
-    requestFrame: (callback) => { const id = next++; frames.set(id, callback); return id; },
-    cancelFrame: (id) => frames.delete(id), now: () => time, wallNow: () => 10_000 + time,
+    holdRender: (reason) => holds.add(reason),
+    releaseRender: (reason) => holds.delete(reason),
+    requestFrame: (callback) => {
+      const id = next++;
+      frames.set(id, callback);
+      return id;
+    },
+    cancelFrame: (id) => frames.delete(id),
+    now: () => time,
+    wallNow: () => 10_000 + time,
     createStage: (options) => ({ ...options, enabled: true }),
   });
   function tick(value) {
@@ -27,7 +56,16 @@ function fixture() {
     frames.clear();
     for (const callback of pending) callback();
   }
-  return { effects, frames, stages, holds, requests, bloom, originalBloom, tick };
+  return {
+    effects,
+    frames,
+    stages,
+    holds,
+    requests,
+    bloom,
+    originalBloom,
+    tick,
+  };
 }
 
 test('construction is inert and initialization creates one owned pipeline', () => {
@@ -37,7 +75,11 @@ test('construction is inert and initialization creates one owned pipeline', () =
   f.effects.initStyles();
   f.effects.initPostProcess();
   assert.equal(f.stages.size, 7);
-  assert.ok(Object.values(f.effects.stages).every((stage) => !stage.enabled && stage.uniforms.intensity === 0));
+  assert.ok(
+    Object.values(f.effects.stages).every(
+      (stage) => !stage.enabled && stage.uniforms.intensity === 0,
+    ),
+  );
   f.effects.initStyles();
   f.effects.initPostProcess();
   assert.equal(f.stages.size, 7);
@@ -50,7 +92,11 @@ test('crossfade uses the established 500ms easing and settles without idle frame
   f.effects.startTransition('noir', 0, 1);
   assert.equal(f.effects.frameId, 0, 'zero is a valid pending animation id');
   f.effects.startAnimationLoop();
-  assert.equal(f.frames.size, 1, 'starting twice cannot schedule duplicate frames');
+  assert.equal(
+    f.frames.size,
+    1,
+    'starting twice cannot schedule duplicate frames',
+  );
   f.tick(125);
   assert.equal(f.effects.stages.noir.uniforms.intensity, 0.125);
   f.tick(250);
@@ -69,7 +115,11 @@ test('a superseding transition starts from the current rendered intensity', () =
   f.effects.initStyles();
   f.effects.startTransition('noir', 0, 1);
   f.tick(250);
-  f.effects.startTransition('noir', f.effects.stages.noir.uniforms.intensity, 0);
+  f.effects.startTransition(
+    'noir',
+    f.effects.stages.noir.uniforms.intensity,
+    0,
+  );
   f.tick(500);
   assert.equal(f.effects.stages.noir.uniforms.intensity, 0.25);
   f.tick(750);
@@ -147,7 +197,11 @@ test('stop revokes pending work immediately but retains stages until final destr
   const staleFrame = [...f.frames.values()][0];
   f.effects.stop();
   assert.equal(f.frames.size, 0);
-  assert.equal(f.stages.size, 7, 'Context and Cockpit may still be releasing these stages');
+  assert.equal(
+    f.stages.size,
+    7,
+    'Context and Cockpit may still be releasing these stages',
+  );
   const intensity = f.effects.stages.retro.uniforms.intensity;
   staleFrame();
   f.effects.startTransition('retro', 0, 1);
@@ -156,14 +210,21 @@ test('stop revokes pending work immediately but retains stages until final destr
   assert.equal(f.effects.stages.retro.uniforms.intensity, intensity);
   f.effects.destroy();
   assert.equal(f.stages.size, 0);
-  assert.deepEqual(f.bloom, f.originalBloom, 'borrowed bloom configuration is restored');
+  assert.deepEqual(
+    f.bloom,
+    f.originalBloom,
+    'borrowed bloom configuration is restored',
+  );
   f.effects.destroy();
 });
 
 test('destroying one instance does not remove another pipeline or clock', () => {
   const a = fixture();
   const b = fixture();
-  for (const f of [a, b]) { f.effects.initStyles(); f.effects.startTransition('retro', 0, 1); }
+  for (const f of [a, b]) {
+    f.effects.initStyles();
+    f.effects.startTransition('retro', 0, 1);
+  }
   a.effects.destroy();
   b.tick(250);
   assert.equal(a.stages.size, 0);
@@ -179,7 +240,10 @@ test('existing baseline and military presets keep one detection default', () => 
   assert.equal(GLOBAL_POST_DEFAULTS.detectionFadePct, 7);
   assert.equal(GLOBAL_POST_DEFAULTS.detectionOutsideOpacityPct, 1);
   for (const name of ['retro', 'surveillance', 'thermal']) {
-    assert.equal(STYLE_PRESET_DEFAULTS[name].detection, MILITARY_DETECTION_PRESET);
+    assert.equal(
+      STYLE_PRESET_DEFAULTS[name].detection,
+      MILITARY_DETECTION_PRESET,
+    );
   }
   assert.equal(STYLE_PRESET_DEFAULTS.normal, undefined);
 });

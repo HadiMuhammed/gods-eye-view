@@ -1,6 +1,14 @@
 import { PostProcessStage } from 'cesium';
-import { bloomStrengthFromIntensity, clampBloomIntensity, BLOOM_INTENSITY_DEFAULT } from '../bloom.js';
-import { STYLES, SHARPEN_SHADER, TRANSITION_DURATION_MS } from './visualPresets.js';
+import {
+  bloomStrengthFromIntensity,
+  clampBloomIntensity,
+  BLOOM_INTENSITY_DEFAULT,
+} from '../bloom.js';
+import {
+  STYLES,
+  SHARPEN_SHADER,
+  TRANSITION_DURATION_MS,
+} from './visualPresets.js';
 
 /** Own the post-process stages and their animation, without DOM dependencies. */
 export class VisualEffects {
@@ -8,10 +16,15 @@ export class VisualEffects {
    * @param {object} options - Viewer, render ownership callbacks and optional clocks.
    * Construction is inert; initStyles/initPostProcess retain startup ordering.
    */
-  constructor({ viewer, requestRender, holdRender, releaseRender,
+  constructor({
+    viewer,
+    requestRender,
+    holdRender,
+    releaseRender,
     requestFrame = (callback) => requestAnimationFrame(callback),
     cancelFrame = (id) => cancelAnimationFrame(id),
-    now = () => performance.now(), wallNow = () => Date.now(),
+    now = () => performance.now(),
+    wallNow = () => Date.now(),
     createStage = (options) => new PostProcessStage(options),
   }) {
     this.viewer = viewer;
@@ -43,9 +56,15 @@ export class VisualEffects {
     if (this.stopped || this.stageEntries.length) return;
     for (const [name, shader] of Object.entries(STYLES)) {
       const uniforms = { intensity: 0.0 };
-      if (shader.fragmentShader.includes('uniform float time')) uniforms.time = 0.0;
-      for (const [name, meta] of Object.entries(shader.uniforms || {})) uniforms[name] = meta.default;
-      const stage = this.createStage({ name: `godsEyeView_${name}`, fragmentShader: shader.fragmentShader, uniforms });
+      if (shader.fragmentShader.includes('uniform float time'))
+        uniforms.time = 0.0;
+      for (const [name, meta] of Object.entries(shader.uniforms || {}))
+        uniforms[name] = meta.default;
+      const stage = this.createStage({
+        name: `godsEyeView_${name}`,
+        fragmentShader: shader.fragmentShader,
+        uniforms,
+      });
       stage.enabled = false;
       this.viewer.scene.postProcessStages.add(stage);
       this.stages[name] = stage;
@@ -56,11 +75,34 @@ export class VisualEffects {
   initPostProcess(sharpenIntensity = this.sharpenIntensity) {
     if (this.stopped || this.sharpenStage) return;
     this.bloomStage = this.viewer.scene.postProcessStages.bloom;
-    const names = ['glowOnly', 'contrast', 'brightness', 'delta', 'sigma', 'stepSize'];
-    this.previousBloom = { enabled: this.bloomStage.enabled, uniforms: Object.fromEntries(names.map((name) => [name, this.bloomStage.uniforms[name]])) };
+    const names = [
+      'glowOnly',
+      'contrast',
+      'brightness',
+      'delta',
+      'sigma',
+      'stepSize',
+    ];
+    this.previousBloom = {
+      enabled: this.bloomStage.enabled,
+      uniforms: Object.fromEntries(
+        names.map((name) => [name, this.bloomStage.uniforms[name]]),
+      ),
+    };
     this.bloomStage.enabled = false;
-    Object.assign(this.bloomStage.uniforms, { glowOnly: false, contrast: 256.0, brightness: -0.35, delta: 0.25, sigma: 0.35, stepSize: 1.0 });
-    this.sharpenStage = this.createStage({ name: 'godsEyeView_sharpen', fragmentShader: SHARPEN_SHADER, uniforms: { amount: 1.3 } });
+    Object.assign(this.bloomStage.uniforms, {
+      glowOnly: false,
+      contrast: 256.0,
+      brightness: -0.35,
+      delta: 0.25,
+      sigma: 0.35,
+      stepSize: 1.0,
+    });
+    this.sharpenStage = this.createStage({
+      name: 'godsEyeView_sharpen',
+      fragmentShader: SHARPEN_SHADER,
+      uniforms: { amount: 1.3 },
+    });
     this.sharpenStage.enabled = false;
     this.viewer.scene.postProcessStages.add(this.sharpenStage);
     this.applySharpenIntensity(sharpenIntensity);
@@ -70,17 +112,21 @@ export class VisualEffects {
     if (this.stopped || !stage) return;
     stage.uniforms.intensity = value;
     stage.enabled = value > 0.001;
-    if (stage.enabled && stage.uniforms.time !== undefined) this.startAnimationLoop();
+    if (stage.enabled && stage.uniforms.time !== undefined)
+      this.startAnimationLoop();
     this.requestRender('style-stage');
   }
 
   syncStagesEnabledFromIntensity() {
-    for (const [, stage] of this.stageEntries) this.setStageIntensity(stage, stage.uniforms.intensity);
+    for (const [, stage] of this.stageEntries)
+      this.setStageIntensity(stage, stage.uniforms.intensity);
   }
 
   syncBloomEnabled() {
     if (this.stopped || !this.bloomStage) return;
-    this.bloomStage.enabled = this.bloomEnabled && bloomStrengthFromIntensity(this.bloomIntensity) > 0.06;
+    this.bloomStage.enabled =
+      this.bloomEnabled &&
+      bloomStrengthFromIntensity(this.bloomIntensity) > 0.06;
   }
 
   applyBloomIntensity(intensity) {
@@ -89,7 +135,7 @@ export class VisualEffects {
     this.requestRender('bloom');
     if (!this.bloomStage) return;
     const rawStrength = bloomStrengthFromIntensity(this.bloomIntensity);
-    const strength = rawStrength <= 0.06 ? 0.0 : ((rawStrength - 0.06) / 0.94);
+    const strength = rawStrength <= 0.06 ? 0.0 : (rawStrength - 0.06) / 0.94;
     const eased = strength * strength * (3.0 - 2.0 * strength);
     this.bloomStage.uniforms.contrast = 255.0 - eased * 168.0;
     this.bloomStage.uniforms.brightness = -0.5 + eased * 0.36;
@@ -109,7 +155,8 @@ export class VisualEffects {
   applySharpenIntensity(value) {
     if (this.stopped) return;
     this.sharpenIntensity = value;
-    if (this.sharpenStage) this.sharpenStage.uniforms.amount = 0.1 + value * 2.0;
+    if (this.sharpenStage)
+      this.sharpenStage.uniforms.amount = 0.1 + value * 2.0;
     this.requestRender('sharpen');
   }
 
@@ -133,9 +180,15 @@ export class VisualEffects {
       const now = this.now();
       const elapsedSec = (this.wallNow() - this.startTime) / 1000.0;
       for (const [name, transition] of this.transitions) {
-        const t = Math.min((now - transition.start) / TRANSITION_DURATION_MS, 1.0);
+        const t = Math.min(
+          (now - transition.start) / TRANSITION_DURATION_MS,
+          1.0,
+        );
         const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-        this.setStageIntensity(this.stages[name], transition.from + (transition.to - transition.from) * eased);
+        this.setStageIntensity(
+          this.stages[name],
+          transition.from + (transition.to - transition.from) * eased,
+        );
         if (t >= 1.0) {
           this.setStageIntensity(this.stages[name], transition.to);
           this.transitions.delete(name);
