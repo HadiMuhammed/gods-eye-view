@@ -603,6 +603,11 @@ try {
       voiceBefore: probe.voiceBefore, voiceNow: voiceState(),
       selectedStyle: manager.activeStyle, selectedMap: manager.mapStackController.getActiveId(),
       focusedStyle: document.activeElement?.dataset.style || null,
+      holdObservation: {
+        pageFocused: document.hasFocus(), visibility: document.visibilityState,
+        timerPending: Boolean(voice.pushToTalkHoldTimer),
+        focusOwnerMatches: document.activeElement === voice.pushToTalkHoldFocusOwner,
+      },
     });
     probe.reset = () => {
       probe.events.length = 0;
@@ -645,9 +650,11 @@ try {
     await page.keyboard.down('Space');
     styleSpaceIsDown = true;
     longSpaceDown = await page.evaluate(() => window.__qaStyleKeyProbe.snapshot());
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    // Use the browser's clock, like the production hold timer. Runner-side
+    // delays can finish while Chromium's timer is still pending under load.
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 250)));
     await page.keyboard.down('Space'); // exercise repeat without resetting the hold deadline
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 400)));
     longSpaceHeld = await page.evaluate(() => window.__qaStyleKeyProbe.snapshot());
     await page.keyboard.up('Space');
     styleSpaceIsDown = false;
