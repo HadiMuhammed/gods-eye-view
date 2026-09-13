@@ -63,10 +63,6 @@ try {
           '<b>Literal layer</b>' && !row().querySelector('b'),
       ]);
       result.push([
-        'count is presented from the supplied snapshot',
-        row().querySelector('.data-count').textContent === '1.3K',
-      ]);
-      result.push([
         'row subscription is installed',
         typeof listener === 'function',
       ]);
@@ -78,6 +74,10 @@ try {
         enabled === 0 && !manager.isEnabled(id),
       ]);
       await manager.setEnabled(id, true);
+      result.push([
+        'count is presented from the supplied snapshot',
+        row().querySelector('.data-count').textContent === '1.3K',
+      ]);
       result.push([
         'feed state reflects the settled layer snapshot',
         row().querySelector('.data-toggle-btn').dataset.feedState === 'stale',
