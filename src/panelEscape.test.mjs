@@ -1,3 +1,7 @@
+import { readFileSync as readRadioSource } from 'node:fs';
+const radioBindings = readRadioSource(new URL('./ui/radioBindings.js', import.meta.url), 'utf8');
+const radioPresentation = readRadioSource(new URL('./ui/radioPresentation.js', import.meta.url), 'utf8');
+const radioControlsSource = readRadioSource(new URL('./ui/radioControls.js', import.meta.url), 'utf8');
 import { bindPanelDisclosure, collapsePanelOnEscape } from './ui/panelDisclosure.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -155,16 +159,16 @@ test('Cockpit Escape collapses Contact or Live Signals before exiting Cockpit', 
 
 test('Cockpit utility Escape leaves an expanded nested Parameters panel to the shared handler', () => {
   assert.match(
-    source,
+    radioBindings,
     /const nestedPanel = event\.target\?\.closest\?\.\('\.panel-collapsible:not\(\.collapsed\), #param-slider-panel:not\(\.collapsed\)'\);[\s\S]*?if \(nestedPanel\) return;[\s\S]*?setCockpitDisclosure/,
   );
   assert.match(
-    source,
+    radioBindings,
     /const kind = displayOpen \? 'display' : 'radio';[\s\S]*?escapedFromDisclosure[\s\S]*?returnFocus: !escapedFromDisclosure[\s\S]*?disclosure\?\.blur/,
     'Cockpit utility disclosures clear their own focus when Escape closes them',
   );
   assert.match(
-    source,
+    radioBindings,
     /_contextRadioDock\?\.classList\.contains\('disclosure-open'\)[\s\S]*?escapedFromDisclosure[\s\S]*?setRadioDisclosure\(false, \{ returnFocus: !escapedFromDisclosure \}\)[\s\S]*?_contextRadioToggleBtn\?\.blur/,
     'compact Radio disclosure clears its own focus when Escape closes it',
   );

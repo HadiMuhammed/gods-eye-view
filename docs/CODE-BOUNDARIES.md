@@ -287,3 +287,11 @@ the existing location-status formatter. Callers supply city data, search and
 navigation operations. The component owns DOM listeners and pending expansion;
 it imports no geocoder, camera engine, layer or application bootstrap. Existing
 camera authority and search providers remain supplied by the application.
+
+### Radio controls
+
+`ui/radio` owns Radio input, disclosures, tuner state and presentation. It
+receives the existing Radio port and explicit layer/layout actions, without
+importing the renderer or station providers. Pure tuner calculations retain
+compatibility exports from the data layer. Disposal revokes DOM listeners and
+subscriptions before ending the active tuning interaction.

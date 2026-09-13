@@ -1,5 +1,15 @@
 # God's Eye View Current State
 
+## Radio controls
+
+Radio panel, compact controls and tuner presentation have a dedicated owner.
+It receives playback, layer actions and layout callbacks; station ingestion,
+marker placement, audio playback and camera policy stay with their existing
+owners. Tuner calculations have a pure entry, with existing layer exports
+preserved. Destruction removes listeners and state subscriptions before ending
+tuning; a delayed Enable result cannot reveal or refocus removed controls.
+
+
 ## Location control ownership
 
 City/POI rows, search/reset bindings, location readouts and the orbit indicator

@@ -281,7 +281,7 @@ async function main() {
         fullPlayEnabled: !document.getElementById('radio-play-btn').disabled,
         fullPlayLabel: document.getElementById('radio-play-btn').getAttribute('aria-label'),
         tunerVisible: !document.getElementById('radio-tuner').hidden,
-        tunerCount: window.__godsEyeView.styleManager._radioTunerStations.length,
+        tunerCount: window.__godsEyeView.styleManager._radioControls._radioTunerStations.length,
         tunerLabel: document.getElementById('radio-tuner-band-label').textContent,
       };
     });
@@ -332,19 +332,19 @@ async function main() {
       const staticResult = module.setTuningStatic(true);
       const filterBefore = module.getUIState().filter;
       const filterControl = document.getElementById('radio-filter');
-      const originalPinned = style._radioTunerBandPinnedForNavigation;
-      const originalPool = style._radioTunerPool;
-      style._radioTunerBandPinnedForNavigation = true;
+      const originalPinned = style._radioControls._radioTunerBandPinnedForNavigation;
+      const originalPool = style._radioControls._radioTunerPool;
+      style._radioControls._radioTunerBandPinnedForNavigation = true;
       filterControl.value = filterBefore === 'news' ? 'all' : 'news';
       filterControl.dispatchEvent(new Event('change', { bubbles: true }));
       const rejectedUIFilter = {
         moduleFilter: module.getUIState().filter,
         controlFilter: filterControl.value,
-        pinned: style._radioTunerBandPinnedForNavigation,
-        poolIdentityPreserved: style._radioTunerPool === originalPool,
+        pinned: style._radioControls._radioTunerBandPinnedForNavigation,
+        poolIdentityPreserved: style._radioControls._radioTunerPool === originalPool,
       };
-      style._radioTunerBandPinnedForNavigation = originalPinned;
-      style._radioTunerPool = originalPool;
+      style._radioControls._radioTunerBandPinnedForNavigation = originalPinned;
+      style._radioControls._radioTunerPool = originalPool;
       const filterResult = module.setFilter('news');
       const toggleResult = await module.togglePlayback({ origin: 'user' });
       const directSelect = module.selectStation(stationId, {
@@ -2719,7 +2719,7 @@ async function main() {
       const dialRect = document.querySelector('.radio-tuner-dial').getBoundingClientRect();
       const sliderRect = slider.getBoundingClientRect();
       const panelRect = document.querySelector('.radio-panel-inner').getBoundingClientRect();
-      const count = style._radioTunerStations.length;
+      const count = style._radioControls._radioTunerStations.length;
       const usable = sliderRect.width - 14;
       const xFor = (coordinate) => sliderRect.left + 7 + usable * coordinate / Math.max(1, count - 1);
       const pointer = (type, x, pointerId = 71) => slider.dispatchEvent(new PointerEvent(type, {
@@ -2745,7 +2745,7 @@ async function main() {
         };
       };
       const playsBefore = window.__qaRadioPlayCalls.length;
-      const frozenSignature = style._radioTunerBandSignature;
+      const frozenSignature = style._radioControls._radioTunerBandSignature;
       pointer('pointerdown', xFor(0));
       const left = snapshot();
       const centerCoordinate = (count - 1) / 2;
@@ -2765,14 +2765,14 @@ async function main() {
         visible: !document.getElementById('radio-tuner').hidden,
         stationCount: count,
         sliderMax: Number(slider.max),
-        bandFrozen: style._radioTunerBandSignature === frozenSignature,
+        bandFrozen: style._radioControls._radioTunerBandSignature === frozenSignature,
         left,
         center,
         shifted,
         right,
-        leftExpectedId: style._radioTunerStations[0]?.id || null,
-        centerExpectedId: style._radioTunerStations[Math.floor(centerCoordinate + 0.5)]?.id || null,
-        rightExpectedId: style._radioTunerStations[count - 1]?.id || null,
+        leftExpectedId: style._radioControls._radioTunerStations[0]?.id || null,
+        centerExpectedId: style._radioControls._radioTunerStations[Math.floor(centerCoordinate + 0.5)]?.id || null,
+        rightExpectedId: style._radioControls._radioTunerStations[count - 1]?.id || null,
         centerExpected: Math.floor(centerCoordinate + 0.5),
         tapeDelta,
         needleDelta,
@@ -2817,7 +2817,7 @@ async function main() {
       const slider = document.getElementById('radio-tuner-slider');
       // Capture a fresh gesture's complete presentation anchor before moving
       // to a different absolute directory station.
-      const beforeStations = [...style._radioTunerStations];
+      const beforeStations = [...style._radioControls._radioTunerStations];
       const sliderRect = slider.getBoundingClientRect();
       const xFor = (index) => sliderRect.left + 7
         + (sliderRect.width - 14) * index / Math.max(1, beforeStations.length - 1);
@@ -2834,7 +2834,7 @@ async function main() {
       const flyToCalls = [];
       camera.flyTo = (options) => flyToCalls.push(options);
       const before = {
-        signature: style._radioTunerBandSignature,
+        signature: style._radioControls._radioTunerBandSignature,
         ids: beforeStations.map((station) => station.id),
         slot: Number(slider.value),
         selectedId: radio.getUIState().selected?.id || null,
@@ -2848,10 +2848,10 @@ async function main() {
         .find((entity) => String(entity.id).startsWith('radio:selected:'))?.id || null;
       const flyToCallsBeforeCancel = flyToCalls.length;
       pointer('pointercancel', targetIndex);
-      const afterStations = style._radioTunerStations;
+      const afterStations = style._radioControls._radioTunerStations;
       const afterState = radio.getUIState();
       const after = {
-        signature: style._radioTunerBandSignature,
+        signature: style._radioControls._radioTunerBandSignature,
         ids: afterStations.map((station) => station.id),
         slot: Number(slider.value),
         selectedId: afterState.selected?.id || null,
@@ -2972,7 +2972,7 @@ async function main() {
     const tunerRefreshTarget = await page.evaluate(() => {
       const gev = window.__godsEyeView;
       const slider = document.getElementById('radio-tuner-slider');
-      const stations = gev.styleManager._radioTunerStations;
+      const stations = gev.styleManager._radioControls._radioTunerStations;
       const targetIndex = 1;
       const rect = slider.getBoundingClientRect();
       const clientX = rect.left + 7 + (rect.width - 14) * targetIndex / Math.max(1, stations.length - 1);
@@ -3055,7 +3055,7 @@ async function main() {
       const max = Number(slider.max);
       const direction = startSlot < max ? 1 : -1;
       const targetIndex = startSlot + direction;
-      const targetId = gev.styleManager._radioTunerStations[targetIndex]?.id || null;
+      const targetId = gev.styleManager._radioControls._radioTunerStations[targetIndex]?.id || null;
       const rect = slider.getBoundingClientRect();
       const xFor = (index) => rect.left + 7 + (rect.width - 14) * index / Math.max(1, max);
       const pointer = (type, index) => slider.dispatchEvent(new PointerEvent(type, {
@@ -3106,18 +3106,18 @@ async function main() {
       const slider = document.getElementById('radio-tuner-slider');
       const targetIndex = 11;
       slider.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: 1 }));
-      const station = gev.styleManager._radioTunerStations[targetIndex];
+      const station = gev.styleManager._radioControls._radioTunerStations[targetIndex];
       const rect = slider.getBoundingClientRect();
       const currentRatio = Number(slider.value) / Math.max(1, Number(slider.max));
       window.__qaRadioDelayNextPlay = true;
       return {
         id: station.id,
         targetIndex,
-        count: gev.styleManager._radioTunerStations.length,
-        frozenSignature: gev.styleManager._radioTunerBandSignature,
+        count: gev.styleManager._radioControls._radioTunerStations.length,
+        frozenSignature: gev.styleManager._radioControls._radioTunerBandSignature,
         startX: rect.left + 7 + (rect.width - 14) * currentRatio,
         targetX: rect.left + 7 + (rect.width - 14) * targetIndex
-          / Math.max(1, gev.styleManager._radioTunerStations.length - 1),
+          / Math.max(1, gev.styleManager._radioControls._radioTunerStations.length - 1),
         y: rect.top + rect.height / 2,
       };
     });
@@ -3135,11 +3135,11 @@ async function main() {
         audioState: state.audioState,
         tuningStatic: state.tuningStatic,
         awaiting: state.tuningAwaitingStationId,
-        signatureStable: gev.styleManager._radioTunerBandSignature === target.frozenSignature,
-        selectedIndex: gev.styleManager._radioTunerStations.findIndex((item) => item.id === state.selected?.id),
+        signatureStable: gev.styleManager._radioControls._radioTunerBandSignature === target.frozenSignature,
+        selectedIndex: gev.styleManager._radioControls._radioTunerStations.findIndex((item) => item.id === state.selected?.id),
         sliderSlot: Number(slider.value),
         ratio: Number(document.getElementById('radio-tuner').style.getPropertyValue('--radio-tuner-ratio')),
-        pinned: gev.styleManager._radioTunerBandPinnedForNavigation,
+        pinned: gev.styleManager._radioControls._radioTunerBandPinnedForNavigation,
       };
     }, tunerCommitTarget);
     check(
@@ -3183,7 +3183,7 @@ async function main() {
         y: rect.top + rect.height / 2,
         ratio,
         usableWidth: rect.width - 14,
-        signature: style._radioTunerBandSignature,
+        signature: style._radioControls._radioTunerBandSignature,
       };
     });
     const microDragSamples = [];
@@ -3199,7 +3199,7 @@ async function main() {
           pixelDelta,
           slot: Number(slider.value),
           ratio: Number(document.getElementById('radio-tuner').style.getPropertyValue('--radio-tuner-ratio')),
-          signature: style._radioTunerBandSignature,
+          signature: style._radioControls._radioTunerBandSignature,
         };
       }, delta));
     }
@@ -3238,9 +3238,9 @@ async function main() {
       const gev = window.__godsEyeView;
       const style = gev.styleManager;
       const before = {
-        signature: style._radioTunerBandSignature,
-        ids: style._radioTunerStations.map((station) => station.id),
-        selectedIndex: style._radioTunerStations.findIndex((station) => station.id === selectedId),
+        signature: style._radioControls._radioTunerBandSignature,
+        ids: style._radioControls._radioTunerStations.map((station) => station.id),
+        selectedIndex: style._radioControls._radioTunerStations.findIndex((station) => station.id === selectedId),
         needle: Number(document.getElementById('radio-tuner').style.getPropertyValue('--radio-tuner-ratio')),
       };
       const current = gev.viewer.camera.positionCartographic;
@@ -3256,11 +3256,11 @@ async function main() {
       });
       gev.viewer.camera.changed.raiseEvent();
       await new Promise((resolve) => setTimeout(resolve, 400));
-      const stations = gev.styleManager._radioTunerStations;
+      const stations = gev.styleManager._radioControls._radioTunerStations;
       const selectedIndex = stations.findIndex((station) => station.id === selectedId);
       return {
         before,
-        signature: style._radioTunerBandSignature,
+        signature: style._radioControls._radioTunerBandSignature,
         ids: stations.map((station) => station.id),
         count: stations.length,
         selectedIndex,
@@ -3279,14 +3279,14 @@ async function main() {
     const nextNeedleBefore = await page.evaluate(() => {
       const style = window.__godsEyeView.styleManager;
       const selectedId = window.__godsEyeView.dataManager.layers.get('radio').module.getUIState().selected?.id;
-      const selectedIndex = style._radioTunerStations.findIndex((station) => station.id === selectedId);
-      const selectedPoolIndex = style._radioTunerPool.findIndex((station) => station.id === selectedId);
-      const expectedPoolIndex = (selectedPoolIndex + 1) % style._radioTunerPool.length;
+      const selectedIndex = style._radioControls._radioTunerStations.findIndex((station) => station.id === selectedId);
+      const selectedPoolIndex = style._radioControls._radioTunerPool.findIndex((station) => station.id === selectedId);
+      const expectedPoolIndex = (selectedPoolIndex + 1) % style._radioControls._radioTunerPool.length;
       return {
-        signature: style._radioTunerBandSignature,
+        signature: style._radioControls._radioTunerBandSignature,
         selectedIndex,
-        count: style._radioTunerStations.length,
-        expectedId: style._radioTunerPool[expectedPoolIndex]?.id || null,
+        count: style._radioControls._radioTunerStations.length,
+        expectedId: style._radioControls._radioTunerPool[expectedPoolIndex]?.id || null,
       };
     });
     await page.$eval('#radio-next-btn', (button) => button.click());
@@ -3294,15 +3294,15 @@ async function main() {
     const nextNeedleAfter = await page.evaluate(() => {
       const style = window.__godsEyeView.styleManager;
       const selectedId = window.__godsEyeView.dataManager.layers.get('radio').module.getUIState().selected?.id;
-      const selectedIndex = style._radioTunerStations.findIndex((station) => station.id === selectedId);
+      const selectedIndex = style._radioControls._radioTunerStations.findIndex((station) => station.id === selectedId);
       return {
-        signature: style._radioTunerBandSignature,
+        signature: style._radioControls._radioTunerBandSignature,
         selectedId,
         selectedIndex,
-        count: style._radioTunerStations.length,
+        count: style._radioControls._radioTunerStations.length,
         sliderSlot: Number(document.getElementById('radio-tuner-slider').value),
         ratio: Number(document.getElementById('radio-tuner').style.getPropertyValue('--radio-tuner-ratio')),
-        pinned: style._radioTunerBandPinnedForNavigation,
+        pinned: style._radioControls._radioTunerBandPinnedForNavigation,
       };
     });
     check(
@@ -3327,8 +3327,8 @@ async function main() {
       const markerId = () => gev.viewer.entities.values
         .find((entity) => String(entity.id).startsWith('radio:selected:'))?.id || null;
       const startIndex = Number(slider.value);
-      const expectedIndex = Math.min(style._radioTunerStations.length - 1, startIndex + 1);
-      const expectedId = style._radioTunerStations[expectedIndex]?.id || null;
+      const expectedIndex = Math.min(style._radioControls._radioTunerStations.length - 1, startIndex + 1);
+      const expectedId = style._radioControls._radioTunerStations[expectedIndex]?.id || null;
       const playsBefore = window.__qaRadioPlayCalls.length;
       key('keydown', 'ArrowRight');
       const preview = {
@@ -3353,7 +3353,7 @@ async function main() {
         tuningActive: radio.getUIState().tuningActive,
         playDelta: window.__qaRadioPlayCalls.length - committedPlays,
       };
-      const count = style._radioTunerStations.length;
+      const count = style._radioControls._radioTunerStations.length;
       const pageStep = Math.max(1, Math.round((count - 1) / 10));
       const previewAndCancel = (value, expectedSlot) => {
         const beforePlays = window.__qaRadioPlayCalls.length;
@@ -3405,7 +3405,7 @@ async function main() {
       const radio = gev.dataManager.layers.get('radio').module;
       const slider = document.getElementById('radio-tuner-slider');
       const rect = slider.getBoundingClientRect();
-      const count = style._radioTunerStations.length;
+      const count = style._radioControls._radioTunerStations.length;
       const centerIndex = Math.floor((count - 1) / 2 + 0.5);
       const clientX = rect.left + rect.width / 2;
       slider.dispatchEvent(new PointerEvent('pointerdown', {
@@ -3425,7 +3425,7 @@ async function main() {
         ratio: Number(document.getElementById('radio-tuner').style.getPropertyValue('--radio-tuner-ratio')),
         markerId: gev.viewer.entities.values
           .find((entity) => String(entity.id).startsWith('radio:selected:'))?.id || null,
-        expectedId: style._radioTunerStations[centerIndex]?.id || null,
+        expectedId: style._radioControls._radioTunerStations[centerIndex]?.id || null,
       };
       slider.dispatchEvent(new PointerEvent('pointercancel', {
         bubbles: true,
@@ -3450,7 +3450,7 @@ async function main() {
     const fullPoolNavigation = await page.evaluate(() => {
       const gev = window.__godsEyeView;
       const radio = gev.dataManager.layers.get('radio').module;
-      const pool = gev.styleManager._radioTunerPool;
+      const pool = gev.styleManager._radioControls._radioTunerPool;
       const ids = pool.map((station) => station.id);
       const selectWithoutPlayback = (index) => radio.selectStation(ids[index], {
         autoplay: false,
@@ -3500,7 +3500,7 @@ async function main() {
       const gev = window.__godsEyeView;
       const slider = document.getElementById('radio-tuner-slider');
       const rect = slider.getBoundingClientRect();
-      const count = gev.styleManager._radioTunerStations.length;
+      const count = gev.styleManager._radioControls._radioTunerStations.length;
       const current = Number(slider.value);
       const target = Math.min(count - 1, current + 4);
       const xFor = (index) => rect.left + 7 + (rect.width - 14) * index / Math.max(1, count - 1);
@@ -3695,7 +3695,7 @@ async function main() {
       Array.from({ length: gev.viewer.dataSources.length }, (_, index) => gev.viewer.dataSources.get(index))
         .find((item) => item.name === 'Radio stations').clustering.enabled = true;
       radio.selectStation('00000000-0000-4000-8000-000000000001', { autoplay: false, focus: false });
-      const pool = gev.styleManager._radioTunerPool;
+      const pool = gev.styleManager._radioControls._radioTunerPool;
       const selectedIndex = pool.findIndex((station) => station.id === radio.getUIState().selected?.id);
       window.__qaRadioExpectedPrimary = pool[(selectedIndex + 1) % pool.length];
       window.__qaRadioExpectedFallback = pool[(selectedIndex + 2) % pool.length];

@@ -263,7 +263,7 @@ test('an overlay with NO class to watch still disarms the launcher', () => {
 });
 
 test('one ESC does one thing — the radio disclosure stops the launcher outright', () => {
-  const ui = fs.readFileSync(new URL('./ui.js', import.meta.url), 'utf8');
+  const ui = fs.readFileSync(new URL('./ui/radioBindings.js', import.meta.url), 'utf8');
   const module = fs.readFileSync(new URL('./firstRunExperience.js', import.meta.url), 'utf8');
 
   // stopPropagation() does NOT stop later listeners on the SAME document, so the
