@@ -355,12 +355,12 @@ test('Cockpit side surfaces behave as two single-expanded accordions', () => {
   );
   assert.match(
     radioBindings,
-    /!displayOpen && !radioOpen[\s\S]*?this\.actions\.isCockpitActive\(\)[\s\S]*?!this\.actions\.signalUserCollapsed\(\)[\s\S]*?setSignalCollapsed\(false\)/,
+    /!displayOpen\s*&&\s*!radioOpen[\s\S]*?this\.actions\.isCockpitActive\(\)[\s\S]*?!this\.actions\.signalUserCollapsed\(\)[\s\S]*?setSignalCollapsed\(false\)/,
     'Live Signals should reopen only after both utility panels close and no manual collapse is retained',
   );
   assert.match(
     radioBindings,
-    /event\.target\?\.closest\?\.\('#left-panel-stack, #cockpit-context'\)\) return;[\s\S]*?setCockpitDisclosure\('display', false\);/,
+    /event\.target\?\.closest\?\.\('#left-panel-stack, #cockpit-context'\)\)\s*return;[\s\S]*?setCockpitDisclosure\('display', false\);/,
     'left-side interactions must not collapse the independent Cockpit utilities',
   );
 });
@@ -503,18 +503,18 @@ test('Location navigation releases immediate routes before flight and deferred r
 });
 
 test('Cockpit Radio station changes preserve first-person camera ownership', () => {
-  const cycleHelper = radioBindings.match(/const cycleRadio = \(direction, \{ rotate = true \} = \{\}\) => \{([\s\S]*?)\n    \};/);
+  const cycleHelper = radioBindings.match(/const cycleRadio = \(direction, \{ rotate = true \} = \{\}\) => \{([\s\S]*?)\n  \};/);
   assert.ok(cycleHelper, 'shared Radio cycle helper is missing');
   assert.match(cycleHelper[1], /cycleStation\(direction, \{[\s\S]*?rotate,/);
   assert.match(radioBindings, /listen\(this\._radioPrevBtn, 'click', \(\) => cycleRadio\(-1\)\)/);
   assert.match(radioBindings, /listen\(this\._contextRadioMiniNextBtn, 'click', \(\) => cycleRadio\(1\)\)/);
   assert.match(
     radioBindings,
-    /listen\(this\._cockpitRadioPrevBtn, 'click', \(\) => cycleRadio\(-1, \{ rotate: false \}\)\)/,
+    /listen\(this\._cockpitRadioPrevBtn, 'click', \(\) =>\s*cycleRadio\(-1, \{ rotate: false \}\),?\s*\)/,
   );
   assert.match(
     radioBindings,
-    /listen\(this\._cockpitRadioNextBtn, 'click', \(\) => cycleRadio\(1, \{ rotate: false \}\)\)/,
+    /listen\(this\._cockpitRadioNextBtn, 'click', \(\) =>\s*cycleRadio\(1, \{ rotate: false \}\),?\s*\)/,
   );
 });
 

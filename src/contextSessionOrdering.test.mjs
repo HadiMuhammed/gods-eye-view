@@ -192,7 +192,7 @@ test('only the expanded Radio Enable gesture requests the contained post-enable 
     radioBindings.indexOf("this.listen(this._radioFilter, 'change'"),
   );
   assert.match(radioControls, /revealAfterEnable = enabling && trigger === this\._radioEnableBtn/);
-  assert.match(radioControls, /if \(revealAfterEnable\) await this\._revealRadioControlsAfterExplicitEnable\(trigger\)/);
+  assert.match(radioControls, /if \(revealAfterEnable\)\s*await this\._revealRadioControlsAfterExplicitEnable\(trigger\)/);
   assert.equal((radioBindings.match(/_revealRadioControlsAfterExplicitEnable\(trigger\)/g) || []).length, 1);
   assert.match(radioControlsSource, /async _revealRadioControlsAfterExplicitEnable\(trigger\)/);
 });

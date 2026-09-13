@@ -270,7 +270,7 @@ test('one ESC does one thing — the radio disclosure stops the launcher outrigh
   // disclosure's earlier capture handler closed the disclosure and the launcher
   // dismissed itself off the same key. The earlier listener is the only one that
   // can stop the later one — and only the immediate form does it.
-  const radioEsc = ui.slice(ui.indexOf("if (event.key !== 'Escape' || !this._contextRadioDock"));
+  const radioEsc = ui.slice(ui.indexOf("event.key !== 'Escape' ||"));
   const claim = radioEsc.slice(0, radioEsc.indexOf('setRadioDisclosure(false'));
   assert.match(claim, /event\.preventDefault\(\);/);
   assert.match(claim, /event\.stopImmediatePropagation\(\);/);
