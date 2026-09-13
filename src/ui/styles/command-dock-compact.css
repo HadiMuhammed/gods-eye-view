@@ -21,11 +21,15 @@
 }
 
 #command-dock:has(#location-bar:not(.collapsed)) {
-  transform: translateX(calc(-50% + (var(--dock-location-open) - var(--dock-side-compact)) / 2));
+  transform: translateX(
+    calc(-50% + (var(--dock-location-open) - var(--dock-side-compact)) / 2)
+  );
 }
 
 #command-dock:has(#control-panel:not(.collapsed)) {
-  transform: translateX(calc(-50% - (var(--dock-presets-open) - var(--dock-side-compact)) / 2));
+  transform: translateX(
+    calc(-50% - (var(--dock-presets-open) - var(--dock-side-compact)) / 2)
+  );
 }
 
 #command-dock > #location-bar,
@@ -300,13 +304,27 @@
   transform-origin: bottom;
 }
 
-#command-dock .gev-voice-visualizer span:nth-child(3n) { height: 1.35rem; }
-#command-dock .gev-voice-visualizer span:nth-child(4n) { height: 0.95rem; }
-#command-dock .gev-voice-visualizer span:nth-child(5n) { height: 1.7rem; }
-#command-dock .gev-voice-visualizer span:nth-child(7n) { height: 0.75rem; }
+#command-dock .gev-voice-visualizer span:nth-child(3n) {
+  height: 1.35rem;
+}
+#command-dock .gev-voice-visualizer span:nth-child(4n) {
+  height: 0.95rem;
+}
+#command-dock .gev-voice-visualizer span:nth-child(5n) {
+  height: 1.7rem;
+}
+#command-dock .gev-voice-visualizer span:nth-child(7n) {
+  height: 0.75rem;
+}
 
-#command-dock #gev-voice-control[data-status='listening'] .gev-voice-visualizer span,
-#command-dock #gev-voice-control[data-status='executing'] .gev-voice-visualizer span {
+#command-dock
+  #gev-voice-control[data-status='listening']
+  .gev-voice-visualizer
+  span,
+#command-dock
+  #gev-voice-control[data-status='executing']
+  .gev-voice-visualizer
+  span {
   animation: gev-voice-bar 680ms ease-in-out infinite alternate;
   animation-delay: calc(var(--bar) * -45ms);
 }
@@ -336,13 +354,25 @@
 }
 
 @keyframes command-dock-reveal {
-  from { opacity: 0; transform: translateY(0.2rem); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(0.2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes gev-voice-bar {
-  from { transform: scaleY(0.35); opacity: 0.5; }
-  to { transform: scaleY(1); opacity: 1; }
+  from {
+    transform: scaleY(0.35);
+    opacity: 0.5;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }
 
 /* Compact dock clearance keeps the reference-like low profile. */
@@ -401,4 +431,3 @@ body:not(.ui-clean-view):not(.recording-mode) #cesium-credits {
     flex-basis: 8.5rem;
   }
 }
-

@@ -14,7 +14,11 @@
 #cctv-panel .panel-glow {
   position: absolute;
   inset: -18px;
-  background: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.16) 0%, transparent 65%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 212, 255, 0.16) 0%,
+    transparent 65%
+  );
   filter: blur(16px);
   opacity: 0.25;
   pointer-events: none;
@@ -51,7 +55,11 @@
 }
 
 .cctv-panel-inner::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(0, 212, 255, 0.6), rgba(0, 212, 255, 0.28));
+  background: linear-gradient(
+    180deg,
+    rgba(0, 212, 255, 0.6),
+    rgba(0, 212, 255, 0.28)
+  );
   border: 1px solid rgba(0, 212, 255, 0.4);
   border-radius: 999px;
 }
@@ -99,7 +107,9 @@
   border-radius: 7px;
   padding: 4px 7px;
   cursor: text;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .cctv-cal-value:hover:not(:disabled) {
@@ -212,7 +222,11 @@
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background:
-    radial-gradient(circle at 20% 20%, rgba(0, 244, 255, 0.09), transparent 44%),
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(0, 244, 255, 0.09),
+      transparent 44%
+    ),
     linear-gradient(180deg, rgba(8, 14, 19, 0.88), rgba(4, 7, 11, 0.96));
   min-height: 150px;
   /* .cctv-panel-inner is a scrolling column flex container, so the default
@@ -335,4 +349,3 @@
   color: #a8f7ff;
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.18);
 }
-

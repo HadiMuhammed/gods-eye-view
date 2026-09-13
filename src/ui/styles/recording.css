@@ -30,4 +30,3 @@ body.recording-mode #scene-runtime.active {
 body.scene-playback-mode :is(#clear-selected-layers, #reset-globe-view) {
   display: none !important;
 }
-

@@ -18,14 +18,20 @@ export function readShellElements(document = globalThis.document) {
     _hudLayoutRow: document.getElementById('hud-layout-row'),
     _hudLayoutSelect: document.getElementById('hud-layout-select'),
     _detectionSliderRow: document.getElementById('detection-slider-row'),
-    _detectionDensitySlider: document.getElementById('detection-density-slider'),
+    _detectionDensitySlider: document.getElementById(
+      'detection-density-slider',
+    ),
     _detectionDensityValue: document.getElementById('detection-density-value'),
-    _detectionAllocationRow: document.getElementById('detection-allocation-row'),
+    _detectionAllocationRow: document.getElementById(
+      'detection-allocation-row',
+    ),
     _detectionFadeRow: document.getElementById('detection-fade-row'),
     _detectionFadeSlider: document.getElementById('detection-fade-slider'),
     _detectionFadeValue: document.getElementById('detection-fade-value'),
     _detectionOpacityRow: document.getElementById('detection-opacity-row'),
-    _detectionOpacitySlider: document.getElementById('detection-opacity-slider'),
+    _detectionOpacitySlider: document.getElementById(
+      'detection-opacity-slider',
+    ),
     _detectionOpacityValue: document.getElementById('detection-opacity-value'),
     _celestialBtn: document.getElementById('celestial-toggle'),
     _scopeBtn: document.getElementById('scope-toggle'),
@@ -42,17 +48,39 @@ export function readShellElements(document = globalThis.document) {
     _contextRadioDock: document.getElementById('context-radio-dock'),
     _contextRadioToggleBtn: document.getElementById('context-radio-toggle-btn'),
     _contextRadioMini: document.getElementById('context-radio-mini'),
-    _contextRadioMiniEnableBtn: document.getElementById('context-radio-mini-enable-btn'),
-    _contextRadioDetailsBtn: document.getElementById('context-radio-details-btn'),
-    _contextRadioMiniCloseBtn: document.getElementById('context-radio-mini-close-btn'),
-    _contextRadioMiniStation: document.getElementById('context-radio-mini-station'),
-    _contextRadioMiniPrevBtn: document.getElementById('context-radio-mini-prev-btn'),
-    _contextRadioMiniPlayBtn: document.getElementById('context-radio-mini-play-btn'),
-    _contextRadioMiniNextBtn: document.getElementById('context-radio-mini-next-btn'),
-    _contextRadioMiniVolume: document.getElementById('context-radio-mini-volume'),
-    _contextRadioMiniVolumeValue: document.getElementById('context-radio-mini-volume-value'),
-    _cockpitUtilityControls: document.getElementById('cockpit-utility-controls'),
-    _cockpitDisplayToggleBtn: document.getElementById('cockpit-display-toggle-btn'),
+    _contextRadioMiniEnableBtn: document.getElementById(
+      'context-radio-mini-enable-btn',
+    ),
+    _contextRadioDetailsBtn: document.getElementById(
+      'context-radio-details-btn',
+    ),
+    _contextRadioMiniCloseBtn: document.getElementById(
+      'context-radio-mini-close-btn',
+    ),
+    _contextRadioMiniStation: document.getElementById(
+      'context-radio-mini-station',
+    ),
+    _contextRadioMiniPrevBtn: document.getElementById(
+      'context-radio-mini-prev-btn',
+    ),
+    _contextRadioMiniPlayBtn: document.getElementById(
+      'context-radio-mini-play-btn',
+    ),
+    _contextRadioMiniNextBtn: document.getElementById(
+      'context-radio-mini-next-btn',
+    ),
+    _contextRadioMiniVolume: document.getElementById(
+      'context-radio-mini-volume',
+    ),
+    _contextRadioMiniVolumeValue: document.getElementById(
+      'context-radio-mini-volume-value',
+    ),
+    _cockpitUtilityControls: document.getElementById(
+      'cockpit-utility-controls',
+    ),
+    _cockpitDisplayToggleBtn: document.getElementById(
+      'cockpit-display-toggle-btn',
+    ),
     _cockpitDisplayPanel: document.getElementById('cockpit-display-panel'),
     _cockpitRadioToggleBtn: document.getElementById('cockpit-radio-toggle-btn'),
     _cockpitRadioPanel: document.getElementById('cockpit-radio-panel'),
@@ -62,7 +90,9 @@ export function readShellElements(document = globalThis.document) {
     _cockpitRadioPlayBtn: document.getElementById('cockpit-radio-play-btn'),
     _cockpitRadioNextBtn: document.getElementById('cockpit-radio-next-btn'),
     _cockpitRadioVolume: document.getElementById('cockpit-radio-volume'),
-    _cockpitRadioVolumeValue: document.getElementById('cockpit-radio-volume-value'),
+    _cockpitRadioVolumeValue: document.getElementById(
+      'cockpit-radio-volume-value',
+    ),
     _radioLayerState: document.getElementById('radio-layer-state'),
     _radioEnableBtn: document.getElementById('radio-enable-btn'),
     _radioFilter: document.getElementById('radio-filter'),
@@ -83,12 +113,18 @@ export function readShellElements(document = globalThis.document) {
     _radioVolumeValue: document.getElementById('radio-volume-value'),
     _radioPlaybackState: document.getElementById('radio-playback-state'),
     _radioStationHomepage: document.getElementById('radio-station-homepage'),
-    _globalContextFlightsBtn: document.getElementById('global-context-flights-btn'),
-    _globalContextMissionsBtn: document.getElementById('global-context-missions-btn'),
+    _globalContextFlightsBtn: document.getElementById(
+      'global-context-flights-btn',
+    ),
+    _globalContextMissionsBtn: document.getElementById(
+      'global-context-missions-btn',
+    ),
     _contextModeStandby: document.getElementById('context-mode-standby'),
     _contextFlightsView: document.getElementById('context-flights-view'),
     _contextMissionsView: document.getElementById('context-missions-view'),
-    _installationsSearchBtn: document.getElementById('installations-search-btn'),
+    _installationsSearchBtn: document.getElementById(
+      'installations-search-btn',
+    ),
     _leftPanelStack: document.getElementById('left-panel-stack'),
     _cctvEnableBtn: document.getElementById('cctv-enable-btn'),
     _cctvNearestBtn: document.getElementById('cctv-nearest-btn'),

@@ -1,5 +1,13 @@
 /** Own loading notices, traffic status, toast timing and visibility cleanup. */
-import { aggregateLayerLoading, createGlobalStatusNotice, createLoadingFeedbackState, createTrafficSyncFeedbackState, presentGlobalLoadingStatus, reduceLoadingFeedback, reduceTrafficSyncFeedback } from '../loadingFeedback.js';
+import {
+  aggregateLayerLoading,
+  createGlobalStatusNotice,
+  createLoadingFeedbackState,
+  createTrafficSyncFeedbackState,
+  presentGlobalLoadingStatus,
+  reduceLoadingFeedback,
+  reduceTrafficSyncFeedback,
+} from '../loadingFeedback.js';
 import { setSplitFlapText, disposeSplitFlap } from '../splitFlap.js';
 export class ShellFeedback {
   constructor({ readLayers }) {
@@ -9,15 +17,24 @@ export class ShellFeedback {
     this._trafficSyncFeedbackState = createTrafficSyncFeedbackState();
     this._loadingFeedbackEvent = null;
     this._globalStatusNotice = null;
-    this._loadingFeedbackTicker = this._trafficChipTicker = this._toastTimer = null;
+    this._loadingFeedbackTicker =
+      this._trafficChipTicker =
+      this._toastTimer =
+        null;
     this._loadingVisibilityHandler = null;
     this._lastLoadingFeedbackUpdateAt = 0;
-    this._globalLoadingStatus = document.getElementById('global-loading-status');
+    this._globalLoadingStatus = document.getElementById(
+      'global-loading-status',
+    );
     this._globalLoadingLabel = document.getElementById('global-loading-label');
-    this._globalLoadingDetail = document.getElementById('global-loading-detail');
+    this._globalLoadingDetail = document.getElementById(
+      'global-loading-detail',
+    );
     this._trafficSyncChip = document.getElementById('traffic-sync-chip');
     this._trafficSyncLabel = document.getElementById('traffic-sync-label');
-    this._trafficSyncProgress = document.getElementById('traffic-sync-progress');
+    this._trafficSyncProgress = document.getElementById(
+      'traffic-sync-progress',
+    );
     this._toast = document.getElementById('toast');
   }
   observeVisibility() {
@@ -26,23 +43,38 @@ export class ShellFeedback {
       if (!document.hidden) this._updateGlobalLoadingFeedback();
       else this._stopLoadingFeedbackTicker();
     };
-    document.addEventListener('visibilitychange', this._loadingVisibilityHandler);
+    document.addEventListener(
+      'visibilitychange',
+      this._loadingVisibilityHandler,
+    );
   }
   _updateTrafficSyncChip(forceShow = false, now = performance.now()) {
     if (this.destroyed) return;
-    if (!this._trafficSyncChip || !this._trafficSyncLabel || !this._trafficSyncProgress) return;
+    if (
+      !this._trafficSyncChip ||
+      !this._trafficSyncLabel ||
+      !this._trafficSyncProgress
+    )
+      return;
     const layers = this.readLayers();
-    const traffic = Array.isArray(layers) ? layers.find((layer) => layer.id === 'traffic') : null;
+    const traffic = Array.isArray(layers)
+      ? layers.find((layer) => layer.id === 'traffic')
+      : null;
     this._trafficSyncFeedbackState = reduceTrafficSyncFeedback(
       this._trafficSyncFeedbackState,
-      { enabled: traffic?.enabled === true, stats: traffic?.stats || {}, forceShow },
+      {
+        enabled: traffic?.enabled === true,
+        stats: traffic?.stats || {},
+        forceShow,
+      },
       now,
     );
     const presentation = this._trafficSyncFeedbackState;
     // setSplitFlapText carries the same unchanged-text guard internally, and
     // the flap keeps textContent equal to the settled label throughout, so
     // this stays a no-op on the repeat ticks exactly as it did before.
-    if (presentation.label) setSplitFlapText(this._trafficSyncLabel, presentation.label);
+    if (presentation.label)
+      setSplitFlapText(this._trafficSyncLabel, presentation.label);
     // Written on every change INCLUDING the empty settled value — the reducer
     // clears the progress number once the sync lands, and a truthiness guard
     // here would strand the last "..." beside the settled label.
@@ -69,9 +101,11 @@ export class ShellFeedback {
       summary,
       now,
     );
-    if (this._globalStatusNotice?.persistent !== true
-        && Number.isFinite(this._globalStatusNotice?.hideAt)
-        && now >= this._globalStatusNotice.hideAt) {
+    if (
+      this._globalStatusNotice?.persistent !== true &&
+      Number.isFinite(this._globalStatusNotice?.hideAt) &&
+      now >= this._globalStatusNotice.hideAt
+    ) {
       this._globalStatusNotice = null;
     }
     // Loading phases and universal notices both have time-driven transitions.
@@ -129,7 +163,9 @@ export class ShellFeedback {
       const now = performance.now();
       this._lastLoadingFeedbackUpdateAt = now;
       this._updateGlobalLoadingFeedback(now);
-      const noticeNeedsTicker = Number.isFinite(this._globalStatusNotice?.hideAt);
+      const noticeNeedsTicker = Number.isFinite(
+        this._globalStatusNotice?.hideAt,
+      );
       if (this._loadingFeedbackState?.phase === 'idle' && !noticeNeedsTicker) {
         this._stopLoadingFeedbackTicker();
       }
@@ -158,7 +194,11 @@ export class ShellFeedback {
     clearInterval(this._trafficChipTicker);
     clearTimeout(this._toastTimer);
     this._trafficChipTicker = this._toastTimer = null;
-    if (this._loadingVisibilityHandler) document.removeEventListener('visibilitychange', this._loadingVisibilityHandler);
+    if (this._loadingVisibilityHandler)
+      document.removeEventListener(
+        'visibilitychange',
+        this._loadingVisibilityHandler,
+      );
     this._loadingVisibilityHandler = null;
     disposeSplitFlap(this._globalLoadingLabel);
     disposeSplitFlap(this._trafficSyncLabel);

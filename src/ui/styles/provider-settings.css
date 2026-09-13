@@ -17,7 +17,11 @@
   font-family: var(--font-mono);
   font-size: 0.6rem;
   letter-spacing: 0.09rem;
-  background: linear-gradient(145deg, rgba(10, 27, 37, 0.92), rgba(7, 13, 22, 0.9));
+  background: linear-gradient(
+    145deg,
+    rgba(10, 27, 37, 0.92),
+    rgba(7, 13, 22, 0.9)
+  );
   border: 1px solid rgba(54, 220, 255, 0.38);
   border-radius: 0.42rem;
   box-shadow:
@@ -26,12 +30,19 @@
   backdrop-filter: blur(18px) saturate(1.2);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
   cursor: pointer;
-  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 #key-setup-chip:hover,
 #key-setup-chip:focus-visible {
-  background: linear-gradient(145deg, rgba(14, 38, 51, 0.95), rgba(9, 18, 28, 0.93));
+  background: linear-gradient(
+    145deg,
+    rgba(14, 38, 51, 0.95),
+    rgba(9, 18, 28, 0.93)
+  );
   border-color: rgba(54, 220, 255, 0.7);
   outline: none;
   transform: translateY(-1px);
@@ -42,7 +53,9 @@
   font-size: 0.95rem;
 }
 
-#key-setup-chip[hidden] { display: none; }
+#key-setup-chip[hidden] {
+  display: none;
+}
 
 #key-setup {
   position: fixed;
@@ -70,12 +83,16 @@
   -webkit-backdrop-filter: blur(28px) saturate(1.25);
   opacity: 0;
   transform: translate(-50%, calc(-50% + 0.8rem)) scale(0.985);
-  transition: opacity 220ms ease, transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:
+    opacity 220ms ease,
+    transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
   pointer-events: none;
 }
 
 /* Same cascade note as the launcher: an author display beats [hidden]. */
-#key-setup[hidden] { display: none; }
+#key-setup[hidden] {
+  display: none;
+}
 
 #key-setup.visible {
   opacity: 1;
@@ -87,7 +104,12 @@
   position: absolute;
   inset: 0 0 auto;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(54, 220, 255, 0.8), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(54, 220, 255, 0.8),
+    transparent
+  );
   box-shadow: 0 0 1rem rgba(54, 220, 255, 0.45);
   pointer-events: none;
 }
@@ -105,7 +127,9 @@
   text-transform: uppercase;
 }
 
-.key-setup-kicker { color: rgba(54, 220, 255, 0.86); }
+.key-setup-kicker {
+  color: rgba(54, 220, 255, 0.86);
+}
 
 .key-setup-close {
   display: grid;
@@ -116,7 +140,9 @@
   border: 1px solid transparent;
   border-radius: 0.3rem;
   cursor: pointer;
-  transition: color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .key-setup-close:hover,
@@ -126,7 +152,9 @@
   outline: none;
 }
 
-.key-setup-close .material-symbols-outlined { font-size: 1rem; }
+.key-setup-close .material-symbols-outlined {
+  font-size: 1rem;
+}
 
 #key-setup h2 {
   margin-top: 0.6rem;
@@ -163,7 +191,9 @@
   scrollbar-gutter: stable;
 }
 
-.key-setup-rows::-webkit-scrollbar { width: 6px; }
+.key-setup-rows::-webkit-scrollbar {
+  width: 6px;
+}
 .key-setup-rows::-webkit-scrollbar-thumb {
   background: rgba(54, 220, 255, 0.45);
   border-radius: 3px;
@@ -209,7 +239,9 @@
   box-shadow: 0 0 0.5rem rgba(84, 227, 156, 0.66);
 }
 
-.key-setup-tier { font-size: 0.55rem; }
+.key-setup-tier {
+  font-size: 0.55rem;
+}
 
 .key-setup-exposed {
   padding: 0.05rem 0.3rem;
@@ -264,9 +296,13 @@
   outline: none;
 }
 
-.key-setup-fields input::placeholder { color: rgba(148, 178, 188, 0.42); }
+.key-setup-fields input::placeholder {
+  color: rgba(148, 178, 188, 0.42);
+}
 
-.key-setup-footer { margin-top: 0.85rem; }
+.key-setup-footer {
+  margin-top: 0.85rem;
+}
 
 .key-setup-apply {
   padding: 0.5rem 0.95rem;
@@ -318,7 +354,9 @@ body.scene-playback-mode #key-setup {
 
 @media (max-width: 620px) {
   /* Clear the dock. Desktop-first app; this is a courtesy, not a layout. */
-  #key-setup-chip { bottom: 5.8rem; }
+  #key-setup-chip {
+    bottom: 5.8rem;
+  }
 }
 
 /* Provider Settings additions: externally-managed badge + per-row remove. */
@@ -344,7 +382,9 @@ body.scene-playback-mode #key-setup {
   border: 1px solid rgba(255, 170, 150, 0.3);
   border-radius: 0.32rem;
   cursor: pointer;
-  transition: color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .key-setup-remove:hover,

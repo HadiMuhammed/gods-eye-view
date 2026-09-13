@@ -74,10 +74,14 @@
   letter-spacing: 1.35px;
   text-transform: uppercase;
   transform: translateX(-50%);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34), 0 0 14px rgba(0, 212, 255, 0.08);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.34),
+    0 0 14px rgba(0, 212, 255, 0.08);
   pointer-events: none;
 }
-#global-loading-status[hidden] { display: none; }
+#global-loading-status[hidden] {
+  display: none;
+}
 #global-loading-label {
   color: rgba(184, 244, 255, 0.92);
 }
@@ -92,25 +96,49 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-#global-loading-status:is([data-state='complete'], [data-state='cancelled'], [data-state='error']) {
+#global-loading-status:is(
+  [data-state='complete'],
+  [data-state='cancelled'],
+  [data-state='error']
+) {
   justify-content: center;
   text-align: center;
 }
-#global-loading-status:is([data-state='complete'], [data-state='cancelled'], [data-state='error']) #global-loading-detail {
+#global-loading-status:is(
+    [data-state='complete'],
+    [data-state='cancelled'],
+    [data-state='error']
+  )
+  #global-loading-detail {
   display: none;
 }
-#global-loading-status[data-state='error'] { border-color: rgba(255, 98, 82, 0.55); color: #ff9b8e; }
+#global-loading-status[data-state='error'] {
+  border-color: rgba(255, 98, 82, 0.55);
+  color: #ff9b8e;
+}
 #global-loading-status[data-state='error'] #global-loading-label,
-#global-loading-status[data-state='error'] #global-loading-detail { color: #ff9b8e; }
-#global-loading-status[data-state='cancelled'] { color: #ffd488; }
-#global-loading-status[data-state='retry'] { border-color: rgba(255, 212, 136, 0.55); }
+#global-loading-status[data-state='error'] #global-loading-detail {
+  color: #ff9b8e;
+}
+#global-loading-status[data-state='cancelled'] {
+  color: #ffd488;
+}
+#global-loading-status[data-state='retry'] {
+  border-color: rgba(255, 212, 136, 0.55);
+}
 #global-loading-status[data-state='retry'] #global-loading-label,
-#global-loading-status[data-state='retry'] #global-loading-detail { color: #ffd488; }
+#global-loading-status[data-state='retry'] #global-loading-detail {
+  color: #ffd488;
+}
 #global-loading-status[data-state='cancelled'] #global-loading-label,
-#global-loading-status[data-state='cancelled'] #global-loading-detail { color: #ffd488; }
+#global-loading-status[data-state='cancelled'] #global-loading-detail {
+  color: #ffd488;
+}
 #global-loading-status[data-state='acquiring'] {
   border-color: rgba(0, 212, 255, 0.42);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34), 0 0 18px rgba(0, 212, 255, 0.12);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.34),
+    0 0 18px rgba(0, 212, 255, 0.12);
 }
 
 .share-icon {
@@ -141,8 +169,12 @@
   text-transform: uppercase;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.22s ease, transform 0.22s ease;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34), 0 0 14px rgba(0, 212, 255, 0.08);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.34),
+    0 0 14px rgba(0, 212, 255, 0.08);
 }
 
 /* Stacked below the traffic chip so both can show at once */
@@ -270,21 +302,43 @@
    them. */
 .gev-flap-sizing {
   display: inline-block;
-  transition: width var(--gev-flap-total, 500ms) cubic-bezier(0.2, 0.75, 0.25, 1);
+  transition: width var(--gev-flap-total, 500ms)
+    cubic-bezier(0.2, 0.75, 0.25, 1);
 }
 /* The old leaf hinges down and away on the cell's midline. */
 @keyframes gev-flap-out {
-  0% { transform: rotateX(0deg); opacity: 1; }
-  48% { transform: rotateX(-88deg); opacity: 0.5; }
-  100% { transform: rotateX(-90deg); opacity: 0; }
+  0% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+  48% {
+    transform: rotateX(-88deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: rotateX(-90deg);
+    opacity: 0;
+  }
 }
 /* The new leaf waits for the old one to clear, then drops in and settles
    with a single small overshoot — the mechanical clack. */
 @keyframes gev-flap-in {
-  0% { transform: rotateX(90deg); opacity: 0; }
-  46% { transform: rotateX(90deg); opacity: 0; }
-  78% { transform: rotateX(-7deg); opacity: 1; }
-  100% { transform: rotateX(0deg); opacity: 1; }
+  0% {
+    transform: rotateX(90deg);
+    opacity: 0;
+  }
+  46% {
+    transform: rotateX(90deg);
+    opacity: 0;
+  }
+  78% {
+    transform: rotateX(-7deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
 }
 /* Matches the .cockpit-roll-track treatment: collapse the duration rather
    than dropping the animation, so the final frame still lands the glyph.
@@ -322,7 +376,10 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease,
+    transform 0.3s ease;
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
 }
 
@@ -331,4 +388,3 @@
   visibility: visible;
   transform: translateX(-50%) translateY(0);
 }
-

@@ -12,7 +12,11 @@
 #control-panel .panel-glow {
   position: absolute;
   inset: -30px;
-  background: radial-gradient(ellipse at center bottom, var(--accent-dim) 0%, transparent 60%);
+  background: radial-gradient(
+    ellipse at center bottom,
+    var(--accent-dim) 0%,
+    transparent 60%
+  );
   filter: blur(30px);
   opacity: 0.4;
   pointer-events: none;
@@ -185,7 +189,11 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 100%
+  );
   opacity: 0;
   transition: opacity var(--transition-fast);
 }
@@ -264,7 +272,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.8s ease, visibility 0.8s ease;
+  transition:
+    opacity 0.8s ease,
+    visibility 0.8s ease;
 }
 
 #loading-screen.hidden {
@@ -287,8 +297,15 @@
 }
 
 @keyframes logo-pulse {
-  0%, 100% { opacity: 0.72; transform: scale(0.98); }
-  50% { opacity: 1; transform: scale(1.02); }
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
 }
 
 .loader-content h2 {
@@ -309,8 +326,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* ── Post-Processing Toggles ─────────────────── */
@@ -332,7 +354,9 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--panel-radius);
   background: var(--glass-bg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(24px) saturate(1.4);
   -webkit-backdrop-filter: blur(24px) saturate(1.4);
 }
@@ -389,7 +413,9 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--panel-radius);
   background: var(--glass-bg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(24px) saturate(1.4);
   -webkit-backdrop-filter: blur(24px) saturate(1.4);
   cursor: default;
@@ -461,7 +487,11 @@
   font-size: 14px;
   font-weight: 400;
   font-style: normal;
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 20;
 }
 
 .pp-label {
@@ -600,7 +630,7 @@
   outline-offset: 2px;
 }
 .gev-quantitative-slider:disabled {
-  opacity: .42;
+  opacity: 0.42;
   cursor: not-allowed;
 }
 .gev-slider-value {
@@ -608,7 +638,7 @@
   color: var(--accent);
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: .5px;
+  letter-spacing: 0.5px;
   text-align: right;
   flex-shrink: 0;
 }
@@ -793,7 +823,9 @@
 }
 
 /* Proximity / All segmented control under the 3D toggle */
-#models3d-mode-row { min-width: 184px; }
+#models3d-mode-row {
+  min-width: 184px;
+}
 .pp-mode-seg {
   display: flex;
   flex: 1;
@@ -812,11 +844,21 @@
   letter-spacing: 0.6px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 }
-.pp-mode-btn + .pp-mode-btn { border-left: 1px solid rgba(255, 255, 255, 0.14); }
-.pp-mode-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-primary); }
-.pp-mode-btn.active { background: var(--accent); color: #000; }
+.pp-mode-btn + .pp-mode-btn {
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+.pp-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+.pp-mode-btn.active {
+  background: var(--accent);
+  color: #000;
+}
 
 /* These controls also move into Cockpit Display; keep focus on the control
    itself and inside clipped button groups, independent of selection color. */
@@ -913,8 +955,13 @@ body.ui-clean-view #scene-runtime.active {
 }
 
 @keyframes detection-pulse {
-  0%, 100% { box-shadow: 0 0 12px rgba(0, 255, 80, 0.15); }
-  50% { box-shadow: 0 0 22px rgba(0, 255, 80, 0.35); }
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(0, 255, 80, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(0, 255, 80, 0.35);
+  }
 }
 
 /* ── Parameter Slider Panel ──────────────────── */
@@ -942,7 +989,10 @@ body.ui-clean-view #scene-runtime.active {
   opacity: 0;
   visibility: hidden;
   transform: translateY(6px);
-  transition: opacity var(--transition-smooth), visibility var(--transition-smooth), transform var(--transition-smooth);
+  transition:
+    opacity var(--transition-smooth),
+    visibility var(--transition-smooth),
+    transform var(--transition-smooth);
 }
 
 #param-slider-panel::-webkit-scrollbar {
@@ -988,7 +1038,12 @@ body.ui-clean-view #scene-runtime.active {
 }
 
 #param-slider-panel:not(.collapsed) .param-panel-divider {
-  background: linear-gradient(90deg, rgb(0 212 255 / 28%), rgba(0, 212, 255, 0.18) 58%, transparent);
+  background: linear-gradient(
+    90deg,
+    rgb(0 212 255 / 28%),
+    rgba(0, 212, 255, 0.18) 58%,
+    transparent
+  );
 }
 
 .param-slider-row {
@@ -1058,4 +1113,3 @@ body.ui-clean-view #scene-runtime.active {
   text-align: right;
   flex-shrink: 0;
 }
-

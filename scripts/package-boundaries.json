@@ -425,9 +425,7 @@
     "external": []
   },
   "ui-shell": {
-    "exports": [
-      "./ui/shell"
-    ],
+    "exports": ["./ui/shell"],
     "modules": [
       "src/bloom.js",
       "src/cctvFocusPolicy.js",
@@ -522,14 +520,10 @@
       "src/worldFocus.js",
       "src/ui/uiLifetime.js"
     ],
-    "external": [
-      "cesium"
-    ]
+    "external": ["cesium"]
   },
   "ui-styles": {
-    "exports": [
-      "./ui/styles"
-    ],
+    "exports": ["./ui/styles"],
     "modules": [
       "src/ui/styles.js",
       "style.css",

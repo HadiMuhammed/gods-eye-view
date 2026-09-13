@@ -4,7 +4,12 @@ const PANEL_POSITION_STORAGE_VERSION = 'v8';
 const PANEL_Z_BASE = 100;
 const PANEL_Z_MAX = 139;
 export class PanelPositionControls {
-  constructor({ syncPanelCollapseButton, layoutRightPanels, syncCctvPanelViewport, showToast }) {
+  constructor({
+    syncPanelCollapseButton,
+    layoutRightPanels,
+    syncCctvPanelViewport,
+    showToast,
+  }) {
     this._syncPanelCollapseButton = syncPanelCollapseButton;
     this._layoutRightPanels = layoutRightPanels;
     this._syncCctvPanelViewport = syncCctvPanelViewport;
@@ -17,7 +22,9 @@ export class PanelPositionControls {
     this.destroyed = false;
   }
   listen(target, type, callback) {
-    const listener = (event) => { if (!this.destroyed) callback(event); };
+    const listener = (event) => {
+      if (!this.destroyed) callback(event);
+    };
     target.addEventListener(type, listener);
     this.removers.push(() => target.removeEventListener(type, listener));
   }
@@ -35,10 +42,13 @@ export class PanelPositionControls {
       const marker = `godsEyeView.${PANEL_POSITION_STORAGE_VERSION}.layoutResetNotified`;
       if (localStorage.getItem(marker)) return;
       localStorage.setItem(marker, '1');
-      const hadOldPositions = Object.keys(localStorage)
-        .some((key) => key.startsWith('godsEyeView.v6.panelPos.'));
+      const hadOldPositions = Object.keys(localStorage).some((key) =>
+        key.startsWith('godsEyeView.v6.panelPos.'),
+      );
       if (hadOldPositions) {
-        this._showToast('Panel layout updated — positions reset to new defaults');
+        this._showToast(
+          'Panel layout updated — positions reset to new defaults',
+        );
       }
     } catch {
       // storage unavailable
@@ -63,7 +73,9 @@ export class PanelPositionControls {
     // full row set a frame or two later, so the restore-time clamp used a stale (shorter) height and
     // the panel could still hang off the bottom (audit U2). Re-clamp on every size change.
     if (this._ppToggles && typeof ResizeObserver !== 'undefined') {
-      this._draggableResizeObserver = new ResizeObserver(() => this._reclampDraggablePanels());
+      this._draggableResizeObserver = new ResizeObserver(() =>
+        this._reclampDraggablePanels(),
+      );
       this._draggableResizeObserver.observe(this._ppToggles);
     }
   }
@@ -105,7 +117,10 @@ export class PanelPositionControls {
 
   _savePanelCollapsedState(panelId, collapsed) {
     try {
-      localStorage.setItem(this._panelCollapseStorageKey(panelId), collapsed ? '1' : '0');
+      localStorage.setItem(
+        this._panelCollapseStorageKey(panelId),
+        collapsed ? '1' : '0',
+      );
     } catch {
       // storage unavailable
     }
@@ -124,10 +139,15 @@ export class PanelPositionControls {
       const raw = localStorage.getItem(this._panelStorageKey(panelId));
       if (!raw) return;
       const pos = JSON.parse(raw);
-      if (!pos || typeof pos.left !== 'number' || typeof pos.top !== 'number') return;
+      if (!pos || typeof pos.left !== 'number' || typeof pos.top !== 'number')
+        return;
       // Clamp to the viewport: a position saved at one window size would otherwise land off-screen at
       // another (audit U2 — observed a panel at x:-192). The drag handler clamps; restore must too.
-      const { left, top } = this._clampToViewport(Math.round(pos.left), Math.round(pos.top), panelEl);
+      const { left, top } = this._clampToViewport(
+        Math.round(pos.left),
+        Math.round(pos.top),
+        panelEl,
+      );
       panelEl.style.left = `${left}px`;
       panelEl.style.top = `${top}px`;
       panelEl.style.right = 'auto';
@@ -153,10 +173,13 @@ export class PanelPositionControls {
   _savePanelPosition(panelId, panelEl) {
     const rect = panelEl.getBoundingClientRect();
     try {
-      localStorage.setItem(this._panelStorageKey(panelId), JSON.stringify({
-        left: Math.round(rect.left),
-        top: Math.round(rect.top),
-      }));
+      localStorage.setItem(
+        this._panelStorageKey(panelId),
+        JSON.stringify({
+          left: Math.round(rect.left),
+          top: Math.round(rect.top),
+        }),
+      );
     } catch {
       // storage unavailable
     }
@@ -187,7 +210,12 @@ export class PanelPositionControls {
     this.listen(handleEl, 'pointerdown', (event) => {
       if (event.button !== 0) return;
       if (event.target.closest('.panel-collapse-btn')) return;
-      if (event.target.closest('input, select, option, button:not(.panel-collapse-btn)')) return;
+      if (
+        event.target.closest(
+          'input, select, option, button:not(.panel-collapse-btn)',
+        )
+      )
+        return;
 
       this._cancelDrag?.();
       event.preventDefault();

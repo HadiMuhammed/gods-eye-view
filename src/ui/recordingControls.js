@@ -4,7 +4,11 @@ export class RecordingControls {
     this._syncShareState = syncShareState;
     this.destroyed = false;
     this._recordingMode = false;
-    this._recordingConfig = { hidePanels: true, hudMode: 'minimal', safeFrame: '16:9' };
+    this._recordingConfig = {
+      hidePanels: true,
+      hudMode: 'minimal',
+      safeFrame: '16:9',
+    };
     this._preRecordingHudState = null;
     this._safeFrameOverlay = document.getElementById('safe-frame-overlay');
     this._safeFrameBox = document.getElementById('safe-frame-box');
@@ -15,21 +19,34 @@ export class RecordingControls {
   _initRecordingOverlay() {
     if (this.destroyed) return;
     if (!this._safeFrameOverlay || !this._safeFrameBox) return;
-    this._safeFrameOverlay.classList.remove('active', 'ratio-9-16', 'ratio-16-9');
+    this._safeFrameOverlay.classList.remove(
+      'active',
+      'ratio-9-16',
+      'ratio-16-9',
+    );
   }
 
   setRecordingMode(enabled, options = {}) {
     if (this.destroyed) return;
-    const { hidePanels = true, hudMode = 'minimal', safeFrame = '16:9' } = options;
+    const {
+      hidePanels = true,
+      hudMode = 'minimal',
+      safeFrame = '16:9',
+    } = options;
     this._recordingMode = !!enabled;
     this._recordingConfig = { hidePanels, hudMode, safeFrame };
 
-    document.body.classList.toggle('recording-mode', this._recordingMode && hidePanels);
+    document.body.classList.toggle(
+      'recording-mode',
+      this._recordingMode && hidePanels,
+    );
 
     if (this._safeFrameOverlay) {
       this._safeFrameOverlay.classList.remove('ratio-9-16', 'ratio-16-9');
       this._safeFrameOverlay.classList.toggle('active', this._recordingMode);
-      this._safeFrameOverlay.classList.add(safeFrame === '9:16' ? 'ratio-9-16' : 'ratio-16-9');
+      this._safeFrameOverlay.classList.add(
+        safeFrame === '9:16' ? 'ratio-9-16' : 'ratio-16-9',
+      );
     }
 
     if (this._recordingMode) {
@@ -46,7 +63,8 @@ export class RecordingControls {
       } else if (hudMode === 'full' || hudMode === 'minimal') {
         this.hud.setMode('on');
         this.hud.setVariant(hudMode === 'minimal' ? 'minimal' : 'tactical');
-        if (this._hudLayoutSelect) this._hudLayoutSelect.value = this.hud.getVariant();
+        if (this._hudLayoutSelect)
+          this._hudLayoutSelect.value = this.hud.getVariant();
       } else {
         this.hud.setMode('auto');
       }
@@ -55,11 +73,16 @@ export class RecordingControls {
       this._preRecordingHudState = null;
       if (saved) {
         this.hud.setVariant(saved.variant);
-        if (this._hudLayoutSelect) this._hudLayoutSelect.value = this.hud.getVariant();
+        if (this._hudLayoutSelect)
+          this._hudLayoutSelect.value = this.hud.getVariant();
       }
       this.hud.setMode(saved ? saved.mode : 'auto');
       if (this._safeFrameOverlay) {
-        this._safeFrameOverlay.classList.remove('active', 'ratio-9-16', 'ratio-16-9');
+        this._safeFrameOverlay.classList.remove(
+          'active',
+          'ratio-9-16',
+          'ratio-16-9',
+        );
       }
     }
     this._hudBtn.classList.toggle('active', this.hud.visible);

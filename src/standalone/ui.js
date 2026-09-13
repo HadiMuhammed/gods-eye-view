@@ -1,7 +1,14 @@
 /** Compose UI controls with the application's existing engines and layer instances. */
 import { StyleManager as ApplicationShell } from '../ui/applicationShell.js';
 import { LocationSearch } from '../ui/location.js';
-import { CITY_POIS, GLOBE_VIEW, flyToGlobeView, flyToPresetLocation, flyToPOI, searchAndFlyTo } from '../locations.js';
+import {
+  CITY_POIS,
+  GLOBE_VIEW,
+  flyToGlobeView,
+  flyToPresetLocation,
+  flyToPOI,
+  searchAndFlyTo,
+} from '../locations.js';
 import { interruptCameraMotion } from '../cameraVerbs.js';
 import { IntelHUD } from '../hud.js';
 import { ShareLinkManager } from '../sharelink.js';
@@ -12,8 +19,14 @@ import {
   isCelestialRingStyleSupported,
   setKeyholeFadeTuning,
 } from '../celestialRing.js';
-import { destroyTrackedReadout, initTrackedReadout } from '../data/trackedReadout.js';
-import { destroyWorldOverlay, initWorldOverlay } from '../overlays/worldOverlay.js';
+import {
+  destroyTrackedReadout,
+  initTrackedReadout,
+} from '../data/trackedReadout.js';
+import {
+  destroyWorldOverlay,
+  initWorldOverlay,
+} from '../overlays/worldOverlay.js';
 import {
   destroyDetection,
   initDetection,
@@ -47,7 +60,11 @@ import {
   warmGroundFloor,
 } from '../data/groundFloor.js';
 import { sampleMeshFloorCells } from '../data/meshFloorSampler.js';
-import { holdContinuousRender, releaseContinuousRender, governorRequestRender } from '../renderGovernor.js';
+import {
+  holdContinuousRender,
+  releaseContinuousRender,
+  governorRequestRender,
+} from '../renderGovernor.js';
 import {
   setScopeMaskEnabled,
   isScopeMaskEnabled,
@@ -65,69 +82,72 @@ import {
 
 export class StyleManager extends ApplicationShell {
   constructor(viewer, options = {}) {
-    super(viewer, { ...options, services: {
-      CITY_POIS,
-      GLOBE_VIEW,
-      flyToGlobeView,
-      flyToPresetLocation,
-      flyToPOI,
-      searchAndFlyTo,
-      interruptCameraMotion,
-      IntelHUD,
-      ShareLinkManager,
-      OrbitController,
-      CelestialRing,
-      getKeyholeFadeTuning,
-      isCelestialRingStyleSupported,
-      setKeyholeFadeTuning,
-      destroyTrackedReadout,
-      initTrackedReadout,
-      destroyWorldOverlay,
-      initWorldOverlay,
-      destroyDetection,
-      initDetection,
-      cycleDetectionMode,
-      readDetectionDiagnostics,
-      getDetectionTuning,
-      getDetectionMode,
-      setDetectionModeByLabel,
-      suspendDetection,
-      resumeDetection,
-      setDetectionStyle,
-      setDetectionTuning,
-      trafficLayer,
-      flightsLayer,
-      militaryFlightsLayer,
-      isTr3b,
-      toggleTr3b,
-      satellitesLayer,
-      cctvLayer,
-      radioLayer,
-      bikeshareLayer,
-      aisLiveVesselsLayer,
-      militaryAwarenessLayer,
-      militaryInstallationsLayer,
-      rocketLaunchesLayer,
-      cachedGroundFloor,
-      cachedMeshFloor,
-      GROUND_FLOOR_LIFT_M,
-      meshFloorPreferred,
-      warmGroundFloor,
-      sampleMeshFloorCells,
-      holdContinuousRender,
-      releaseContinuousRender,
-      governorRequestRender,
-      setScopeMaskEnabled,
-      isScopeMaskEnabled,
-      setScopeMaskFeather,
-      getScopeMaskFeather,
-      setScopeTerminusOverride,
-      getScopeTerminusOverride,
-      clampScopeTerminusPct,
-      fetchRegionalBrief,
-      regionalDistanceM,
-      weatherCodeLabel,
-      LocationSearch
-    } });
+    super(viewer, {
+      ...options,
+      services: {
+        CITY_POIS,
+        GLOBE_VIEW,
+        flyToGlobeView,
+        flyToPresetLocation,
+        flyToPOI,
+        searchAndFlyTo,
+        interruptCameraMotion,
+        IntelHUD,
+        ShareLinkManager,
+        OrbitController,
+        CelestialRing,
+        getKeyholeFadeTuning,
+        isCelestialRingStyleSupported,
+        setKeyholeFadeTuning,
+        destroyTrackedReadout,
+        initTrackedReadout,
+        destroyWorldOverlay,
+        initWorldOverlay,
+        destroyDetection,
+        initDetection,
+        cycleDetectionMode,
+        readDetectionDiagnostics,
+        getDetectionTuning,
+        getDetectionMode,
+        setDetectionModeByLabel,
+        suspendDetection,
+        resumeDetection,
+        setDetectionStyle,
+        setDetectionTuning,
+        trafficLayer,
+        flightsLayer,
+        militaryFlightsLayer,
+        isTr3b,
+        toggleTr3b,
+        satellitesLayer,
+        cctvLayer,
+        radioLayer,
+        bikeshareLayer,
+        aisLiveVesselsLayer,
+        militaryAwarenessLayer,
+        militaryInstallationsLayer,
+        rocketLaunchesLayer,
+        cachedGroundFloor,
+        cachedMeshFloor,
+        GROUND_FLOOR_LIFT_M,
+        meshFloorPreferred,
+        warmGroundFloor,
+        sampleMeshFloorCells,
+        holdContinuousRender,
+        releaseContinuousRender,
+        governorRequestRender,
+        setScopeMaskEnabled,
+        isScopeMaskEnabled,
+        setScopeMaskFeather,
+        getScopeMaskFeather,
+        setScopeTerminusOverride,
+        getScopeTerminusOverride,
+        clampScopeTerminusPct,
+        fetchRegionalBrief,
+        regionalDistanceM,
+        weatherCodeLabel,
+        LocationSearch,
+      },
+    });
   }
 }

@@ -31,7 +31,9 @@
   -webkit-backdrop-filter: blur(28px) saturate(1.25);
   opacity: 0;
   transform: translate(-50%, calc(-50% + 0.8rem)) scale(0.985);
-  transition: opacity 220ms ease, transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:
+    opacity 220ms ease,
+    transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
   /* Inert until revealed AND again while fading out, so a click during the
      dismiss animation cannot launch a second mission behind the fade. */
   pointer-events: none;
@@ -55,7 +57,12 @@
   position: absolute;
   inset: 0 0 auto;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(54, 220, 255, 0.8), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(54, 220, 255, 0.8),
+    transparent
+  );
   box-shadow: 0 0 1rem rgba(54, 220, 255, 0.45);
   pointer-events: none;
 }
@@ -73,7 +80,9 @@
   text-transform: uppercase;
 }
 
-.first-run-kicker { color: rgba(54, 220, 255, 0.86); }
+.first-run-kicker {
+  color: rgba(54, 220, 255, 0.86);
+}
 
 #first-run-launcher h2 {
   margin-top: 0.6rem;
@@ -107,7 +116,9 @@
   scrollbar-gutter: stable;
 }
 
-.first-run-choices::-webkit-scrollbar { width: 6px; }
+.first-run-choices::-webkit-scrollbar {
+  width: 6px;
+}
 .first-run-choices::-webkit-scrollbar-thumb {
   background: rgba(54, 220, 255, 0.45);
   border-radius: 3px;
@@ -127,7 +138,10 @@
   border: 1px solid rgba(100, 200, 220, 0.18);
   border-radius: 0.42rem;
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .first-run-choices button:hover,
@@ -173,7 +187,9 @@
 .first-run-arrow {
   color: rgba(54, 220, 255, 0.4);
   font-size: 1rem;
-  transition: transform var(--transition-fast), color var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .first-run-choices button:hover .first-run-arrow,
@@ -212,7 +228,9 @@
   cursor: pointer;
 }
 
-.first-run-suppress:hover { color: rgba(225, 244, 248, 0.92); }
+.first-run-suppress:hover {
+  color: rgba(225, 244, 248, 0.92);
+}
 
 /* The live region carries mission progress and failures, so it owns a full row
    and reserves its height — otherwise the card resizes as it speaks. */
@@ -249,15 +267,31 @@ body.scene-playback-mode #first-run-launcher {
     transform: translate(-50%, 0.8rem) scale(0.985);
   }
 
-  #first-run-launcher.visible { transform: translate(-50%, 0) scale(1); }
+  #first-run-launcher.visible {
+    transform: translate(-50%, 0) scale(1);
+  }
   /* Five tiles have to clear the dock on a 375 x 812 phone, so the rows tighten
      and the redundant "ESC to dismiss" hint (no ESC key on a phone) drops. */
-  #first-run-launcher h2 { margin-top: 0.45rem; }
-  #first-run-description { margin-top: 0.25rem; font-size: 0.72rem; }
-  .first-run-choices { margin-top: 0.75rem; }
-  .first-run-choices button { min-height: 3rem; padding: 0.45rem 0.6rem; }
-  .first-run-choices small { font-size: 0.62rem; }
-  .first-run-footer > span:last-child { display: none; }
+  #first-run-launcher h2 {
+    margin-top: 0.45rem;
+  }
+  #first-run-description {
+    margin-top: 0.25rem;
+    font-size: 0.72rem;
+  }
+  .first-run-choices {
+    margin-top: 0.75rem;
+  }
+  .first-run-choices button {
+    min-height: 3rem;
+    padding: 0.45rem 0.6rem;
+  }
+  .first-run-choices small {
+    font-size: 0.62rem;
+  }
+  .first-run-footer > span:last-child {
+    display: none;
+  }
 }
 
 /* Short viewports — landscape phones, small laptop windows. The chrome tightens
@@ -266,15 +300,38 @@ body.scene-playback-mode #first-run-launcher {
    fits. (It was dropped here while there were five; the tile that went is
    exactly why it can come back.) */
 @media (max-height: 620px) {
-  #first-run-launcher { padding: 0.75rem 0.85rem; }
-  #first-run-launcher h2 { margin-top: 0.3rem; font-size: 1.1rem; }
-  #first-run-description { margin-top: 0.2rem; font-size: 0.7rem; line-height: 1.4; }
-  .first-run-choices { margin-top: 0.55rem; }
-  .first-run-choices button { min-height: 2.7rem; padding: 0.36rem 0.6rem; }
-  .first-run-choices strong { font-size: 0.68rem; }
-  .first-run-choices small { font-size: 0.6rem; }
-  .first-run-footer { margin-top: 0.5rem; }
-  .first-run-note { margin-top: 0.3rem; min-height: 0; }
+  #first-run-launcher {
+    padding: 0.75rem 0.85rem;
+  }
+  #first-run-launcher h2 {
+    margin-top: 0.3rem;
+    font-size: 1.1rem;
+  }
+  #first-run-description {
+    margin-top: 0.2rem;
+    font-size: 0.7rem;
+    line-height: 1.4;
+  }
+  .first-run-choices {
+    margin-top: 0.55rem;
+  }
+  .first-run-choices button {
+    min-height: 2.7rem;
+    padding: 0.36rem 0.6rem;
+  }
+  .first-run-choices strong {
+    font-size: 0.68rem;
+  }
+  .first-run-choices small {
+    font-size: 0.6rem;
+  }
+  .first-run-footer {
+    margin-top: 0.5rem;
+  }
+  .first-run-note {
+    margin-top: 0.3rem;
+    min-height: 0;
+  }
 }
 
 /* A soft edge on the list, so a tile cut by the fold reads as "more below"
@@ -283,8 +340,16 @@ body.scene-playback-mode #first-run-launcher {
    promise content that is not there, which is the opposite of the affordance
    it is meant to be. Decorative only: the list scrolls under it. */
 .first-run-choices[data-scrollable='true'] {
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.4rem), transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 1.4rem), transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 calc(100% - 1.4rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 calc(100% - 1.4rem),
+    transparent 100%
+  );
 }
 
 /* Scrolled to the end, there is nothing left to promise, so the fade lifts.
@@ -308,8 +373,11 @@ body.scene-playback-mode #first-run-launcher {
 @media (prefers-reduced-motion: reduce) {
   #first-run-launcher,
   .first-run-choices button,
-  .first-run-arrow { transition: none; }
+  .first-run-arrow {
+    transition: none;
+  }
   /* Scrolling a tile into view must not animate either. */
-  .first-run-choices { scroll-behavior: auto; }
+  .first-run-choices {
+    scroll-behavior: auto;
+  }
 }
-

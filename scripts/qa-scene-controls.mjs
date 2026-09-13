@@ -210,7 +210,11 @@ try {
   );
   // Escape can also collapse the Scene accordion. Reopen it through its
   // installed disclosure before testing the next visible user action.
-  if (await page.$eval('#scene-panel', (panel) => panel.classList.contains('collapsed')))
+  if (
+    await page.$eval('#scene-panel', (panel) =>
+      panel.classList.contains('collapsed'),
+    )
+  )
     await page.click('[data-collapse-target="scene-panel"]');
   await page.waitForSelector('#scene-download-btn', { visible: true });
   await page.click('#scene-download-btn');

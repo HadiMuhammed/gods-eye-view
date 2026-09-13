@@ -170,7 +170,13 @@
   }
 
   #command-dock #location-bar .dock-popover-content {
-    left: calc((var(--dock-side-compact) + var(--dock-side-compact) + var(--dock-voice-width) - var(--dock-popover-mobile-width)) / 2);
+    left: calc(
+      (
+          var(--dock-side-compact) + var(--dock-side-compact) +
+            var(--dock-voice-width) - var(--dock-popover-mobile-width)
+        ) /
+        2
+    );
   }
 
   #command-dock #control-panel .dock-popover-content {
@@ -182,7 +188,13 @@
        left edge — pinned by the 480 px bounds assert in
        `scripts/qa-map-source-tray.mjs`. */
     width: var(--dock-popover-mobile-width);
-    right: calc((var(--dock-side-compact) + var(--dock-side-compact) + var(--dock-voice-width) - var(--dock-popover-mobile-width)) / 2);
+    right: calc(
+      (
+          var(--dock-side-compact) + var(--dock-side-compact) +
+            var(--dock-voice-width) - var(--dock-popover-mobile-width)
+        ) /
+        2
+    );
   }
 
   /* ── Required-attribution clearance ─────────────────────────────────
@@ -213,8 +225,12 @@
     bottom: calc(100% + 3rem);
   }
 
-  #command-dock.dock-has-pinned-tray #location-bar:not(.collapsed):not(.dock-pinned) .dock-popover-content,
-  #command-dock.dock-has-pinned-tray #control-panel:not(.collapsed):not(.dock-pinned) .dock-popover-content {
+  #command-dock.dock-has-pinned-tray
+    #location-bar:not(.collapsed):not(.dock-pinned)
+    .dock-popover-content,
+  #command-dock.dock-has-pinned-tray
+    #control-panel:not(.collapsed):not(.dock-pinned)
+    .dock-popover-content {
     bottom: calc(100% + 3rem + var(--dock-pinned-stack-height));
   }
 
@@ -224,8 +240,12 @@
      top tray drops var(--dock-lower-pinned-height), landing on top of its
      pinned sibling. Naming the panel makes it (2,5,0), ahead of both the
      ordinary (2,1,0) and single-pinned (2,4,0) rules. */
-  #command-dock.dock-has-two-pinned-trays #location-bar.dock-pinned-top.dock-pinned:not(.collapsed) .dock-popover-content,
-  #command-dock.dock-has-two-pinned-trays #control-panel.dock-pinned-top.dock-pinned:not(.collapsed) .dock-popover-content {
+  #command-dock.dock-has-two-pinned-trays
+    #location-bar.dock-pinned-top.dock-pinned:not(.collapsed)
+    .dock-popover-content,
+  #command-dock.dock-has-two-pinned-trays
+    #control-panel.dock-pinned-top.dock-pinned:not(.collapsed)
+    .dock-popover-content {
     bottom: calc(100% + 3rem + var(--dock-lower-pinned-height));
   }
 }
@@ -242,14 +262,22 @@
     bottom: calc(100% + 2vh + 2.5rem);
   }
 
-  #command-dock.dock-has-pinned-tray #location-bar:not(.collapsed):not(.dock-pinned) .dock-popover-content,
-  #command-dock.dock-has-pinned-tray #control-panel:not(.collapsed):not(.dock-pinned) .dock-popover-content {
+  #command-dock.dock-has-pinned-tray
+    #location-bar:not(.collapsed):not(.dock-pinned)
+    .dock-popover-content,
+  #command-dock.dock-has-pinned-tray
+    #control-panel:not(.collapsed):not(.dock-pinned)
+    .dock-popover-content {
     bottom: calc(100% + 2vh + 2.5rem + var(--dock-pinned-stack-height));
   }
 
   /* Panel IDs for the same specificity reason as the max-width:900px block. */
-  #command-dock.dock-has-two-pinned-trays #location-bar.dock-pinned-top.dock-pinned:not(.collapsed) .dock-popover-content,
-  #command-dock.dock-has-two-pinned-trays #control-panel.dock-pinned-top.dock-pinned:not(.collapsed) .dock-popover-content {
+  #command-dock.dock-has-two-pinned-trays
+    #location-bar.dock-pinned-top.dock-pinned:not(.collapsed)
+    .dock-popover-content,
+  #command-dock.dock-has-two-pinned-trays
+    #control-panel.dock-pinned-top.dock-pinned:not(.collapsed)
+    .dock-popover-content {
     bottom: calc(100% + 2vh + 2.5rem + var(--dock-lower-pinned-height));
   }
 }
@@ -327,24 +355,39 @@
   height: var(--audio-level, 5px);
   opacity: var(--audio-opacity, 0.56);
   animation: none;
-  transition: height 70ms linear, opacity 90ms linear;
+  transition:
+    height 70ms linear,
+    opacity 90ms linear;
 }
 
-#command-dock #gev-voice-control[data-status='listening'] .gev-voice-visualizer span,
-#command-dock #gev-voice-control[data-status='executing'] .gev-voice-visualizer span {
+#command-dock
+  #gev-voice-control[data-status='listening']
+  .gev-voice-visualizer
+  span,
+#command-dock
+  #gev-voice-control[data-status='executing']
+  .gev-voice-visualizer
+  span {
   animation: none;
 }
 
-#command-dock #gev-voice-control[data-speaker='user'] :is(#gev-voice-status, #gev-voice-detail) {
+#command-dock
+  #gev-voice-control[data-speaker='user']
+  :is(#gev-voice-status, #gev-voice-detail) {
   color: #ffbf69;
 }
 
-#command-dock #gev-voice-control[data-speaker='user'] .gev-voice-visualizer span {
+#command-dock
+  #gev-voice-control[data-speaker='user']
+  .gev-voice-visualizer
+  span {
   background: linear-gradient(to top, #d98a35, #ffcf8a);
   box-shadow: 0 0 0.35rem rgba(255, 191, 105, 0.32);
 }
 
-#command-dock #gev-voice-control[data-speaker='ai'] :is(#gev-voice-status, #gev-voice-detail) {
+#command-dock
+  #gev-voice-control[data-speaker='ai']
+  :is(#gev-voice-status, #gev-voice-detail) {
   color: var(--accent);
 }
 
@@ -364,11 +407,15 @@
 
 @media (max-width: 900px) {
   #command-dock #location-bar .dock-popover-content {
-    left: calc((var(--dock-unified-width) - var(--dock-popover-mobile-width)) / 2);
+    left: calc(
+      (var(--dock-unified-width) - var(--dock-popover-mobile-width)) / 2
+    );
   }
 
   #command-dock #control-panel .dock-popover-content {
-    right: calc((var(--dock-unified-width) - var(--dock-popover-mobile-width)) / 2);
+    right: calc(
+      (var(--dock-unified-width) - var(--dock-popover-mobile-width)) / 2
+    );
   }
 }
 
@@ -417,32 +464,44 @@
   box-shadow:
     0 0 0 0.18rem rgba(232, 234, 237, 0.04),
     0 0 0.75rem rgba(232, 234, 237, 0.08);
-  transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 #command-dock .gev-mic-orbit img {
   filter: grayscale(1) saturate(0) brightness(1.65);
   opacity: 0.68;
-  transition: filter var(--transition-fast), opacity var(--transition-fast);
+  transition:
+    filter var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
 #command-dock #gev-voice-button:hover .gev-mic-orbit,
-#command-dock #gev-voice-control:is(
-  [data-status='connecting'],
-  [data-status='listening']:not([data-microphone='muted']),
-  [data-status='executing']
-) .gev-mic-orbit {
+#command-dock
+  #gev-voice-control:is(
+    [data-status='connecting'],
+    [data-status='listening']:not([data-microphone='muted']),
+    [data-status='executing']
+  )
+  .gev-mic-orbit {
   background: rgba(0, 212, 255, 0.06);
   border-color: rgba(0, 212, 255, 0.48);
-  box-shadow: 0 0 0 0.18rem rgba(0, 212, 255, 0.06), 0 0 0.9rem rgba(0, 212, 255, 0.12);
+  box-shadow:
+    0 0 0 0.18rem rgba(0, 212, 255, 0.06),
+    0 0 0.9rem rgba(0, 212, 255, 0.12);
 }
 
 #command-dock #gev-voice-button:hover .gev-mic-orbit img,
-#command-dock #gev-voice-control:is(
-  [data-status='connecting'],
-  [data-status='listening']:not([data-microphone='muted']),
-  [data-status='executing']
-) .gev-mic-orbit img {
+#command-dock
+  #gev-voice-control:is(
+    [data-status='connecting'],
+    [data-status='listening']:not([data-microphone='muted']),
+    [data-status='executing']
+  )
+  .gev-mic-orbit
+  img {
   filter: none;
   opacity: 1;
 }
@@ -470,7 +529,6 @@
   background: var(--glass-bg);
   border-color: var(--glass-border-hover);
   color: var(--accent);
-
 }
 
 #command-dock > :is(#location-bar, #control-panel).dock-pinned {
@@ -590,7 +648,9 @@
 }
 
 #gev-voice-control:not([data-status='error']):hover .gev-voice-help-tray,
-#gev-voice-control:not([data-status='error']) #gev-voice-button:focus-visible ~ .gev-voice-help-tray {
+#gev-voice-control:not([data-status='error'])
+  #gev-voice-button:focus-visible
+  ~ .gev-voice-help-tray {
   visibility: visible;
   opacity: 1;
   transform: translate(-50%, 0) scale(1);
@@ -622,10 +682,17 @@
 }
 
 #command-dock #location-bar .location-toolbar::after {
-  background: linear-gradient(90deg, rgba(232, 234, 237, 0.24), rgba(232, 234, 237, 0));
+  background: linear-gradient(
+    90deg,
+    rgba(232, 234, 237, 0.24),
+    rgba(232, 234, 237, 0)
+  );
 }
 
 #command-dock #control-panel .panel-header::after {
-  background: linear-gradient(90deg, rgba(232, 234, 237, 0), rgba(232, 234, 237, 0.24));
+  background: linear-gradient(
+    90deg,
+    rgba(232, 234, 237, 0),
+    rgba(232, 234, 237, 0.24)
+  );
 }
-

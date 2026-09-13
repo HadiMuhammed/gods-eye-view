@@ -7,7 +7,10 @@
   z-index: 145;
   display: grid;
   grid-template-areas: 'locations voice presets';
-  grid-template-columns: minmax(300px, 1fr) minmax(230px, 270px) minmax(390px, 1.15fr);
+  grid-template-columns: minmax(300px, 1fr) minmax(230px, 270px) minmax(
+      390px,
+      1.15fr
+    );
   align-items: stretch;
   width: min(94vw, 1240px);
   padding: 6px;
@@ -22,7 +25,9 @@
   backdrop-filter: blur(28px) saturate(1.35);
   -webkit-backdrop-filter: blur(28px) saturate(1.35);
   transform: translateX(-50%);
-  transition: opacity var(--transition-smooth), visibility var(--transition-smooth);
+  transition:
+    opacity var(--transition-smooth),
+    visibility var(--transition-smooth);
 }
 
 #command-dock > #location-bar,
@@ -214,7 +219,10 @@ body:not(.ui-clean-view):not(.recording-mode) #cesium-credits {
   bottom: calc(2vh + 7rem);
 }
 
-body:not(.ui-clean-view):not(.recording-mode):has(#intel-hud[data-variant='minimal'].active) #cesium-credits {
+body:not(.ui-clean-view):not(.recording-mode):has(
+    #intel-hud[data-variant='minimal'].active
+  )
+  #cesium-credits {
   right: 36px;
   left: auto;
   width: min(340px, calc(100vw - 72px)) !important;
