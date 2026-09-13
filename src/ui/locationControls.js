@@ -12,8 +12,8 @@ export class LocationControls {
     onSearch,
     onReset,
     doc = document,
-    requestFrame = requestAnimationFrame,
-    cancelFrame = cancelAnimationFrame,
+    requestFrame = (callback) => requestAnimationFrame(callback),
+    cancelFrame = (id) => cancelAnimationFrame(id),
   }) {
     Object.assign(this, {
       elements,
