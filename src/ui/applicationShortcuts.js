@@ -1,6 +1,11 @@
 const STYLE_KEYS = Object.freeze({
-  '1': 'normal', '2': 'retro', '3': 'surveillance',
-  '4': 'thermal', '5': 'anime', '6': 'noir', '7': 'snow',
+  1: 'normal',
+  2: 'retro',
+  3: 'surveillance',
+  4: 'thermal',
+  5: 'anime',
+  6: 'noir',
+  7: 'snow',
 });
 
 /**
@@ -13,10 +18,15 @@ const STYLE_KEYS = Object.freeze({
  * @param {object} options.actions Existing application operations.
  * @returns {{destroy: Function}} Synchronous, idempotent listener cleanup.
  */
-export function bindApplicationShortcuts({ documentRef, searchInput, actions }) {
+export function bindApplicationShortcuts({
+  documentRef,
+  searchInput,
+  actions,
+}) {
   const onKeyDown = (event) => {
-    const isFormControl = event.target?.matches?.('select, input, textarea')
-      || event.target === searchInput;
+    const isFormControl =
+      event.target?.matches?.('select, input, textarea') ||
+      event.target === searchInput;
     if (isFormControl && event.key !== 'Escape') return;
 
     if (STYLE_KEYS[event.key]) actions.setStyle(STYLE_KEYS[event.key]);
@@ -30,5 +40,9 @@ export function bindApplicationShortcuts({ documentRef, searchInput, actions }) 
     if (key === 'c') actions.toggleCctv();
   };
   documentRef.addEventListener('keydown', onKeyDown);
-  return { destroy() { documentRef.removeEventListener('keydown', onKeyDown); } };
+  return {
+    destroy() {
+      documentRef.removeEventListener('keydown', onKeyDown);
+    },
+  };
 }

@@ -7,12 +7,16 @@
  * @param {Document} [options.documentRef] Document used to construct rows.
  * @returns {{render: Function, clear: Function, destroy: Function}}
  */
-export function createStyleParameters({ container, documentRef = container.ownerDocument }) {
+export function createStyleParameters({
+  container,
+  documentRef = container.ownerDocument,
+}) {
   let listeners = [];
   let destroyed = false;
   const clear = () => {
     if (destroyed) return;
-    for (const [slider, listener] of listeners) slider.removeEventListener('input', listener);
+    for (const [slider, listener] of listeners)
+      slider.removeEventListener('input', listener);
     listeners = [];
     container.replaceChildren();
   };

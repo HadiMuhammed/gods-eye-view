@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bindApplicationShortcuts, createStyleParameters } from './visualInput.js';
+import {
+  bindApplicationShortcuts,
+  createStyleParameters,
+} from './visualInput.js';
 
 class Element {
   constructor(tagName = 'DIV', ownerDocument) {
@@ -11,46 +14,98 @@ class Element {
     this.attributes = new Map();
   }
   addEventListener(type, listener, capture) {
-    assert.notEqual(capture, true, 'these controls must not preempt capture-phase surfaces');
+    assert.notEqual(
+      capture,
+      true,
+      'these controls must not preempt capture-phase surfaces',
+    );
     if (!this.listeners.has(type)) this.listeners.set(type, new Set());
     this.listeners.get(type).add(listener);
   }
-  removeEventListener(type, listener) { this.listeners.get(type)?.delete(listener); }
-  emit(type, event = {}) { for (const listener of [...(this.listeners.get(type) || [])]) listener(event); }
-  setAttribute(name, value) { this.attributes.set(name, value); }
-  append(...children) { this.children.push(...children); }
-  appendChild(child) { this.children.push(child); }
-  replaceChildren(...children) { this.children = children; }
-  matches() { return ['INPUT', 'SELECT', 'TEXTAREA'].includes(this.tagName); }
+  removeEventListener(type, listener) {
+    this.listeners.get(type)?.delete(listener);
+  }
+  emit(type, event = {}) {
+    for (const listener of [...(this.listeners.get(type) || [])])
+      listener(event);
+  }
+  setAttribute(name, value) {
+    this.attributes.set(name, value);
+  }
+  append(...children) {
+    this.children.push(...children);
+  }
+  appendChild(child) {
+    this.children.push(child);
+  }
+  replaceChildren(...children) {
+    this.children = children;
+  }
+  matches() {
+    return ['INPUT', 'SELECT', 'TEXTAREA'].includes(this.tagName);
+  }
 }
 
 function shortcuts() {
   const documentRef = new Element();
   const searchInput = new Element();
   const calls = [];
-  const names = ['setStyle', 'dismissSearch', 'toggleHud', 'toggleOrbit', 'toggleCleanView', 'toggleLayers', 'cycleDetection', 'toggleCctv'];
-  const actions = Object.fromEntries(names.map((name) => [name, (...args) => calls.push([name, ...args])]));
-  const controller = bindApplicationShortcuts({ documentRef, searchInput, actions });
-  const press = (key, target = new Element(), rest = {}) => documentRef.emit('keydown', { key, target, ...rest });
+  const names = [
+    'setStyle',
+    'dismissSearch',
+    'toggleHud',
+    'toggleOrbit',
+    'toggleCleanView',
+    'toggleLayers',
+    'cycleDetection',
+    'toggleCctv',
+  ];
+  const actions = Object.fromEntries(
+    names.map((name) => [name, (...args) => calls.push([name, ...args])]),
+  );
+  const controller = bindApplicationShortcuts({
+    documentRef,
+    searchInput,
+    actions,
+  });
+  const press = (key, target = new Element(), rest = {}) =>
+    documentRef.emit('keydown', { key, target, ...rest });
   return { documentRef, searchInput, calls, controller, press };
 }
 
 test('number keys retain the seven style mappings', () => {
   const f = shortcuts();
-  for (const key of ['1', '2', '3', '4', '5', '6', '7', '8', 'Space']) f.press(key);
-  assert.deepEqual(f.calls, ['normal', 'retro', 'surveillance', 'thermal', 'anime', 'noir', 'snow'].map((style) => ['setStyle', style]));
+  for (const key of ['1', '2', '3', '4', '5', '6', '7', '8', 'Space'])
+    f.press(key);
+  assert.deepEqual(
+    f.calls,
+    ['normal', 'retro', 'surveillance', 'thermal', 'anime', 'noir', 'snow'].map(
+      (style) => ['setStyle', style],
+    ),
+  );
 });
 
 test('letter shortcuts retain uppercase handling and existing actions', () => {
   const f = shortcuts();
   for (const key of ['H', 'o', 'V', 'f', 'D', 'c']) f.press(key);
-  assert.deepEqual(f.calls, ['toggleHud', 'toggleOrbit', 'toggleCleanView', 'toggleLayers', 'cycleDetection', 'toggleCctv'].map((name) => [name]));
+  assert.deepEqual(
+    f.calls,
+    [
+      'toggleHud',
+      'toggleOrbit',
+      'toggleCleanView',
+      'toggleLayers',
+      'cycleDetection',
+      'toggleCctv',
+    ].map((name) => [name]),
+  );
 });
 
 for (const tag of ['INPUT', 'SELECT', 'TEXTAREA']) {
   test(`${tag} retains native editing, while Escape reaches search dismissal`, () => {
     const f = shortcuts();
-    for (const key of ['1', 'h', 'o', 'v', 'f', 'd', 'c']) f.press(key, new Element(tag));
+    for (const key of ['1', 'h', 'o', 'v', 'f', 'd', 'c'])
+      f.press(key, new Element(tag));
     assert.deepEqual(f.calls, []);
     f.press('Escape', new Element(tag));
     assert.deepEqual(f.calls, [['dismissSearch']]);
@@ -77,20 +132,39 @@ test('destroy synchronously removes shortcuts and a replacement binds once', () 
   f.press('h');
   assert.deepEqual(f.calls, []);
   assert.equal(f.documentRef.listeners.get('keydown').size, 0);
-  const replacement = bindApplicationShortcuts({ documentRef: f.documentRef, searchInput: f.searchInput, actions: { toggleHud: () => f.calls.push('new') } });
+  const replacement = bindApplicationShortcuts({
+    documentRef: f.documentRef,
+    searchInput: f.searchInput,
+    actions: { toggleHud: () => f.calls.push('new') },
+  });
   f.press('h');
   assert.deepEqual(f.calls, ['new']);
   replacement.destroy();
 });
 
 function parameters() {
-  const documentRef = { createElement: (tag) => new Element(tag.toUpperCase(), documentRef) };
+  const documentRef = {
+    createElement: (tag) => new Element(tag.toUpperCase(), documentRef),
+  };
   const container = new Element('DIV', documentRef);
   const controller = createStyleParameters({ container });
   const values = { amount: 0.25, scale: 2 };
-  const uniforms = { amount: { label: '<Amount>', min: 0, max: 1 }, scale: { label: 'Scale', min: 0, max: 10 } };
+  const uniforms = {
+    amount: { label: '<Amount>', min: 0, max: 1 },
+    scale: { label: 'Scale', min: 0, max: 10 },
+  };
   const order = [];
-  const options = { uniforms, readValue: (name) => values[name], writeValue: (name, value) => { order.push(['write', name, value]); values[name] = value; }, onChange: () => { order.push(['change', container.children[0]?.children[2].textContent]); } };
+  const options = {
+    uniforms,
+    readValue: (name) => values[name],
+    writeValue: (name, value) => {
+      order.push(['write', name, value]);
+      values[name] = value;
+    },
+    onChange: () => {
+      order.push(['change', container.children[0]?.children[2].textContent]);
+    },
+  };
   controller.render(options);
   return { container, controller, values, options, order };
 }
@@ -109,7 +183,11 @@ test('parameter rows preserve labels, bounds, precision and initial values', () 
   assert.equal(value.textContent, '0.25');
   assert.equal(f.container.children[1].children[1].step, '0.1');
   assert.equal(f.container.children[1].children[2].textContent, '2.0');
-  assert.deepEqual(f.order, [], 'rendering must not write shader values or publish changes');
+  assert.deepEqual(
+    f.order,
+    [],
+    'rendering must not write shader values or publish changes',
+  );
 });
 
 test('input writes numeric values, updates the readout, then requests a change', () => {
@@ -118,13 +196,19 @@ test('input writes numeric values, updates the readout, then requests a change',
   slider.value = '0.75';
   slider.emit('input');
   assert.equal(f.values.amount, 0.75);
-  assert.deepEqual(f.order, [['write', 'amount', 0.75], ['change', '0.75']]);
+  assert.deepEqual(f.order, [
+    ['write', 'amount', 0.75],
+    ['change', '0.75'],
+  ]);
 });
 
 test('rebuilding the parameter panel revokes detached slider listeners', () => {
   const f = parameters();
   const oldSlider = f.container.children[0].children[1];
-  f.controller.render({ ...f.options, uniforms: { scale: f.options.uniforms.scale } });
+  f.controller.render({
+    ...f.options,
+    uniforms: { scale: f.options.uniforms.scale },
+  });
   oldSlider.value = '0.8';
   oldSlider.emit('input');
   assert.equal(f.values.amount, 0.25);
