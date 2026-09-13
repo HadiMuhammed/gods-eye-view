@@ -81,7 +81,7 @@ test('Cockpit heading tape leaves the bottom exit row unobstructed', () => {
 
 test('Cockpit vision cycle exposes exactly five real visual styles without NONE', () => {
   assert.match(cycleVisionMode.toString(), /const modes = COCKPIT_VISION_MODES;/);
-  assert.match(setVisionMode.toString(), /const labels = \{ optical: inherited, crt: 'CRT', nvg: 'NVG', thermal: 'FLIR', noir: 'NOIR' \};/);
+  assert.match(setVisionMode.toString(), /const labels = \{\s*optical: inherited,\s*crt: 'CRT',\s*nvg: 'NVG',\s*thermal: 'FLIR',\s*noir: 'NOIR',?\s*\};/);
   assert.doesNotMatch(setVisionMode.toString(), /none: 'NONE'/);
   assert.match(ui, /getInheritedVisionLabel: \(\) => \([\s\S]*?STYLE_STATUS_LABELS\[this\.activeStyle\]/);
   assert.match(html, /id="cockpit-vision-current-label"[^>]*>NORMAL<\/strong>/);
@@ -131,11 +131,11 @@ test('Cockpit Escape handling precedes form-control shortcut suppression and foc
 test('Cockpit shortcut failures do not leak and open Radio owns the first Escape', () => {
   const keydown = cockpitKeyDown.toString();
   assert.ok(keydown, 'Cockpit keyboard handler is missing');
-  assert.match(keydown, /document\.getElementById\('context-radio-dock'\)\?\.classList\.contains\('disclosure-open'\)/);
+  assert.match(keydown, /document\s*\.getElementById\('context-radio-dock'\)\s*\?\.classList\.contains\('disclosure-open'\)/);
   assert.match(keydown, /#cockpit-utility-controls \[aria-expanded="true"\]/);
   assert.match(
     keydown,
-    /const cockpitAttempt = !!\(this\.readAircraftInfo\(\) && this\.viewer\.trackedEntity\?\.position\);[\s\S]*?event\.preventDefault\(\);[\s\S]*?event\.stopImmediatePropagation\(\);[\s\S]*?!this\.isEntryAllowed\(\)/,
+    /const cockpitAttempt = !!\(\s*this\.readAircraftInfo\(\) && this\.viewer\.trackedEntity\?\.position\s*\);[\s\S]*?event\.preventDefault\(\);[\s\S]*?event\.stopImmediatePropagation\(\);[\s\S]*?!this\.isEntryAllowed\(\)/,
   );
 });
 
@@ -284,7 +284,7 @@ test('Cockpit owns a focused shared Display portal and compact Radio controls', 
   );
   assert.match(css, /\.cockpit-utility-controls\.layout-primary-only[\s\S]*?display:\s*none/);
   assert.match(css, /@media \(max-width:\s*760px\)[\s\S]*?\.cockpit-utility-controls:has\(\.cockpit-utility-control\.is-expanded\)[\s\S]*?display:\s*none/);
-  assert.match(syncSignalLayout.toString(), /resolveCockpitUtilityLayout\(\{ availableHeight, expandedHeight, collapsedHeight \}\)/);
+  assert.match(syncSignalLayout.toString(), /resolveCockpitUtilityLayout\(\{\s*availableHeight,\s*expandedHeight,\s*collapsedHeight,?\s*\}\)/);
   assert.match(syncSignalLayout.toString(), /setAttribute\('aria-hidden', String\(hiddenSibling\)\)/);
 });
 
@@ -547,7 +547,7 @@ test('Cockpit panel corridors reserve the owned topline readouts', () => {
   assert.ok(signalLayout, 'Cockpit signal layout method is missing');
   assert.match(
     signalLayout,
-    /setProperty\('--cockpit-utility-top', `\$\{utilityAnchor\.top\.toFixed\(1\)\}px`\)/,
+    /setProperty\(\s*'--cockpit-utility-top',\s*`\$\{utilityAnchor\.top\.toFixed\(1\)\}px`,?\s*\)/,
     'Cockpit owns the utility strip anchor and republishes it every layout tick',
   );
   assert.match(
@@ -558,13 +558,13 @@ test('Cockpit panel corridors reserve the owned topline readouts', () => {
   assert.match(signalLayout, /#intel-hud \.hud-top-right/);
   assert.match(
     signalLayout,
-    /const recBounds = isRenderedOnScreen\(recReadout\) \? recReadout\.getBoundingClientRect\(\) : null;/,
+    /const recBounds = isRenderedOnScreen\(recReadout\)\s*\? recReadout\.getBoundingClientRect\(\)\s*: null;/,
     'HUD Off retires the Intel HUD with visibility/opacity, which leaves the REC '
       + 'readout a rect — a rect test alone would anchor the strip to an invisible readout',
   );
   assert.match(
     isRenderedOnScreen.toString(),
-    /function isRenderedOnScreen\(element\) \{[\s\S]*?style\.display === 'none' \|\| style\.visibility === 'hidden' \|\| Number\(style\.opacity\) === 0[\s\S]*?rect\.width > 0 && rect\.height > 0;/,
+    /function isRenderedOnScreen\(element\) \{[\s\S]*?style\.display === 'none'\s*\|\|\s*style\.visibility === 'hidden'\s*\|\|\s*Number\(style\.opacity\) === 0[\s\S]*?rect\.width > 0 && rect\.height > 0;/,
   );
   assert.match(
     ui,
@@ -645,7 +645,7 @@ test('Cockpit Display portals shared HUD, Detection, Parameters, and 3D controls
   assert.doesNotMatch(ui, /\['presets',/);
   assert.match(
     CockpitDisplayPortal.toString(),
-    /group\.before\(anchor\)[\s\S]*?window\.addEventListener\('gev:cockpit-mode-changed'/,
+    /group\.before\(anchor\)[\s\S]*?window\.addEventListener\(\s*'gev:cockpit-mode-changed'/,
   );
   assert.match(
     CockpitDisplayPortal.prototype.setActive.toString(),

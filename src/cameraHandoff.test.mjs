@@ -130,16 +130,17 @@ test('voice Cockpit next/previous shares the manual Context navigation path', ()
   // the arbiter.
   assert.match(
     CockpitViewController.toString(),
-    /this\._listen\(this\.contextPrevious, 'click', \(\) => this\.navigateContext\(-1, \{ origin: 'user' \}\)\);/,
+    /this\._listen\(this\.contextPrevious, 'click', \(\) =>\s*this\.navigateContext\(-1, \{ origin: 'user' \}\),?\s*\);/,
   );
   assert.match(
     CockpitViewController.toString(),
-    /this\._listen\(this\.contextNext, 'click', \(\) => this\.navigateContext\(1, \{ origin: 'user' \}\)\);/,
+    /this\._listen\(this\.contextNext, 'click', \(\) =>\s*this\.navigateContext\(1, \{ origin: 'user' \}\),?\s*\);/,
   );
   const funnel = navigateContext.toString();
+  assert.match(funnel, /const navigationOptions = wasActive\s*\? \{ \.\.\.options, aircraftOnly: true \}\s*: options;/);
   ordered(funnel, [
     "const method = direction < 0 ? 'navigatePrevious' : 'navigateNext';",
-    'const navigationOptions = wasActive ? { ...options, aircraftOnly: true } : options;',
+    'const navigationOptions = wasActive',
     'militaryAwarenessLayer?.[method]?.(navigationOptions)',
     'this._adoptTrackedEntity(performance.now());',
   ], 'Cockpit Context navigation funnel');
