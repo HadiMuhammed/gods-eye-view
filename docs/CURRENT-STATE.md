@@ -1,5 +1,11 @@
 # God's Eye View Current State
 
+## UI disposal
+
+UI disposal releases the CCTV subscription, command-dock observer, legacy drag
+resize observer and window resize listener. These remain independent of the
+Location component and are included in whole-UI browser teardown acceptance.
+
 ## Radio controls
 
 Radio panel, compact controls and tuner presentation have a dedicated owner.

@@ -172,5 +172,6 @@
   "src/ui/radioBindings.js",
   "src/ui/radioPresentation.js",
   "src/ui/radioTunerModel.js",
-  "src/ui/radioControls.test.mjs"
+  "src/ui/radioControls.test.mjs",
+  "scripts/qa-ui-disposal.mjs"
 ]

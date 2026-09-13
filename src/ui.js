@@ -8595,6 +8595,16 @@ export class StyleManager {
     this._dataManagerUnsubscribe?.();
     this._dataManagerUnsubscribe = null;
 
+    this._cctvUnsubscribe?.();
+    this._cctvUnsubscribe = null;
+    this._commandDockTrayObserver?.disconnect?.();
+    this._commandDockTrayObserver = null;
+    this._draggableResizeObserver?.disconnect();
+    this._draggableResizeObserver = null;
+    if (this._windowResizeHandler) {
+      window.removeEventListener('resize', this._windowResizeHandler);
+      this._windowResizeHandler = null;
+    }
     if (this._loadingVisibilityHandler) {
       document.removeEventListener('visibilitychange', this._loadingVisibilityHandler);
       this._loadingVisibilityHandler = null;
