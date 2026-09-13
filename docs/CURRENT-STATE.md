@@ -1,5 +1,15 @@
 # God's Eye View Current State
 
+## Panel disclosure lifecycle
+
+Panel collapse buttons, nested Escape handling and dock hover/focus timing now
+use `ui/panels`. The component receives existing DOM elements and callbacks for
+state changes and content focus. Panel layout, saved state, share restoration,
+Location draft cleanup and Map Source selection remain with their existing
+callers. Listener and timer cleanup is synchronous when controls are replaced
+or disposed, preventing old hover or focus work from changing a later view.
+
+
 ## Military feed cooldown and loading guidance
 
 The adsb.lol military proxy reuses its last response during upstream 429/5xx

@@ -114,5 +114,11 @@
   "server/providers/regional/weather-effects.js",
   "server/providers/regional/weather.js",
   "server/standalone/key-setup.js",
-  "src/tooling/localServices.test.mjs"
+  "src/tooling/localServices.test.mjs",
+  "src/search/index.js",
+  "src/search/placeSearch.js",
+  "src/search/google.js",
+  "src/keylessGeocoder.js",
+  "src/standalone/placeSearch.js",
+  "src/ui/panelDisclosure.js"
 ]

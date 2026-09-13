@@ -118,5 +118,8 @@
     "./server/standalone/key-setup": {
       "node": "./server/standalone/key-setup.js"
     }
-  }
+    },
+    "./search": "./src/search/index.js",
+    "./ui/panels": "./src/ui/panelDisclosure.js"
+  
 }

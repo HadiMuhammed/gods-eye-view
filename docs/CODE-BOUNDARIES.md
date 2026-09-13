@@ -169,3 +169,29 @@ accepts an optional `annotationGuidance` paragraph. Neither factory starts
 acquisition on import. Setup retains its pre-environment-load provenance capture
 and development-only registration. Package checks enumerate every owned module
 and reject browser imports of these Node entries.
+
+## Browser place search
+
+`gods-eye-view/search` exports an explicit geocoding service and Google/Photon
+adapters. The entry owns normalization, bounded caches, deadlines and fallback
+sequencing. It imports no application state, environment configuration, rendering
+or Node server code. Google transport is supplied by its caller.
+
+`src/standalone/placeSearch.js` constructs the configured Google request and
+keyless Photon fallback. The application passes this service to location
+controls, annotation resolution and voice/radio actions. Those consumers retain
+framing, landmark recovery, footprint matching and playback decisions. Existing
+reverse geocoding and nearby/text-search routes remain separate.
+
+## Panel controls
+
+`gods-eye-view/ui/panels` owns collapse-button binding, nearest-panel Escape
+handling, hover delays and delayed content-focus handoff. It accepts existing
+DOM elements and callbacks; importing it creates no browser state. `destroy()`
+removes owned listeners and cancels pending work without changing saved state
+or moving focus. Call it before removing or replacing the controls.
+
+`src/ui.js` retains panel layout, persistence, share restoration and application
+reactions to state changes. Map Source selection and Location draft cleanup are
+provided through callbacks. The component imports no globe, data, application
+or server modules. Package checks and scoped formatting cover this entry.
