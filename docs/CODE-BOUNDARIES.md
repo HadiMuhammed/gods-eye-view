@@ -323,7 +323,7 @@ original Display groups, independent scroll positions and current focus owner.
 
 ## Scene controls
 
-`ui/scenes` owns Scene panel input, project/shot rows, playback button and runtime
+`ui/scenes` owns Scene prompts, panel input, project/shot rows, playback button and runtime
 presentation. It receives project reads and explicit actions, with no imports of
 the director, source modules, camera engine or storage. Replacement and disposal
 release listeners; pending action feedback is limited to its current owner.

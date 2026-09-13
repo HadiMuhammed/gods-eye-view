@@ -262,3 +262,45 @@ test('Scene action failures are visible only while that action still owns presen
     f.restore();
   }
 });
+
+test('creation and deletion prompts precede their model actions and remain inert after disposal', () => {
+  const f = fixture();
+  try {
+    let prompts = 0;
+    window.prompt = () => {
+      prompts++;
+      return null;
+    };
+    window.confirm = () => {
+      prompts++;
+      return false;
+    };
+    f.elements.new.click();
+    f.elements.delete.click();
+    f.owner.deleteShot('scene-a', 'shot-a');
+    assert.deepEqual(f.calls, []);
+    window.prompt = () => {
+      prompts++;
+      return 'New title';
+    };
+    window.confirm = () => {
+      prompts++;
+      return true;
+    };
+    f.elements.new.click();
+    f.elements.delete.click();
+    f.owner.deleteShot('scene-a', 'shot-a');
+    assert.deepEqual(f.calls, [
+      ['create', 'New title'],
+      ['deleteScene'],
+      ['deleteShot', 'scene-a', 'shot-a'],
+    ]);
+    f.owner.destroy();
+    f.owner.createScene();
+    f.owner.deleteSelectedScene();
+    f.owner.deleteShot('scene-a', 'shot-a');
+    assert.equal(prompts, 6);
+  } finally {
+    f.restore();
+  }
+});

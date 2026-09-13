@@ -25,8 +25,6 @@ export class SceneControls {
       this.run('selectScene', elements.select.value),
     );
     for (const [element, action] of Object.entries({
-      new: 'create',
-      delete: 'deleteScene',
       capture: 'capture',
       update: 'update',
       next: 'next',
@@ -35,6 +33,8 @@ export class SceneControls {
     })) {
       this.listen(elements[element], 'click', () => this.run(action));
     }
+    this.listen(elements.new, 'click', () => this.createScene());
+    this.listen(elements.delete, 'click', () => this.deleteSelectedScene());
     this.listen(elements.start, 'click', () =>
       this.run('start', this.read().selectedSceneId),
     );
@@ -79,6 +79,33 @@ export class SceneControls {
     if (!this.destroyed) renderSceneOptions(this.elements.select, this.read());
   }
 
+  createScene() {
+    if (this.destroyed) return;
+    const name = window.prompt(
+      'New scene name',
+      `Scene ${this.read().scenes.length + 1}`,
+    );
+    if (name) this.run('create', name);
+  }
+
+  deleteSelectedScene() {
+    if (this.destroyed) return;
+    const state = this.read();
+    const scene = state.scenes.find(
+      (item) => item.id === state.selectedSceneId,
+    );
+    if (scene && window.confirm(`Delete scene "${scene.title}" and all shots?`))
+      this.run('deleteScene');
+  }
+
+  deleteShot(sceneId, shotId) {
+    if (this.destroyed) return;
+    const scene = this.read().scenes.find((item) => item.id === sceneId);
+    const shot = scene?.shots.find((item) => item.id === shotId);
+    if (shot && window.confirm(`Delete shot "${shot.title}"?`))
+      this.run('deleteShot', sceneId, shotId);
+  }
+
   renderShotList() {
     if (this.destroyed) return;
     for (const remove of this.rowRemovers.splice(0)) remove();
@@ -89,7 +116,7 @@ export class SceneControls {
       rename: (sceneId, shotId, title) =>
         this.run('renameShot', sceneId, shotId, title),
       load: (sceneId, shotId) => this.run('load', sceneId, shotId),
-      remove: (sceneId, shotId) => this.run('deleteShot', sceneId, shotId),
+      remove: (sceneId, shotId) => this.deleteShot(sceneId, shotId),
     });
   }
 

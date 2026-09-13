@@ -417,7 +417,7 @@ export class SceneDirector {
           this._saveProject();
           this._renderShotList();
         },
-        create: () => this._createScene(),
+        create: (name) => this._createScene(name),
         deleteScene: () => this._deleteSelectedScene(),
         capture: () => this.captureShot(),
         update: () => this.updateSelectedShot(),
@@ -474,9 +474,8 @@ export class SceneDirector {
     return { scene, shot };
   }
 
-  /** Prompt the user for a name and append a new empty scene to the project. */
-  _createScene() {
-    const sceneName = window.prompt('New scene name', `Scene ${this._project.scenes.length + 1}`);
+  /** Append a named empty scene after the controls accept the creation prompt. */
+  _createScene(sceneName) {
     if (!sceneName) return;
 
     const scene = {
@@ -497,9 +496,6 @@ export class SceneDirector {
   _deleteSelectedScene() {
     const scene = this._getSelectedScene();
     if (!scene) return;
-
-    const ok = window.confirm(`Delete scene "${scene.title}" and all shots?`);
-    if (!ok) return;
 
     this._project.scenes = this._project.scenes.filter((item) => item.id !== scene.id);
     // Restore default recipes if the user deleted all scenes
@@ -595,9 +591,6 @@ export class SceneDirector {
   deleteShot(sceneId, shotId) {
     const { scene, shot } = this._getShot(sceneId, shotId);
     if (!scene || !shot) return;
-
-    const ok = window.confirm(`Delete shot "${shot.title}"?`);
-    if (!ok) return;
 
     scene.shots = scene.shots.filter((item) => item.id !== shot.id);
     this._selectedShotId = scene.shots[0]?.id || null;

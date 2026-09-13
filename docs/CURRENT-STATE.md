@@ -2,7 +2,7 @@
 
 ## Scene control ownership
 
-Scene controls own panel listeners, shot rows, playback/recording presentation
+Scene controls own creation/deletion prompts, panel listeners, shot rows, playback/recording presentation
 and keyboard cancellation. The director supplies project reads and explicit
 editing/playback actions while retaining persistence, camera and layer sequencing.
 Replacing rows revokes their old listeners. Disposal stops controls immediately;
