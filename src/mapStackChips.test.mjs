@@ -346,7 +346,7 @@ test('the Visual Presets tray owns Map Source and the retired left panel is abse
   );
   const panels = readFileSync(new URL('./ui/panelDisclosure.js', import.meta.url), 'utf8');
   assert.match(panels, /event\.key !== 'Escape'[\s\S]*?disclosure\?\.focus/);
-  assert.match(ui, /querySelector\('\.map-stack-chip\.active'\)\s*\|\| panel\.querySelector\('\.map-stack-chip'\)/);
+  assert.match(ui, /querySelector\(\s*'\.map-stack-chip\.active',?\s*\)\s*\|\|\s*panel\.querySelector\('\.map-stack-chip'\)/);
 
   const controls = readFileSync(new URL('./ui/mapSourceControls.js', import.meta.url), 'utf8');
   assert.match(ui, /return this\._mapSourceControls\.select\(stackId, \{ syncShare \}\)/,

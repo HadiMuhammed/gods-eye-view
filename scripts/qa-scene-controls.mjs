@@ -192,6 +192,13 @@ try {
         window.__godsEyeView.styleManager.getControlState().recording,
     ),
   );
+  // A focused panel owns Escape to collapse one level. Release panel focus
+  // before testing the global playback shortcut; the canvas is not tabbable.
+  await page.evaluate(() => document.activeElement?.blur());
+  check(
+    'global playback shortcut has document focus',
+    await page.evaluate(() => document.activeElement === document.body),
+  );
   await page.keyboard.press('Escape');
   await page.waitForFunction(
     () =>

@@ -178,8 +178,8 @@ test('desktop panel lanes use per-panel allocations and presentation-only auto-c
     /panel !== displayPanel[\s\S]*?removeProperty\('--right-panel-allocated-height'\)[\s\S]*?const naturalHeight/,
     'right intrinsic measurement must retain Display allocation while clearing other panel allocations',
   );
-  assert.match(css, /var\(--left-panel-allocated-height/);
-  assert.match(css, /var\(--right-panel-allocated-height/);
+  assert.match(css, /var\(\s*--left-panel-allocated-height/);
+  assert.match(css, /var\(\s*--right-panel-allocated-height/);
   assert.match(
     css,
     /#left-panel-stack\.layout-focus > \[data-panel-id\]\.collapsed\s*\{\s*display:\s*none;/,
@@ -217,7 +217,7 @@ test('parameterized Display presets keep one stable scroll owner', () => {
   const css = readStylesheet(new URL('../style.css', import.meta.url));
 
   assert.match(css, /#pp-toggles:not\(\.collapsed\) > #param-slider-panel\.active\s*\{[\s\S]*?flex:\s*0 0 auto;[\s\S]*?max-height:\s*none;[\s\S]*?overflow-y:\s*visible;/);
-  assert.match(ui, /readDisplayScrollTop: \(\) => this\._displayPortalScrollRestoreOwner === 'standard'[\s\S]*?this\._standardDisplayScrollTop[\s\S]*?this\._ppToggles\?\.scrollTop \|\| 0/);
+  assert.match(ui, /readDisplayScrollTop: \(\) =>\s*this\._displayPortalScrollRestoreOwner === 'standard'[\s\S]*?this\._standardDisplayScrollTop[\s\S]*?this\._ppToggles\?\.scrollTop \|\| 0/);
   assert.match(rightRail, /displayPanel\.scrollTop = Math\.min\(displayScrollTop, maxScrollTop\);/);
   assert.match(
     ui,
@@ -243,7 +243,7 @@ test('expanded Display uses its container shell instead of a nested header card'
   );
   assert.match(
     css,
-    /#pp-toggles\.collapsed \.pp-header-row\s*\{[\s\S]*?width:\s*var\(--right-collapsed-width, 132px\);/,
+    /#pp-toggles\.collapsed \.pp-header-row\s*\{[\s\S]*?width:\s*var\(\s*--right-collapsed-width, 132px\);/,
     'collapsed Display must retain its standalone launcher sizing',
   );
 });
@@ -257,7 +257,7 @@ test('expanded left panels integrate their headers with the container shell', ()
   );
   assert.match(
     css,
-    /#left-panel-stack > \[data-panel-id\]:not\(\.collapsed\) \.panel-divider\s*\{[\s\S]*?linear-gradient\(90deg, rgb\(0 212 255 \/ 28%\), rgba\(0, 212, 255, 0\.18\) 58%, transparent\)[\s\S]*?box-shadow:\s*0 0 7px rgba\(0, 212, 255, 0\.22\);/,
+    /#left-panel-stack > \[data-panel-id\]:not\(\.collapsed\) \.panel-divider\s*\{[\s\S]*?linear-gradient\(\s*90deg,\s*rgb\(0 212 255 \/ 28%\),\s*rgba\(0, 212, 255, 0\.18\) 58%,\s*transparent\s*\)[\s\S]*?box-shadow:\s*0 0 7px rgba\(0, 212, 255, 0\.22\);/,
   );
 });
 
@@ -284,10 +284,10 @@ test('expanded right panels highlight the title divider without changing collaps
   );
   assert.match(
     css,
-    /#right-context-rail \[data-panel-id\]:not\(\.collapsed\) \.panel-divider\s*\{[\s\S]*?linear-gradient\(90deg, rgb\(0 212 255 \/ 28%\), rgba\(0, 212, 255, 0\.18\) 58%, transparent\)[\s\S]*?box-shadow:\s*0 0 7px rgba\(0, 212, 255, 0\.22\);/,
+    /#right-context-rail \[data-panel-id\]:not\(\.collapsed\) \.panel-divider\s*\{[\s\S]*?linear-gradient\(\s*90deg,\s*rgb\(0 212 255 \/ 28%\),\s*rgba\(0, 212, 255, 0\.18\) 58%,\s*transparent\s*\)[\s\S]*?box-shadow:\s*0 0 7px rgba\(0, 212, 255, 0\.22\);/,
   );
   assert.match(
     css,
-    /#param-slider-panel:not\(\.collapsed\) \.param-panel-divider\s*\{[\s\S]*?linear-gradient\(90deg, rgb\(0 212 255 \/ 28%\), rgba\(0, 212, 255, 0\.18\) 58%, transparent\);/,
+    /#param-slider-panel:not\(\.collapsed\) \.param-panel-divider\s*\{[\s\S]*?linear-gradient\(\s*90deg,\s*rgb\(0 212 255 \/ 28%\),\s*rgba\(0, 212, 255, 0\.18\) 58%,\s*transparent\s*\);/,
   );
 });

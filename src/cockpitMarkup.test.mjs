@@ -87,13 +87,13 @@ test('Cockpit vision cycle exposes exactly five real visual styles without NONE'
   assert.match(cycleVisionMode.toString(), /const modes = COCKPIT_VISION_MODES;/);
   assert.match(setVisionMode.toString(), /const labels = \{\s*optical: inherited,\s*crt: 'CRT',\s*nvg: 'NVG',\s*thermal: 'FLIR',\s*noir: 'NOIR',?\s*\};/);
   assert.doesNotMatch(setVisionMode.toString(), /none: 'NONE'/);
-  assert.match(ui, /getInheritedVisionLabel: \(\) => \([\s\S]*?STYLE_STATUS_LABELS\[this\.activeStyle\]/);
+  assert.match(ui, /getInheritedVisionLabel: \(\) =>\s*\(?[\s\S]*?STYLE_STATUS_LABELS\[this\.activeStyle\]/);
   assert.match(html, /id="cockpit-vision-current-label"[^>]*>NORMAL<\/strong>/);
-  assert.match(ui, /const target = applyCockpitVisionStageIntensities\(this\.stages, next, this\._cockpitVisionRestore\);/);
-  assert.match(ui, /this\._cockpitVisionRestore = captureCockpitVisionBaseline\(this\.stages, this\.transitions\);/);
+  assert.match(ui, /const target = applyCockpitVisionStageIntensities\(\s*this\.stages,\s*next,\s*this\._cockpitVisionRestore,?\s*\);/);
+  assert.match(ui, /this\._cockpitVisionRestore = captureCockpitVisionBaseline\(\s*this\.stages,\s*this\.transitions,?\s*\);/);
   assert.match(
     ui,
-    /if \(next === 'optical'\) \{[\s\S]*?applyCockpitVisionStageIntensities\(this\.stages, next, this\._cockpitVisionRestore\);[\s\S]*?return;[\s\S]*?const target = applyCockpitVisionStageIntensities/,
+    /if \(next === 'optical'\) \{[\s\S]*?applyCockpitVisionStageIntensities\(\s*this\.stages,\s*next,\s*this\._cockpitVisionRestore,?\s*\);[\s\S]*?return;[\s\S]*?const target = applyCockpitVisionStageIntensities/,
     'the inherited entry must restore the map shader while CRT, NVG, FLIR, and NOIR remain temporary Cockpit overrides',
   );
   assert.match(
@@ -181,7 +181,7 @@ test('the Contact panel never hides itself out from under its own NEXT button', 
   );
   assert.match(
     css,
-    /\.cockpit-context-window\[data-state="lost"\]/,
+    /\.cockpit-context-window\[data-state='lost'\]/,
     'CONTACT LOST reuses the panel-level data-state cue that "uncertain" already uses',
   );
 });
@@ -255,15 +255,15 @@ test('Cockpit owns a focused shared Display portal and compact Radio controls', 
   const cockpitRadio = html.match(/id="cockpit-radio-panel"[\s\S]*?<\/div>\s*<\/div>\s*<\/aside>/);
   assert.ok(cockpitRadio, 'Cockpit compact Radio controls are missing');
   assert.doesNotMatch(cockpitRadio[0], /context-radio-details-btn|radio-filter|radio-tuner/);
-  assert.match(css, /\.cockpit-utility-controls[\s\S]*?top:\s*var\(--cockpit-utility-top/);
-  assert.match(css, /\[data-cockpit-launcher="display"\]\s*\{\s*width:\s*var\(--left-collapsed-width, 176px\)/);
+  assert.match(css, /\.cockpit-utility-controls[\s\S]*?top:\s*var\(\s*--cockpit-utility-top/);
+  assert.match(css, /\[data-cockpit-launcher='display'\]\s*\{\s*width:\s*var\(\s*--left-collapsed-width, 176px\)/);
   assert.match(css, /--display-panel-expanded-width:\s*272px/);
-  assert.match(css, /#pp-toggles\s*\{[\s\S]*?--pp-expanded-width:\s*var\(--display-panel-expanded-width\)/);
-  assert.match(css, /is-expanded:has\(\[data-cockpit-launcher="display"\]\)\s*\{[\s\S]*?width:\s*var\(--display-panel-expanded-width\)/);
+  assert.match(css, /#pp-toggles\s*\{[\s\S]*?--pp-expanded-width:\s*var\(\s*--display-panel-expanded-width\)/);
+  assert.match(css, /is-expanded:has\(\[data-cockpit-launcher='display'\]\)\s*\{[\s\S]*?width:\s*var\(\s*--display-panel-expanded-width\)/);
   assert.doesNotMatch(ui, /--cockpit-display-expanded-width|dataPanelWidth/);
-  assert.match(css, /is-expanded:has\(\[data-cockpit-launcher="display"\]\)[\s\S]*?box-shadow:\s*0 8px 32px rgba\(0, 0, 0, \.42\)/);
+  assert.match(css, /is-expanded:has\(\[data-cockpit-launcher='display'\]\)[\s\S]*?box-shadow:\s*0 8px 32px rgba\(0, 0, 0, 0\.42\)/);
   assert.match(css, /\.cockpit-utility-control\.is-expanded \.cockpit-utility-launcher\s*\{[\s\S]*?border:\s*0;[\s\S]*?background:\s*transparent;[\s\S]*?box-shadow:\s*none;/);
-  assert.match(css, /\.cockpit-utility-control\.is-expanded \.cockpit-utility-divider\s*\{[\s\S]*?linear-gradient\(90deg, rgb\(0 212 255 \/ 28%\), rgba\(0, 212, 255, 0\.18\) 58%, transparent\)[\s\S]*?box-shadow:\s*0 0 7px rgba\(0, 212, 255, \.22\);/);
+  assert.match(css, /\.cockpit-utility-control\.is-expanded \.cockpit-utility-divider\s*\{[\s\S]*?linear-gradient\(\s*90deg,\s*rgb\(0 212 255 \/ 28%\),\s*rgba\(0, 212, 255, 0\.18\) 58%,\s*transparent\s*\)[\s\S]*?box-shadow:\s*0 0 7px rgba\(0, 212, 255, 0\.22\);/);
   assert.match(radioBindings, /this\._cockpitDisplayToggleBtn\.textContent = displayOpen \? '▶' : '◀';/);
   assert.match(radioBindings, /this\._cockpitRadioToggleBtn\.textContent = radioOpen \? '▶' : '◀';/);
   assert.match(css, /#cockpit-display-panel\s*\{[\s\S]*?display:\s*flex;[\s\S]*?gap:\s*7px;[\s\S]*?padding:\s*0;[\s\S]*?border-top:\s*0;/);
@@ -275,8 +275,8 @@ test('Cockpit owns a focused shared Display portal and compact Radio controls', 
   assert.match(css, /--cockpit-radio-expanded-width:\s*232px/);
   assert.doesNotMatch(css, /--map-stack-(?:collapsed|expanded)-width/);
   assert.doesNotMatch(html, /id="stack-panel"/, 'the retired Map Stack panel must not remain in Cockpit layout');
-  assert.match(css, /\[data-cockpit-launcher="radio"\]\s*\{\s*width:\s*var\(--cockpit-radio-collapsed-width, 148px\)/);
-  assert.match(css, /is-expanded:has\(\[data-cockpit-launcher="radio"\]\)[\s\S]*?--cockpit-radio-expanded-width/);
+  assert.match(css, /\[data-cockpit-launcher='radio'\]\s*\{\s*width:\s*var\(\s*--cockpit-radio-collapsed-width, 148px\)/);
+  assert.match(css, /is-expanded:has\(\[data-cockpit-launcher='radio'\]\)[\s\S]*?--cockpit-radio-expanded-width/);
   assert.doesNotMatch(ui, /--cockpit-radio-tab-width/);
   assert.doesNotMatch(css, /\.cockpit-utility-launcher:hover/);
   const desktopUtilityCss = css.slice(
@@ -348,11 +348,11 @@ test('Cockpit side surfaces behave as two single-expanded accordions', () => {
   );
   assert.match(
     ui,
-    /!nextCollapsed && this\.cockpitView\?\.active && panelId === 'data-panel'[\s\S]*?_cockpitContextCollapsedForDataPanel = !this\.cockpitView\.contextCollapsed[\s\S]*?this\.cockpitView\.setContextCollapsed\(true\);/,
+    /!nextCollapsed\s*&&\s*this\.cockpitView\?\.active\s*&&\s*panelId === 'data-panel'[\s\S]*?_cockpitContextCollapsedForDataPanel =\s*!this\.cockpitView\.contextCollapsed[\s\S]*?this\.cockpitView\.setContextCollapsed\(true\);/,
   );
   assert.match(
     ui,
-    /nextCollapsed && this\.cockpitView\?\.active && panelId === 'data-panel'[\s\S]*?_cockpitContextCollapsedForDataPanel[\s\S]*?this\.cockpitView\.setContextCollapsed\(false\);/,
+    /nextCollapsed\s*&&\s*this\.cockpitView\?\.active\s*&&\s*panelId === 'data-panel'[\s\S]*?_cockpitContextCollapsedForDataPanel[\s\S]*?this\.cockpitView\.setContextCollapsed\(false\);/,
     'closing Data Layers must restore Contact only after an automatic collapse',
   );
   assert.match(setContextCollapsed.toString(),
@@ -404,7 +404,7 @@ test('fresh Cockpit entry temporarily collapses map panels and exit restores the
   );
   assert.match(
     callback[1],
-    /_cockpitPanelRestore\.set\(panelId, panel\.classList\.contains\('collapsed'\)\)/,
+    /_cockpitPanelRestore\.set\(\s*panelId,\s*panel\.classList\.contains\('collapsed'\),?\s*\)/,
     'entry must remember each panel\'s exact collapsed state before hiding it',
   );
   assert.match(
@@ -449,12 +449,12 @@ test('fresh Cockpit entry temporarily collapses map panels and exit restores the
 });
 
 test('real disclosure changes reconsider only their own temporary panel lane', () => {
-  const collapseStart = ui.indexOf('setPanelCollapsed(panelId, collapsed, {');
+  const collapseStart = ui.indexOf('  setPanelCollapsed(');
   const collapse = ui.slice(
     collapseStart,
     ui.indexOf('toggleCleanView(forceEnabled)', collapseStart),
   );
-  assert.match(collapse, /classList\.contains\('collapsed'\) === nextCollapsed && !wasAutoCollapsed[\s\S]*?return;/);
+  assert.match(collapse, /classList\.contains\('collapsed'\) === nextCollapsed\s*&&\s*!wasAutoCollapsed[\s\S]*?return;/);
   assert.match(collapse, /_rightPanelStack\?\.contains\(panelEl\)[\s\S]*?_scheduleRightPanelLayout\(\{ reconsiderAutoCollapse: true \}\)/);
   assert.match(collapse, /_scheduleLeftPanelLayout\(\{[\s\S]*?reconsiderAutoCollapse: this\._leftPanelStack\?\.contains\(panelEl\) === true/);
 });
@@ -462,7 +462,7 @@ test('real disclosure changes reconsider only their own temporary panel lane', (
 test('Cockpit hides the complete top-center globe action group', () => {
   assert.match(
     css,
-    /body\.cockpit-mode :is\([\s\S]*?#top-center-actions[\s\S]*?\) \{ display: none !important; \}/,
+    /body\.cockpit-mode :is\([\s\S]*?#top-center-actions[\s\S]*?\)\s*\{\s*display: none !important;\s*\}/,
   );
   assert.match(
     css,
@@ -587,7 +587,7 @@ test('Cockpit panel corridors reserve the owned topline readouts', () => {
   assert.match(signalLayout, /cockpit-utility-controls[\s\S]*?--cockpit-utility-max-height/);
   assert.match(
     css,
-    /\.cockpit-utility-controls\s*\{[\s\S]*?top:\s*var\(--cockpit-utility-top, var\(--left-stack-safe-top, var\(--left-stack-top\)\)\)/,
+    /\.cockpit-utility-controls\s*\{[\s\S]*?top:\s*var\(\s*--cockpit-utility-top,\s*var\(\s*--left-stack-safe-top,\s*var\(\s*--left-stack-top\)\s*\)\s*\)/,
     'the first frame before Cockpit publishes an anchor still needs the fallback chain',
   );
   assert.match(css, /body\.cockpit-mode #left-panel-stack\s*\{[\s\S]*?transition:\s*none;/);
@@ -859,7 +859,7 @@ test('cockpit state cannot report entryAllowed while already active', () => {
   );
   assert.match(
     state,
-    /const entryAllowed = !active && Boolean\(/,
+    /const entryAllowed =\s*!active &&\s*Boolean\(/,
     'entry is impossible while already inside, unconditionally',
   );
   assert.match(state, /entryBlockedReason:/, 'and a refusal can be explained');

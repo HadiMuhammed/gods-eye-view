@@ -207,7 +207,7 @@ test('Radio volume and mission speed share the Sharpen slider visual language', 
   assert.match(css, /\.gev-quantitative-slider::-webkit-slider-runnable-track\s*\{[\s\S]*?height: 3px;[\s\S]*?background: rgba\(255, 255, 255, 0\.08\);/);
   assert.match(css, /\.gev-quantitative-slider::-webkit-slider-thumb\s*\{[\s\S]*?width: 10px;[\s\S]*?height: 10px;[\s\S]*?border-radius: 50%;[\s\S]*?background: var\(--accent\);/);
   assert.match(css, /\.gev-quantitative-slider:focus-visible\s*\{[\s\S]*?outline: 1px solid/);
-  assert.match(css, /\.gev-quantitative-slider:disabled\s*\{[\s\S]*?opacity: \.42;[\s\S]*?cursor: not-allowed;/);
+  assert.match(css, /\.gev-quantitative-slider:disabled\s*\{[\s\S]*?opacity: 0\.42;[\s\S]*?cursor: not-allowed;/);
   assert.match(css, /\.gev-slider-value\s*\{[\s\S]*?color: var\(--accent\);[\s\S]*?font-size: 9px;/);
   assert.doesNotMatch(css, /#space-mission-panel \[data-mission-replay-speed\]::-webkit-slider-thumb/);
 });
@@ -245,13 +245,13 @@ test('Radio is nested inside Context with separate disclosure and power controls
   assert.match(css, /\.radio-tuner\.is-static/);
   assert.match(css, /\.radio-tuner-tick\s*\{/);
   assert.doesNotMatch(css, /radio-tuner-scale-(?:left|right)/);
-  assert.match(css, /\.radio-tuner-needle\s*\{[\s\S]*?transition: left \.18s ease-out;/);
+  assert.match(css, /\.radio-tuner-needle\s*\{[\s\S]*?transition: left 0\.18s ease-out;/);
   assert.match(css, /\.radio-tuner\.is-dragging \.radio-tuner-needle,[\s\S]*?\.radio-tuner\.is-dragging \.radio-tuner-tick\s*\{\s*transition: none;/);
   assert.match(css, /\.radio-tuner\s*\{[\s\S]*?max-width: 100%;[\s\S]*?overflow: hidden;/);
   assert.match(css, /#radio-tuner-slider\s*\{[\s\S]*?max-width: 100%;[\s\S]*?touch-action: none;/);
   assert.match(css, /#title-bar\.radio-broadcasting \.title-logo::before/);
   assert.match(css, /#title-bar\.radio-broadcasting \.title-logo::after/);
-  assert.match(css, /--radio-broadcast-opacity: \.17/);
+  assert.match(css, /--radio-broadcast-opacity: 0\.17/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.radio-tuner-needle,[\s\S]*?\.radio-tuner-tick\s*\{\s*transition: none;/);
   assert.doesNotMatch(ui, /_radioTunerCameraRemove = this\.viewer\?\.camera\?\.changed/);
   assert.match(radioPresentation, /classList\.toggle\('radio-broadcasting', state\.audioState === 'playing'\)/);
