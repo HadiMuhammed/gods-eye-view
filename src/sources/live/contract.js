@@ -10,7 +10,11 @@
  * Records contain observation data only, with no scene objects or transport data.
  */
 export class LiveSourceError extends Error {
-  constructor(code, message, { status = null, retryAfterMs = 20000, source = null } = {}) {
+  constructor(
+    code,
+    message,
+    { status = null, retryAfterMs = 20000, source = null } = {},
+  ) {
     super(message);
     this.name = 'LiveSourceError';
     this.code = code;
@@ -36,13 +40,18 @@ export function cleanText(value) {
 }
 
 export function coordinates(latitude, longitude) {
-  return Number.isFinite(latitude) && Math.abs(latitude) <= 90
-    && Number.isFinite(longitude) && Math.abs(longitude) <= 180;
+  return (
+    Number.isFinite(latitude) &&
+    Math.abs(latitude) <= 90 &&
+    Number.isFinite(longitude) &&
+    Math.abs(longitude) <= 180
+  );
 }
 
 /** Admit a snapshot atomically; an all-invalid nonempty feed is unavailable. */
 export function admitRecords(rows, normalize, label) {
-  if (!Array.isArray(rows)) throw new LiveSourceError('malformed', `Malformed ${label} response`);
+  if (!Array.isArray(rows))
+    throw new LiveSourceError('malformed', `Malformed ${label} response`);
   const records = [];
   const ids = new Set();
   for (const row of rows) {
@@ -55,11 +64,20 @@ export function admitRecords(rows, normalize, label) {
   if (rows.length && !records.length) {
     throw new LiveSourceError('malformed', `Malformed ${label} aircraft rows`);
   }
-  return { records, complete: records.length === rows.length, rejectedCount: rows.length - records.length };
+  return {
+    records,
+    complete: records.length === rows.length,
+    rejectedCount: rows.length - records.length,
+  };
 }
 
 /** Cancellation is checked after body parsing even when a transport ignores it. */
-export async function readResponse(fetchImpl, url, { signal, ...init } = {}, source = 'Live source') {
+export async function readResponse(
+  fetchImpl,
+  url,
+  { signal, ...init } = {},
+  source = 'Live source',
+) {
   signal?.throwIfAborted();
   let response;
   try {
@@ -68,18 +86,35 @@ export async function readResponse(fetchImpl, url, { signal, ...init } = {}, sou
   } catch (error) {
     signal?.throwIfAborted();
     if (error?.name === 'AbortError') throw error;
-    throw new LiveSourceError('unavailable', `${source} network error`, { source });
+    throw new LiveSourceError('unavailable', `${source} network error`, {
+      source,
+    });
   }
   let payload = null;
-  try { payload = await response.json(); } catch { /* classified below */ }
+  try {
+    payload = await response.json();
+  } catch {
+    /* classified below */
+  }
   signal?.throwIfAborted();
   return { response, payload };
 }
 
 export function httpError(response, source) {
   const status = response.status;
-  const code = status === 429 ? 'limited' : status === 401 || status === 403 ? 'denied' : 'unavailable';
-  return new LiveSourceError(code, status === 429 ? `${source} rate limited` : `${source} HTTP ${status}`, {
-    status, source, retryAfterMs: code === 'limited' || code === 'denied' ? 45000 : 20000,
-  });
+  const code =
+    status === 429
+      ? 'limited'
+      : status === 401 || status === 403
+        ? 'denied'
+        : 'unavailable';
+  return new LiveSourceError(
+    code,
+    status === 429 ? `${source} rate limited` : `${source} HTTP ${status}`,
+    {
+      status,
+      source,
+      retryAfterMs: code === 'limited' || code === 'denied' ? 45000 : 20000,
+    },
+  );
 }
