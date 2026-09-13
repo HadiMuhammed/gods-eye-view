@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
 </head>
-<body>
+<body data-auto-translate-page="true">
   <div id="cesiumContainer"></div>
   <div id="world-overlay-root" aria-hidden="true">
     <canvas id="world-overlay-canvas"></canvas>
@@ -25,8 +25,8 @@
   <!-- Title -->
   <div id="title-bar">
     <div class="title-glow"></div>
-    <h1><span class="title-logo brand-logo" data-logo-gaze data-logo-src="/logo.svg" aria-hidden="true"><img src="/logo.svg" alt="" /></span> <span>GOD'S EYE <span class="title-accent">VIEW</span></span></h1>
-    <p class="subtitle">NO PLACE LEFT BEHIND</p>
+    <h1><span class="title-logo brand-logo" data-logo-gaze data-logo-src="/logo.svg" aria-hidden="true"><img src="/logo.svg" alt="" /></span> <span data-i18n="appTitle">GOD'S EYE VIEW</span></h1>
+    <p class="subtitle" data-i18n="subtitle">NO PLACE LEFT BEHIND</p>
   </div>
 
   <!-- Style indicator -->
@@ -37,26 +37,41 @@
 
   <!-- Top-center camera and share actions -->
   <nav id="top-center-actions" aria-label="Globe actions">
-    <button id="clear-selected-layers" type="button" aria-label="Clear selected data layers" title="Turn off all selected data layers">
+    <button id="clear-selected-layers" type="button" aria-label="Clear selected data layers" title="Turn off all selected data layers" data-i18n-label="clearSelectedLayers">
       <span class="material-symbols-outlined" aria-hidden="true">layers_clear</span>
     </button>
-    <button id="share-btn" type="button" aria-label="Copy share link" title="Copy share link">
+    <button id="share-btn" type="button" aria-label="Copy share link" title="Copy share link" data-i18n-label="copyShareLink">
       <span class="share-icon" aria-hidden="true">&#x1F517;</span>
     </button>
-    <button id="reset-globe-view" type="button" aria-label="Reset to full globe view" title="Reset camera and return to full globe view">
+    <button id="reset-globe-view" type="button" aria-label="Reset to full globe view" title="Reset camera and return to full globe view" data-i18n-label="resetFullGlobeView">
       <span class="material-symbols-outlined" aria-hidden="true">public</span>
     </button>
+    <div class="language-menu-wrap">
+      <button id="language-menu-trigger" type="button" data-language-menu-trigger="true" aria-haspopup="menu" aria-expanded="false" data-i18n="language" data-i18n-label="language">
+        <span class="material-symbols-outlined" aria-hidden="true">language</span>
+        <span data-language-label>Language</span>
+      </button>
+      <div id="language-menu" data-language-menu="true" role="menu" aria-label="Select language" hidden>
+        <span data-language-menu-label="true">Select language</span>
+        <button type="button" role="menuitemradio" data-locale="en" aria-checked="true">English</button>
+        <button type="button" role="menuitemradio" data-locale="es" aria-checked="false">Español</button>
+        <button type="button" role="menuitemradio" data-locale="fr" aria-checked="false">Français</button>
+        <button type="button" role="menuitemradio" data-locale="de" aria-checked="false">Deutsch</button>
+        <button type="button" role="menuitemradio" data-locale="ja" aria-checked="false">日本語</button>
+        <button type="button" role="menuitemradio" data-locale="ar" aria-checked="false">العربية</button>
+      </div>
+    </div>
   </nav>
   <div id="global-loading-status" role="status" aria-live="polite" aria-atomic="true" hidden>
-    <span id="global-loading-label">LOADING LIVE DATA</span>
+    <span id="global-loading-label" data-i18n="loadingLiveData">LOADING LIVE DATA</span>
     <span id="global-loading-detail"></span>
   </div>
   <div id="traffic-sync-chip" aria-live="polite">
-    <span id="traffic-sync-label">syncing road network</span>
+    <span id="traffic-sync-label" data-i18n="syncRoadNetwork">syncing road network</span>
     <span id="traffic-sync-progress">0%</span>
   </div>
   <div id="cctv-sync-chip" aria-live="polite">
-    <span id="cctv-sync-label">loading frames</span>
+    <span id="cctv-sync-label" data-i18n="loadingFrames">loading frames</span>
     <span id="cctv-sync-progress">0/0</span>
   </div>
 
@@ -581,7 +596,7 @@
     <div class="panel-glow"></div>
     <div class="data-panel-inner">
       <div class="panel-header">
-        <span class="panel-title">DATA LAYERS</span>
+        <span class="panel-title" data-i18n="dataLayers">DATA LAYERS</span>
         <span class="panel-divider"></span>
         <button class="panel-collapse-btn" data-collapse-target="data-panel" title="Collapse panel">+</button>
       </div>
@@ -650,35 +665,35 @@
     <div class="panel-glow"></div>
     <div class="scene-panel-inner">
       <div class="panel-header">
-        <span class="panel-title">SCENES</span>
+        <span class="panel-title" data-i18n="scenes">SCENES</span>
         <span class="panel-divider"></span>
         <button class="panel-collapse-btn" data-collapse-target="scene-panel" title="Collapse panel">+</button>
       </div>
       <div class="scene-controls">
         <select id="scene-select" aria-label="Scene recipe"></select>
-        <button id="scene-new-btn" class="scene-btn">NEW</button>
-        <button id="scene-delete-btn" class="scene-btn scene-btn-danger">DEL</button>
+        <button id="scene-new-btn" class="scene-btn" data-i18n="newScene">NEW</button>
+        <button id="scene-delete-btn" class="scene-btn scene-btn-danger" data-i18n="deleteScene">DEL</button>
       </div>
       <div class="scene-controls">
-        <button id="scene-capture-btn" class="scene-btn">CAPTURE SHOT</button>
-        <button id="scene-update-shot-btn" class="scene-btn">UPDATE SHOT</button>
+        <button id="scene-capture-btn" class="scene-btn" data-i18n="captureShot">CAPTURE SHOT</button>
+        <button id="scene-update-shot-btn" class="scene-btn" data-i18n="updateShot">UPDATE SHOT</button>
       </div>
       <div id="scene-shot-list" class="scene-shot-list"></div>
       <div class="scene-controls">
-        <button id="scene-start-btn" class="scene-btn">START</button>
-        <button id="scene-stop-btn" class="scene-btn scene-btn-danger">STOP</button>
-        <button id="scene-next-btn" class="scene-btn">NEXT</button>
+        <button id="scene-start-btn" class="scene-btn" data-i18n="start">START</button>
+        <button id="scene-stop-btn" class="scene-btn scene-btn-danger" data-i18n="stop">STOP</button>
+        <button id="scene-next-btn" class="scene-btn" data-i18n="next">NEXT</button>
       </div>
       <div class="scene-controls">
-        <button id="scene-export-btn" class="scene-btn">EXPORT PRESETS</button>
-        <button id="scene-import-btn" class="scene-btn">IMPORT</button>
-        <button id="scene-download-btn" class="scene-btn">RUN LOG</button>
+        <button id="scene-export-btn" class="scene-btn" data-i18n="exportPresets">EXPORT PRESETS</button>
+        <button id="scene-import-btn" class="scene-btn" data-i18n="import">IMPORT</button>
+        <button id="scene-download-btn" class="scene-btn" data-i18n="runLog">RUN LOG</button>
         <input type="file" id="scene-import-file" accept="application/json,.json" hidden />
       </div>
       <div class="scene-progress">
         <div id="scene-progress-fill">0%</div>
       </div>
-      <div id="scene-status">Ready</div>
+      <div id="scene-status" data-i18n="ready">Ready</div>
     </div>
   </div>
 
@@ -839,23 +854,23 @@
   <aside id="first-run-launcher" role="dialog" aria-labelledby="first-run-title" aria-describedby="first-run-description" hidden>
     <div class="first-run-scanline" aria-hidden="true"></div>
     <header class="first-run-header">
-      <span class="first-run-kicker">MISSION CONTROL · FIRST LAUNCH</span>
+      <span class="first-run-kicker" data-i18n="firstRunKicker">MISSION CONTROL · FIRST LAUNCH</span>
     </header>
-    <h2 id="first-run-title">Choose your first view</h2>
+    <h2 id="first-run-title" data-i18n="firstRunTitle">Choose your first view</h2>
     <!-- The card's one persuasive line, owner-authored and VERBATIM (2026-08-23)
          — including the unspaced em dash. The arc it has to carry: this looks
          like something you should not have access to → the sources are all
          public → the data is real. Tile subcopy stays purely functional. -->
-    <p id="first-run-description">It feels like a forbidden cockpit—then you realize the sources are public and the data is real.</p>
+    <p id="first-run-description" data-i18n="firstRunDescription">It feels like a forbidden cockpit—then you realize the sources are public and the data is real.</p>
     <div class="first-run-choices">
       <button type="button" data-first-run-choice="contacts">
         <span class="material-symbols-outlined" aria-hidden="true">radar</span>
-        <span><strong>LIVE CONTACTS</strong><small>Aircraft, vessels and nearby intelligence</small></span>
+        <span><strong data-i18n="liveContacts">LIVE CONTACTS</strong><small data-i18n="liveContactsDescription">Aircraft, vessels and nearby intelligence</small></span>
         <span class="material-symbols-outlined first-run-arrow" aria-hidden="true">arrow_forward</span>
       </button>
       <button type="button" data-first-run-choice="space-missions">
         <span class="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
-        <span><strong>SPACE MISSIONS</strong><small>Launches, spacecraft and orbital context</small></span>
+        <span><strong data-i18n="spaceMissions">SPACE MISSIONS</strong><small data-i18n="spaceMissionsDescription">Launches, spacecraft and orbital context</small></span>
         <span class="material-symbols-outlined first-run-arrow" aria-hidden="true">arrow_forward</span>
       </button>
       <button type="button" data-first-run-choice="environmental">
@@ -864,25 +879,25 @@
         <!-- Subcopy names BOTH feeds this tile turns on, because the launcher
              optimizes for the fully configured experience (owner ruling,
              2026-08-23) — see the mission table in src/firstRunExperience.js. -->
-        <span><strong data-first-run-environmental-title>ENVIRONMENTAL</strong><small>Live earthquakes and active fires, from USGS and NASA</small></span>
+        <span><strong data-first-run-environmental-title data-i18n="environmental">ENVIRONMENTAL</strong><small data-i18n="environmentalDescription">Live earthquakes and active fires, from USGS and NASA</small></span>
         <span class="material-symbols-outlined first-run-arrow" aria-hidden="true">arrow_forward</span>
       </button>
       <button type="button" class="first-run-explore" data-first-run-choice="explore">
         <span class="material-symbols-outlined" aria-hidden="true">public</span>
-        <span><strong>EXPLORE MANUALLY</strong><small>Begin with a clean globe</small></span>
+        <span><strong data-i18n="exploreManually">EXPLORE MANUALLY</strong><small data-i18n="exploreManuallyDescription">Begin with a clean globe</small></span>
         <span class="material-symbols-outlined first-run-arrow" aria-hidden="true">arrow_forward</span>
       </button>
     </div>
     <div class="first-run-footer">
       <label class="first-run-suppress">
         <input type="checkbox" data-first-run-suppress />
-        <span>Don't show this again</span>
+        <span data-i18n="dontShowAgain">Don't show this again</span>
       </label>
-      <span>ESC to dismiss</span>
+      <span data-i18n="escToDismiss">ESC to dismiss</span>
     </div>
     <!-- Kept out of the footer row: it swaps to mission progress and errors, and
          a live region that also holds layout makes the row jump as it speaks. -->
-    <p class="first-run-note" data-first-run-status role="status" aria-live="polite">Tip: the GEV MIC button in the dock lets you talk to the map.</p>
+    <p class="first-run-note" data-first-run-status role="status" aria-live="polite" data-i18n="firstRunTip">Tip: the GEV MIC button in the dock lets you talk to the map.</p>
   </aside>
 
   <!-- POWER UP — in-app key setup. Dev-server only: src/keySetup.js removes
@@ -919,7 +934,7 @@
     <div class="loader-content">
       <span class="loader-logo brand-logo" data-logo-gaze data-logo-src="/logo.svg" aria-hidden="true"><img src="/logo.svg" alt="" /></span>
       <h2>GOD'S EYE <span class="title-accent">VIEW</span></h2>
-      <p class="loader-status">Initializing photorealistic world...</p>
+      <p class="loader-status" data-i18n="initializingWorld">Initializing photorealistic world...</p>
     </div>
   </div>
 

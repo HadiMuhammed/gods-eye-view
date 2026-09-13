@@ -1,5 +1,13 @@
 import { createStandaloneApplication } from './standalone/application.js';
 import { describeError } from './standalone/errors.js';
+import { bindLanguageControls, initializeLocale, t } from './i18n.js';
+import { initializeAutoTranslation } from './autoTranslate.js';
+
+initializeLocale();
+window.addEventListener('DOMContentLoaded', () => {
+  bindLanguageControls(document);
+  initializeAutoTranslation(document);
+});
 
 const application = createStandaloneApplication({
   googleApiKey: import.meta.env.GOOGLE_MAPS_API_KEY,
@@ -10,7 +18,7 @@ const application = createStandaloneApplication({
 application.start().catch((error) => {
   console.error("God's Eye View initialization failed:", error);
   const loaderStatus = document.querySelector('#loading-screen .loader-status');
-  loaderStatus.textContent = `Error: ${describeError(error)}`;
+  loaderStatus.textContent = `${t('errorPrefix')}${describeError(error)}`;
   loaderStatus.style.color = '#ff4444';
 });
 

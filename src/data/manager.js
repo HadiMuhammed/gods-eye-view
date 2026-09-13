@@ -2,6 +2,7 @@ import { governorRequestRender } from '../renderGovernor.js';
 import { LayerPanel } from '../ui/layers.js';
 export { layerFeedState } from '../ui/layers.js';
 import { markDetectionSourcesChanged } from './detection.js';
+import { localizedLayerName } from '../i18n.js';
 function cloneLayerParams(value) {
   if (Array.isArray(value)) return value.map(cloneLayerParams);
   if (value && typeof value === 'object') {
@@ -1868,7 +1869,7 @@ export class DataLayerManager {
     for (const [id, entry] of this.layers) {
       result.push({
         id,
-        name: entry.module.name,
+        name: localizedLayerName(id, entry.module.name),
         icon: entry.module.icon,
         source: entry.module.source,
         showInTogglePanel: entry.module.showInTogglePanel !== false,
@@ -1964,6 +1965,10 @@ export class DataLayerManager {
    */
   buildTogglePanel(container) {
     this._toggleContainer = container;
+    if (!this._localeRefreshBound && typeof window !== 'undefined') {
+      this._localeRefreshBound = true;
+      window.addEventListener('gev:localechange', () => this._renderToggles());
+    }
     this._renderToggles();
   }
 
