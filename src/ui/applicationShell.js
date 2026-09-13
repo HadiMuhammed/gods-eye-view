@@ -1,3 +1,4 @@
+import { createStateChannel } from '../app/stateChannel.js';
 import { setSplitFlapText } from '../splitFlap.js';
 import { UiLifetime } from './uiLifetime.js';
 import { RecordingControls } from './recordingControls.js';
@@ -537,6 +538,14 @@ export class StyleManager {
         ]),
       );
     });
+    this._shareState = createStateChannel(() => this._readShareState());
+    this._shareState.subscribe(({ state }) => {
+      this.shareLinkManager.onToggleChange(state.bloomEnabled, state.sharpenEnabled, state.options);
+    }, { emitCurrent: false });
+    this._locationState = createStateChannel(() => this._locationLookup?.getState() || null);
+    this._locationState.subscribe(({ state, change }) => {
+      this._handleLocationSearchState(state, change);
+    }, { emitCurrent: false });
     // Parse before panel chrome initializes so every valid share URL starts
     // from deterministic markup defaults instead of recipient-local panel
     // preferences. Encoded panel fields are applied after all panels exist.
@@ -1893,8 +1902,17 @@ export class StyleManager {
     });
   }
 
+  /** Current shareable visual preferences; subscriptions include an initial snapshot. */
+  subscribeShareState(listener, options) {
+    return this._shareState.subscribe(listener, options);
+  }
+
   _syncShareState() {
     if (this._disposed) return;
+    this._shareState.publish({ type: 'settings-changed' });
+  }
+
+  _readShareState() {
     const {
       getDetectionTuning,
       isScopeMaskEnabled,
@@ -1902,10 +1920,10 @@ export class StyleManager {
       getScopeTerminusOverride,
     } = this.services;
     const detection = this._shareableDetectionState();
-    this.shareLinkManager.onToggleChange(
-      this.bloomEnabled,
-      this.sharpenEnabled,
-      {
+    return {
+      bloomEnabled: this.bloomEnabled,
+      sharpenEnabled: this.sharpenEnabled,
+      options: {
         bloomIntensity: this._getBloomIntensity(),
         bloomVersion: BLOOM_SCALE_VERSION,
         sharpenIntensity: parseInt(this._sharpenSlider?.value || '49', 10),
@@ -1929,7 +1947,7 @@ export class StyleManager {
             : Math.round(getScopeTerminusOverride() * 100),
         mapStack: this.mapStackController?.getActiveId?.() || 'photoreal',
       },
-    );
+    };
   }
 
   /**
@@ -4488,6 +4506,28 @@ export class StyleManager {
 
   // ── Location Bar ─────────────────────────────
 
+  /** Subscribe to the current location lookup, including replacements of its control owner. */
+  subscribeLocationSearch(listener, options) {
+    return this._locationState.subscribe(listener, options);
+  }
+
+  _handleLocationSearchState(state, change) {
+    if (this._disposed || !change) return;
+    if (change.type === 'started') this._activeLocationSearchGeneration = change.generation;
+    else if (change.type === 'found') {
+      this._searchedLocationLabel = state.destination.label || state.query;
+      this._setActiveLocation(null);
+      this._currentPoi = null;
+      this._collapsePOIRow();
+      this._updateLocationMiniStatus();
+    } else if (change.type === 'missing') this._showToast('Location not found');
+    else if (change.type === 'failed') this._showToast('Search failed');
+    else if (change.type === 'settled') this._settleLocationSearchUi(change.generation);
+    else if (change.type === 'reset' && this._activeLocationSearchGeneration !== null) {
+      this._settleLocationSearchUi(this._activeLocationSearchGeneration);
+    }
+  }
+
   /**
    * Initializes the location bar: renders city pills from CITY_POIS, sets up
    * QWERTY keyboard navigation for POI selection, wires the search toggle
@@ -4497,6 +4537,7 @@ export class StyleManager {
   _initLocationBar() {
     const { CITY_POIS, searchAndFlyTo, LocationSearch } = this.services;
     this._locationControls?.destroy();
+    this._locationLookupUnsubscribe?.();
     this._locationLookup?.destroy();
     this._locationLookup = new LocationSearch({
       input: this._locationSearch,
@@ -4509,22 +4550,10 @@ export class StyleManager {
           placeSearch: this.placeSearch,
           ...options,
         }),
-      onStart: (generation) => {
-        this._activeLocationSearchGeneration = generation;
-      },
-      onResult: (destination, query) => {
-        this._searchedLocationLabel = destination.label || query;
-        this._setActiveLocation(null);
-        this._currentPoi = null;
-        this._collapsePOIRow();
-        this._updateLocationMiniStatus();
-      },
-      onMissing: () => this._showToast('Location not found'),
-      onError: (error) => {
-        console.error('[Search] Geocoding failed:', error);
-        this._showToast('Search failed');
-      },
-      onSettled: (generation) => this._settleLocationSearchUi(generation),
+      onError: (error) => console.error('[Search] Geocoding failed:', error),
+    });
+    this._locationLookupUnsubscribe = this._locationLookup.subscribe(({ initial, change }) => {
+      this._locationState.publish(initial ? { type: 'reset' } : change);
     });
     this._locationControls = new LocationControls({
       elements: {
@@ -5234,6 +5263,10 @@ export class StyleManager {
     this._feedback._globalStatusNotice = null;
     if (this._globalLoadingStatus) this._globalLoadingStatus.hidden = true;
     this._disposed = true;
+    this._shareState.destroy();
+    this._locationState.destroy();
+    this._locationLookupUnsubscribe?.();
+    this._locationLookupUnsubscribe = null;
     this._lifetime.destroy();
     this._recording.destroy();
     this._panelPosition.destroy();

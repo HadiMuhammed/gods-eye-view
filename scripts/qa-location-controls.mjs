@@ -87,6 +87,8 @@ try {
   await page.evaluate(() => {
     const lookup = window.__godsEyeView.styleManager._locationLookup;
     window.__qaSearchRequests = [];
+    window.__qaLocationState = [];
+    window.__godsEyeView.styleManager.subscribeLocationSearch((notification) => window.__qaLocationState.push(notification));
     lookup.search = (query, options) =>
       new Promise((resolve) =>
         window.__qaSearchRequests.push({ query, options, resolve }),
@@ -139,6 +141,14 @@ try {
       );
     }),
   );
+  check('Location subscriptions accept only the current result and retain request identities', await page.evaluate(() => {
+    const seen = window.__qaLocationState;
+    const started = seen.filter(({ change }) => change?.type === 'started');
+    const found = seen.filter(({ change }) => change?.type === 'found');
+    return seen[0].initial && started.length === 2 && found.length === 1 &&
+      found[0].change.requestId === started[1].change.requestId &&
+      found[0].state.destination.label === 'Second landmark, Test city' && Object.isFrozen(found[0].state.destination);
+  }));
   check(
     'cancelled POI expansion stays closed after a frame',
     await page.evaluate(async (id) => {

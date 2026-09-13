@@ -645,3 +645,55 @@ test('destroy drains cancelled LOAD work before its viewer can be discarded', as
   assert.equal((await director.startScene('scene-1')).reason, 'destroyed');
   await director.destroy();
 });
+
+test('Scene snapshots are immutable and editing outcomes retain the affected shot and index', async () => {
+  const { director, restore } = makeDirector();
+  try {
+    director._activeRun = null;
+    const seen = [];
+    const unsubscribe = director.subscribe((notification) => seen.push(notification));
+    assert.equal(seen[0].initial, true);
+    assert.equal(seen[0].state.selectedShotId, 'shot-a');
+    assert.ok(Object.isFrozen(seen[0].state));
+    director.captureShot();
+    const captured = seen.find(({ change }) => change?.type === 'shot-captured');
+    assert.equal(captured.change.index, 2);
+    assert.ok(Object.isFrozen(captured.change.shot.camera));
+    const id = captured.change.shot.id;
+    director.deleteShot('scene-1', id);
+    const deleted = seen.find(({ change }) => change?.type === 'shot-deleted');
+    assert.equal(deleted.change.index, 2);
+    assert.equal(deleted.change.shot.id, id);
+    assert.equal(captured.state.selectedShotId, id);
+    unsubscribe();
+    const count = seen.length;
+    director.captureShot();
+    assert.equal(seen.length, count);
+    await director.destroy();
+  } finally { restore(); }
+});
+
+test('Scene load outcomes exclude superseded and disposed completions', async () => {
+  const { director, styleManager, restore } = makeDirector();
+  try {
+    director._activeRun = null;
+    const seen = [];
+    director.subscribe(({ change }) => { if (change) seen.push(change); });
+    const pending = [];
+    styleManager.applyVisualState = () => new Promise((resolve) => pending.push(resolve));
+    const old = director.loadShot('scene-1', 'shot-a');
+    const current = director.loadShot('scene-1', 'shot-b');
+    pending[1]();
+    await current;
+    pending[0]();
+    await old;
+    assert.deepEqual(seen.filter((change) => change.type === 'shot-loaded').map((change) => change.shot.id), ['shot-b']);
+    const late = director.loadShot('scene-1', 'shot-a');
+    const disposal = director.destroy();
+    const count = seen.length;
+    pending[2]();
+    await Promise.all([late, disposal]);
+    director.subscribe(() => assert.fail('disposed director must not notify'));
+    assert.equal(seen.length, count);
+  } finally { restore(); }
+});

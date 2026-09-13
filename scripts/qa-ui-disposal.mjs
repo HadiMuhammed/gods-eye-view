@@ -119,6 +119,9 @@ try {
     setSplitFlapText(feedbackLabel, 'LOAD COMPLETE');
     const permanentText =
       feedbackLabel.querySelector('.gev-flap-text')?.firstChild;
+    let stateNotifications = 0;
+    ui.subscribeShareState(() => stateNotifications++, { emitCurrent: false });
+    ui.subscribeLocationSearch(() => stateNotifications++, { emitCurrent: false });
     try {
       const disposal = ui.dispose();
       const focusBefore = document.activeElement;
@@ -139,6 +142,9 @@ try {
       const noDeferredFocus = document.activeElement === focusBefore;
       releaseRestoration();
       await disposal;
+      ui._syncShareState();
+      ui.subscribeShareState(() => stateNotifications++);
+      ui.subscribeLocationSearch(() => stateNotifications++);
       const once = JSON.stringify(counts);
       await ui.dispose();
       window.dispatchEvent(new Event('resize'));
@@ -202,6 +208,7 @@ try {
           ui._lifetime.frames.size === 0 &&
           ui._lifetime.timers.size === 0 &&
           ui._lifetime.removers.size === 0,
+        stateStopped: stateNotifications === 0,
         idempotent: once === JSON.stringify(counts),
       };
     } finally {
@@ -249,6 +256,7 @@ try {
     'shell teardown cancels deferred work and releases listeners',
     result.shellWorkReleased,
   );
+  check('state subscriptions stop synchronously with UI disposal', result.stateStopped);
   check('repeated UI disposal is inert', result.idempotent);
   check(
     'disposal and subsequent resize produce no uncaught browser errors',

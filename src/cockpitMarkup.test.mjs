@@ -242,8 +242,8 @@ test('Cockpit owns a focused shared Display portal and compact Radio controls', 
     css,
     /body\.scene-playback-mode :is\(#clear-selected-layers, #reset-globe-view\)\s*\{\s*display:\s*none !important;/,
   );
-  assert.match(sceneDirector, /this\._running = true;\s*this\._controls\?\.setPlaybackActive\(true\);/);
-  assert.match(sceneDirector, /styleManager\.setRecordingMode\(false\);\s*this\._controls\?\.setPlaybackActive\(false\);/);
+  assert.match(sceneDirector, /this\._running = true;\s*this\._setPlaybackActive\(true\);/);
+  assert.match(sceneDirector, /styleManager\.setRecordingMode\(false\);\s*this\._setPlaybackActive\(false\);/);
   assert.match(SceneControls.prototype.setPlaybackActive.toString(), /document\.body\.classList\.toggle\('scene-playback-mode', active\)/);
   assert.equal((html.match(/id="hud-toggle"/g) || []).length, 1, 'HUD control must have one stateful DOM owner');
   assert.equal((html.match(/id="detection-toggle"/g) || []).length, 1, 'Detection control must have one stateful DOM owner');
