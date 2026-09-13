@@ -164,3 +164,48 @@ test('stopping Cockpit revokes camera actions before deferred disposal releases 
     env.restore();
   }
 });
+
+test('stopped Cockpit cannot rearm briefing rotation or request a fresh region', () => {
+  const env = environment();
+  try {
+    const frames = new Map();
+    let next = 0;
+    let fetches = 0;
+    let paints = 0;
+    env.viewer.scene.screenSpaceCameraController.enableInputs = true;
+    window.setTimeout = (callback) => {
+      frames.set(++next, callback);
+      return next;
+    };
+    window.clearTimeout = (id) => frames.delete(id);
+    const owner = new CockpitViewController(env.viewer, {
+      services: {
+        regionalDistanceM: () => Infinity,
+        fetchRegionalBrief: () => {
+          fetches++;
+          return Promise.resolve({ articles: [] });
+        },
+        releaseContinuousRender() {},
+      },
+    });
+    owner.active = true;
+    owner.showBriefPage = () => {
+      paints++;
+    };
+    owner.setBriefAutoRotate(true);
+    assert.equal(frames.size, 1);
+    const queued = [...frames.values()][0];
+    owner.stop();
+    assert.equal(frames.size, 0);
+    queued();
+    owner.setBriefAutoRotate(true);
+    owner.startBriefRotation();
+    owner.maybeRefreshRegionalBrief({ latitude: 30, longitude: -97 });
+    assert.equal(frames.size, 0);
+    assert.equal(paints, 0);
+    assert.equal(fetches, 0);
+    owner.dispose();
+  } finally {
+    env.restore();
+  }
+});

@@ -11,6 +11,7 @@ import {
 } from './cockpitPresentation.js';
 
 export function showBriefPage(index, { manual = false } = {}) {
+  if (this.destroyed) return;
   const count = COCKPIT_BRIEF_PAGES.length;
   this.briefPageIndex = ((Number(index) % count) + count) % count;
   const page = COCKPIT_BRIEF_PAGES[this.briefPageIndex];
@@ -41,6 +42,7 @@ export function showBriefPage(index, { manual = false } = {}) {
 }
 
 export function setBriefAutoRotate(enabled) {
+  if (this.destroyed) return;
   this.briefAutoRotateEnabled = Boolean(enabled);
   if (this.briefAutoToggle) {
     this.briefAutoToggle.setAttribute(
@@ -60,6 +62,7 @@ export function setBriefAutoRotate(enabled) {
 }
 
 export function startBriefRotation({ reset = false } = {}) {
+  if (this.destroyed) return;
   if (reset) this.stopBriefRotation();
   if (
     !this.briefAutoRotateEnabled ||
@@ -71,6 +74,7 @@ export function startBriefRotation({ reset = false } = {}) {
     return;
   this.briefTimer = window.setTimeout(() => {
     this.briefTimer = null;
+    if (this.destroyed) return;
     const hasPointer = this.signalStream?.matches(':hover') === true;
     const hasFocus =
       this.signalStream?.contains(document.activeElement) === true;
@@ -99,6 +103,7 @@ export function updateLocalPosition(info) {
 }
 
 export function maybeRefreshRegionalBrief(info) {
+  if (this.destroyed) return;
   if (
     !this.active ||
     !Number.isFinite(info.latitude) ||
