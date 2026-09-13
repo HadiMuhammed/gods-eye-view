@@ -371,10 +371,7 @@
     "external": []
   },
   "context-controls": {
-    "exports": [
-      "./ui/context",
-      "./ui/context/policy"
-    ],
+    "exports": ["./ui/context", "./ui/context/policy"],
     "modules": [
       "src/ui/context.js",
       "src/ui/contextActions.js",
