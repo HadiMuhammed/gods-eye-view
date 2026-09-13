@@ -26,6 +26,10 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ### Fixed
 
+- Reuse cached military aircraft during adsb.lol rate limits and server errors,
+  honor bounded retry delays, and preserve cached observation times and stale
+  indicators. Show installation zoom guidance without a false LOAD FAILED.
+
 - GBFS rejects upstream redirects, caps streamed responses at 5 MiB, and keeps
   its deadline active through body reads. Rejected downloads are cancelled.
 

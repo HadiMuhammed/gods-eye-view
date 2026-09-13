@@ -26,9 +26,8 @@ export function normalizeLayerLoading(layer = {}) {
   // normal operation, never a batch failure — mirrors layerFeedState's carve-out
   // so a prompt stored alongside the status cannot turn the chip red.
   const guidance = GUIDANCE_STATUSES.includes(status);
-  const error = stoppingInstallations || guidance
-    ? null
-    : stats.error || stats.lastError || stats.managerRefreshError || null;
+  const error = stoppingInstallations ? null
+    : (!guidance && stats.error) || stats.lastError || stats.managerRefreshError || null;
   const unavailable = !stoppingInstallations && (stats.unavailable === true
     || stats.available === false
     || ['unavailable', 'offline', 'down', 'error'].includes(status));

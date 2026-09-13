@@ -699,3 +699,14 @@ test('a guidance status such as zoom-in never counts as a participant failure', 
   assert.equal(state.terminal, 'complete');
   assert.equal(presentLoadingFeedback(state, settled, 1500).label, 'MAPPED SITES LOADED');
 });
+
+
+test('guidance does not suppress independent manager and feed failures', () => {
+  for (const field of ['lastError', 'managerRefreshError']) {
+    const record = normalizeLayerLoading({
+      id: 'militaryInstallations', enabled: true,
+      stats: { status: 'zoom-in', error: 'Zoom in to load mapped sites.', [field]: 'Network unavailable' },
+    });
+    assert.equal(record.error, 'Network unavailable');
+  }
+});

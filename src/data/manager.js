@@ -81,7 +81,7 @@ export function layerFeedState(stats = {}) {
   if (
     (presentedError || state.unavailable === true || state.available === false)
     && !hasPriorData
-    && !['zoom-in', 'empty', 'idle'].includes(status)
+    && !GUIDANCE_STATUSES.includes(status)
   ) {
     return 'unavailable';
   }
@@ -90,7 +90,7 @@ export function layerFeedState(stats = {}) {
   // operation, not feed faults. One honesty carve-out: layers keep their
   // rendered records through the guidance state, so a genuinely stale cache
   // still reads STALE; a guidance prompt alone never reads DEGRADED.
-  if (['zoom-in', 'empty', 'idle'].includes(status)) {
+  if (GUIDANCE_STATUSES.includes(status)) {
     return state.stale ? 'stale' : 'nominal';
   }
   if (

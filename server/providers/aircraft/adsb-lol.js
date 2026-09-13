@@ -56,6 +56,11 @@ export function adsbLolProxy() {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-store',
       'X-ADS-B-Cache': cacheStatus,
+      ...(['HIT', 'STALE'].includes(cacheStatus)
+        ? {
+            'X-ADS-B-Cache-Age-Ms': String(Math.max(0, Date.now() - _cacheAt)),
+          }
+        : {}),
       ...extra,
     });
     res.end(body);
@@ -70,7 +75,9 @@ export function adsbLolProxy() {
           return;
         }
         if (now < _cooldownUntil) {
-          const retryAfter = String(Math.ceil((_cooldownUntil - now) / 1000));
+          const retryAfter = String(
+            Math.ceil((_cooldownUntil - Date.now()) / 1000),
+          );
           if (_cache) {
             serve(res, 200, _cache, 'STALE', {
               'X-ADS-B-Upstream-Status': String(_cooldownStatus),
@@ -90,32 +97,48 @@ export function adsbLolProxy() {
         const upstream = await fetch('https://api.adsb.lol/v2/mil', {
           headers: { 'User-Agent': 'gods-eye-view-adsblol-proxy/1.0' },
         });
-        const body = await upstream.text();
         if (upstream.ok) {
+          const body = await upstream.text();
           _cache = body;
-          _cacheAt = now;
+          _cacheAt = Date.now();
           _cooldownUntil = 0;
           _cooldownStatus = 0;
           serve(res, 200, body, 'MISS');
           return;
         }
         if (upstream.status === 429 || upstream.status >= 500) {
-          _cooldownUntil = now + cooldownFor(upstream, now);
+          const failedAt = Date.now();
+          _cooldownUntil = failedAt + cooldownFor(upstream, failedAt);
           _cooldownStatus = upstream.status;
           console.warn(
-            `[adsb.lol Proxy] upstream ${upstream.status}; cooling down ${Math.round((_cooldownUntil - now) / 1000)} s${_cache ? ', serving stale' : ''}`,
+            `[adsb.lol Proxy] upstream ${upstream.status}; cooling down ${Math.round((_cooldownUntil - Date.now()) / 1000)} s${_cache ? ', serving stale' : ''}`,
           );
           if (_cache) {
+            // Do not wait for a failing response body before serving usable data.
+            upstream.body?.cancel().catch(() => {});
             serve(res, 200, _cache, 'STALE', {
               'X-ADS-B-Upstream-Status': String(upstream.status),
               'X-ADS-B-Retry-After-Seconds': String(
-                Math.ceil((_cooldownUntil - now) / 1000),
+                Math.ceil((_cooldownUntil - Date.now()) / 1000),
               ),
             });
             return;
           }
         }
-        serve(res, upstream.status, body, 'MISS');
+        const body = await upstream.text();
+        serve(
+          res,
+          upstream.status,
+          body,
+          'MISS',
+          _cooldownUntil > Date.now()
+            ? {
+                'Retry-After': String(
+                  Math.ceil((_cooldownUntil - Date.now()) / 1000),
+                ),
+              }
+            : {},
+        );
       } catch (e) {
         console.error('[adsb.lol Proxy]', e.message);
         if (_cache) {

@@ -1,5 +1,19 @@
 # God's Eye View Current State
 
+## Military feed cooldown and loading guidance
+
+The adsb.lol military proxy reuses its last response during upstream 429/5xx
+failures and observes Retry-After, bounded to 5–120 seconds (defaults: 30 seconds
+for rate limits, 15 seconds for server errors). A failure with no cached data
+still reports an error. Cached responses carry their age; the browser preserves
+observation timestamps and marks fallback data stale instead of inventing fresh
+positions or reporting a failed load. Fresh responses clear that stale state.
+
+Mapped-installation zoom guidance appears in the layer row without counting as
+a global loading failure. Guidance statuses do not suppress independent refresh
+errors.
+
+
 ## Places and CCTV request bounds
 
 With a Google key configured, nearby and text search reject missing, blank,
