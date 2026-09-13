@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 // Exercise the installed event routes and central close method, without WebGL.
-const source = readFileSync(new URL('./ui.js', import.meta.url), 'utf8');
+const source = readFileSync(new URL('./ui/applicationShell.js', import.meta.url), 'utf8');
 const markup = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const locationMarkup = markup.slice(markup.indexOf('<div id="location-bar"'), markup.indexOf('<div id="left-panel-stack"'));
 const locationToggleMarkup = locationMarkup.match(/<button\b([^>]*\bid="location-bar-toggle"[^>]*)>([\s\S]*?)<\/button>/);
@@ -123,6 +123,8 @@ function harness({ hidden = false, selected = true, noChips = false } = {}) {
   const claims = [];
   let shareSyncs = 0;
   const manager = {
+    _lifetime: { frame() {} },
+    _panelLayout: { _leftStackPreferredPanelId: null, _rightStackPreferredPanelId: null },
     ...methods,
     _savePanelCollapsedState(...args) { saves.push(args); },
     _scheduleLeftPanelLayout() {}, _scheduleRightPanelLayout() {},

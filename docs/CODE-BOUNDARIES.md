@@ -327,3 +327,14 @@ original Display groups, independent scroll positions and current focus owner.
 presentation. It receives project reads and explicit actions, with no imports of
 the director, source modules, camera engine or storage. Replacement and disposal
 release listeners; pending action feedback is limited to its current owner.
+
+## UI assembly and styles
+
+`ui/shell` assembles controls from supplied existing layer, navigation, terrain,
+rendering, HUD and share operations. `src/standalone/ui.js` provides the running
+application's instances; `src/ui.js` remains the compatibility entry. The shell
+imports no standalone bootstrap or concrete live layer implementation.
+Panel layout, position/drag, notices, recording and deferred UI work have separate
+owners with synchronous cleanup. Existing scene, share and HUD engines retain
+their entry points. `ui/styles` loads the ordered stylesheet entry; component
+files retain the original cascade, including responsive and dock refinements.

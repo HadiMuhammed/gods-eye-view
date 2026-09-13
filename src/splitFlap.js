@@ -519,3 +519,13 @@ export function setSplitFlapText(element, text, options = {}) {
   });
   return true;
 }
+
+/** Stop decoration without replacing the label's permanent accessible text. */
+export function disposeSplitFlap(element) {
+  if (!element) return;
+  clearFlapTimer(element);
+  cancelWidthEase(element);
+  clearSizing(element);
+  const cells = element.querySelector?.('.gev-flap-cells');
+  if (cells) rest(element, { cells });
+}

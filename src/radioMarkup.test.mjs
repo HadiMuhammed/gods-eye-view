@@ -1,3 +1,4 @@
+import { readStylesheet } from './testSupport/readStylesheet.mjs';
 import { readFileSync as readRadioSource } from 'node:fs';
 const radioBindings = readRadioSource(new URL('./ui/radioBindings.js', import.meta.url), 'utf8');
 const radioPresentation = readRadioSource(new URL('./ui/radioPresentation.js', import.meta.url), 'utf8');
@@ -8,12 +9,12 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const ui = readFileSync(new URL('./ui.js', import.meta.url), 'utf8');
+const ui = readFileSync(new URL('./ui/applicationShell.js', import.meta.url), 'utf8');
 const radio = readFileSync(new URL('./data/radio.js', import.meta.url), 'utf8');
 const rocketLaunches = readFileSync(new URL('./data/rocketLaunches.js', import.meta.url), 'utf8');
 const realtime = readFileSync(new URL('./voice/gevRealtime.js', import.meta.url), 'utf8');
 const voice = ['tools', 'instructions'].map(name => readFileSync(new URL(`../server/providers/openai/${name}.js`, import.meta.url), 'utf8')).join('\n');
-const css = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+const css = readStylesheet(new URL('../style.css', import.meta.url));
 
 /** Parse the Realtime tool array out of the Vite config as real data. */
 function realtimeTools() {
@@ -302,7 +303,7 @@ test('panel collapse is presentation-only and Radio exposes explicit voice playb
   );
   assert.doesNotMatch(disclosureBindings, /setPanelCollapsed\('radio-panel', !/);
   assert.match(ui, /setAttribute\('aria-expanded', String\(/);
-  assert.match(ui, /\.hidden = !/);
+  assert.match(readFileSync(new URL('./ui/shellFeedback.js', import.meta.url), 'utf8'), /\.hidden = !/);
   assert.doesNotMatch(method, /panelId === 'global-context-panel'[\s\S]*?this\._radioState\?\.enabled[\s\S]*?setPanelCollapsed\('radio-panel', false\)/);
 });
 

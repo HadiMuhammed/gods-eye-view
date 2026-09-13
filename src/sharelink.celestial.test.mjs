@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import { ShareLinkManager, decodeShareCreatedAtMs } from './sharelink.js';
 import { createDefaultLayerState } from './data/layerState.js';
 
-const uiSource = fs.readFileSync(new URL('./ui.js', import.meta.url), 'utf8');
+const uiSource = fs.readFileSync(new URL('./ui/applicationShell.js', import.meta.url), 'utf8');
 
 function sourceBlock(start, end) {
   const startIndex = uiSource.indexOf(start);

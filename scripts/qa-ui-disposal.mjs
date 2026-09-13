@@ -33,7 +33,8 @@ try {
     const ui = window.__godsEyeView.styleManager;
     const counts = {};
     const watchObserver = (name) => {
-      const observer = ui[name];
+      const owner = name === '_draggableResizeObserver' ? ui._panelPosition : ui._panelLayout;
+      const observer = owner[name];
       if (!observer) return false;
       const disconnect = observer.disconnect.bind(observer);
       counts[name] = 0;
@@ -113,6 +114,10 @@ try {
       const disposal = ui.dispose();
       const focusBefore = document.activeElement;
       const stoppedBeforeRestoration =
+        ui._panelLayout.destroyed &&
+        ui._panelPosition.destroyed &&
+        ui._feedback.destroyed &&
+        ui._recording.destroyed &&
         cockpit.destroyed &&
         portal.stopped &&
         cockpit._listenerRemovers.length === 0 &&

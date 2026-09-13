@@ -1,5 +1,19 @@
 # God's Eye View Current State
 
+## UI shell and component ownership
+
+The standalone entry composes the UI with the application's existing layer,
+terrain, navigation and rendering operations. The shell receives those instances
+and assembles the controls. Panel layout scheduling, position preferences and
+active drags, loading notices, recording presentation and DOM lookup have focused
+owners. Disposal revokes queued presentation and listeners before asynchronous
+Context restoration, cancels an unfinished drag without saving it, restores the
+recording HUD and releases status decoration without replacing accessible text.
+The ordinary control snapshot includes the current 3D model toggle and mode.
+
+`style.css` imports component styles in their original cascade order. Scene,
+share, HUD and layer engines retain their existing behavior and entry points.
+
 ## Scene control ownership
 
 Scene controls own creation/deletion prompts, panel listeners, shot rows, playback/recording presentation

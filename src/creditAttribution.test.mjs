@@ -1,3 +1,4 @@
+import { readStylesheet } from './testSupport/readStylesheet.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -5,8 +6,8 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const css = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
-const ui = fs.readFileSync(path.join(ROOT, 'src', 'ui.js'), 'utf8');
+const css = readStylesheet(path.join(ROOT, 'style.css'));
+const ui = fs.readFileSync(path.join(ROOT, 'src', 'ui', 'applicationShell.js'), 'utf8');
 
 /*
  * Required-attribution keep-out pin.
@@ -436,9 +437,10 @@ test('custom properties inside modelled offsets are provably non-negative', () =
     assert.doesNotMatch(decl.value, /-\s*\d/, `${decl.prop} has a negative CSS default: ${decl.value}`);
     assert.match(decl.value, /^(0|0px)$/, `${decl.prop} default is not a vetted shape: ${decl.value}`);
   }
-  const start = ui.indexOf('_updateCommandDockTrayStack() {');
+  const layout = fs.readFileSync(new URL('./ui/panelLayoutController.js', import.meta.url), 'utf8');
+  const start = layout.indexOf('_updateCommandDockTrayStack() {');
   assert.ok(start > 0, '_updateCommandDockTrayStack is missing');
-  const writer = ui.slice(start, start + 1800);
+  const writer = layout.slice(start, start + 1800);
   // Every value traces back to a rect height, floored at 0 and rounded up.
   assert.match(writer, /const locationHeight = [\s\S]{0,120}?getBoundingClientRect\(\)\.height \|\| 0;/);
   assert.match(writer, /const presetsHeight = [\s\S]{0,120}?getBoundingClientRect\(\)\.height \|\| 0;/);

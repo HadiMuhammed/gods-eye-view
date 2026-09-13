@@ -1,3 +1,4 @@
+import { readStylesheet } from './testSupport/readStylesheet.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -135,11 +136,11 @@ test('minimum panel corridor expands upward without crossing the lower obstacle 
 });
 
 test('desktop panel lanes use per-panel allocations and presentation-only auto-collapse', () => {
-  const ui = readFileSync(new URL('./ui.js', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+  const ui = readFileSync(new URL('./ui/applicationShell.js', import.meta.url), 'utf8');
+  const css = readStylesheet(new URL('../style.css', import.meta.url));
   assert.doesNotMatch(ui, /_enforce(?:Left|Right)PanelAccordion/);
   assert.match(rails, /classList\.add\('collapsed', 'layout-auto-collapsed'\)/);
-  assert.match(ui, /classList\.remove\('collapsed', 'layout-auto-collapsed'\)/);
+  assert.match(readFileSync(new URL('./ui/panelLayoutController.js', import.meta.url), 'utf8'), /classList\.remove\('collapsed', 'layout-auto-collapsed'\)/);
   assert.match(ui, /reconsiderAutoCollapse/);
   assert.match(
     ui,
@@ -150,13 +151,13 @@ test('desktop panel lanes use per-panel allocations and presentation-only auto-c
     /_scheduleLeftPanelLayout\(\{[\s\S]*?reconsiderAutoCollapse: this\._leftPanelStack\?\.contains\(panelEl\) === true/,
   );
   assert.match(rails, /collapseLaterPanels: shouldFocus && hud\.variant === 'tactical'/);
-  assert.match(ui, /this\._leftStackPreferredPanelId = leftOwnerPanel\.id;/);
+  assert.match(ui, /this\._panelLayout\._leftStackPreferredPanelId = leftOwnerPanel\.id;/);
   assert.match(
     leftRail,
     /preferredExpandedPanel[\s\S]*?\[\s*preferredExpandedPanel,\s*\.\.\.expandedPanelsInDomOrder/,
     'the latest explicitly opened left panel must receive primary allocation',
   );
-  assert.match(ui, /this\._rightStackPreferredPanelId = rightOwnerPanel\.id;/);
+  assert.match(ui, /this\._panelLayout\._rightStackPreferredPanelId = rightOwnerPanel\.id;/);
   assert.match(
     rightRail,
     /panel\.id === preferredPanelId[\s\S]*?\[\s*preferredExpandedPanel,\s*\.\.\.expandedPanelsInDomOrder/,
@@ -189,7 +190,7 @@ test('desktop panel lanes use per-panel allocations and presentation-only auto-c
 });
 
 test('share-panel state excludes responsive collapse and preserves recipient preferences', () => {
-  const ui = readFileSync(new URL('./ui.js', import.meta.url), 'utf8');
+  const ui = readFileSync(new URL('./ui/applicationShell.js', import.meta.url), 'utf8');
   const sharelink = readFileSync(new URL('./sharelink.js', import.meta.url), 'utf8');
 
   assert.match(
@@ -212,8 +213,8 @@ test('share-panel state excludes responsive collapse and preserves recipient pre
 });
 
 test('parameterized Display presets keep one stable scroll owner', () => {
-  const ui = readFileSync(new URL('./ui.js', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+  const ui = readFileSync(new URL('./ui/applicationShell.js', import.meta.url), 'utf8');
+  const css = readStylesheet(new URL('../style.css', import.meta.url));
 
   assert.match(css, /#pp-toggles:not\(\.collapsed\) > #param-slider-panel\.active\s*\{[\s\S]*?flex:\s*0 0 auto;[\s\S]*?max-height:\s*none;[\s\S]*?overflow-y:\s*visible;/);
   assert.match(ui, /readDisplayScrollTop: \(\) => this\._displayPortalScrollRestoreOwner === 'standard'[\s\S]*?this\._standardDisplayScrollTop[\s\S]*?this\._ppToggles\?\.scrollTop \|\| 0/);
@@ -234,7 +235,7 @@ test('parameterized Display presets keep one stable scroll owner', () => {
 });
 
 test('expanded Display uses its container shell instead of a nested header card', () => {
-  const css = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+  const css = readStylesheet(new URL('../style.css', import.meta.url));
 
   assert.match(
     css,
@@ -248,7 +249,7 @@ test('expanded Display uses its container shell instead of a nested header card'
 });
 
 test('expanded left panels integrate their headers with the container shell', () => {
-  const css = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+  const css = readStylesheet(new URL('../style.css', import.meta.url));
 
   assert.match(
     css,
@@ -262,7 +263,7 @@ test('expanded left panels integrate their headers with the container shell', ()
 
 test('Map Source uses five compact tiles in the bottom Visual Presets tray', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+  const css = readStylesheet(new URL('../style.css', import.meta.url));
 
   assert.doesNotMatch(html, /id="stack-panel"/);
   assert.match(html, /id="control-panel"[\s\S]*?class="map-source-section"[\s\S]*?id="map-stack-chips"/);
@@ -275,7 +276,7 @@ test('Map Source uses five compact tiles in the bottom Visual Presets tray', () 
 
 test('expanded right panels highlight the title divider without changing collapsed launchers', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+  const css = readStylesheet(new URL('../style.css', import.meta.url));
 
   assert.match(
     html,

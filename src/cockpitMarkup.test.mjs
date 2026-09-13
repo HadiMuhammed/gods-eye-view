@@ -1,3 +1,6 @@
+import { PanelLayoutController } from './ui/panelLayoutController.js';
+import { readShellElements } from './ui/shellElements.js';
+import { readStylesheet } from './testSupport/readStylesheet.mjs';
 import { SceneControls } from './ui/sceneControls.js';
 import { isRenderedOnScreen } from './ui/cockpitPresentation.js';
 import { onKeyDown as cockpitKeyDown } from './ui/cockpitInput.js';
@@ -23,8 +26,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-const ui = fs.readFileSync(path.join(ROOT, 'src', 'ui.js'), 'utf8');
-const css = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+const ui = fs.readFileSync(path.join(ROOT, 'src', 'ui', 'applicationShell.js'), 'utf8');
+const css = readStylesheet(path.join(ROOT, 'style.css'));
 const sceneDirector = fs.readFileSync(path.join(ROOT, 'src', 'scenes', 'director.js'), 'utf8');
 const manager = fs.readFileSync(path.join(ROOT, 'src', 'data', 'manager.js'), 'utf8');
 const contextLayer = fs.readFileSync(path.join(ROOT, 'src', 'data', 'militaryAwareness.js'), 'utf8');
@@ -299,7 +302,7 @@ test('Display orders 3D above Celestial, Clean UI below it, and Parameters below
   );
   assert.equal((html.match(/id="param-slider-panel"/g) || []).length, 1, 'Parameters must have one DOM owner');
   assert.match(
-    ui,
+    PanelLayoutController.prototype._initRightPanelAdaptiveLayout.toString(),
     /const detectionGroup = this\._detectionBtn\?\.closest\('\.pp-toggle-group'\);[\s\S]*?detectionGroup\.after\(this\._sliderPanel\)/,
   );
   assert.match(
@@ -476,7 +479,7 @@ test('Reset releases Contact camera ownership through its selection-preserving r
   assert.ok(resetStart >= 0);
   assert.ok(contextRelease > resetStart);
   assert.ok(satelliteRelease > contextRelease);
-  assert.match(ui, /this\._cockpitResetGlobeBtn = document\.getElementById\('cockpit-reset-globe'\)/);
+  assert.match(readShellElements.toString(), /_cockpitResetGlobeBtn: document\.getElementById\('cockpit-reset-globe'\)/);
   const controls = fs.readFileSync(path.join(ROOT, 'src', 'ui', 'locationControls.js'), 'utf8');
   assert.match(ui, /resetButtons: \[this\._resetGlobeBtn, this\._cockpitResetGlobeBtn\]/);
   assert.match(ui, /onReset: \(\) => this\.resetToGlobeView\(\)/);
@@ -530,8 +533,9 @@ test('Cockpit Radio station changes preserve first-person camera ownership', () 
 });
 
 test('Cockpit panel corridors reserve the owned topline readouts', () => {
-  const leftObstacles = ui.match(/const LEFT_STACK_OBSTACLE_SELECTOR = \[([\s\S]*?)\]\.join/);
-  const rightObstacles = ui.match(/const RIGHT_STACK_OBSTACLE_SELECTOR = \[([\s\S]*?)\]\.join/);
+  const layout = fs.readFileSync(new URL('./ui/panelLayoutController.js', import.meta.url), 'utf8');
+  const leftObstacles = layout.match(/const LEFT_STACK_OBSTACLE_SELECTOR = \[([\s\S]*?)\]\.join/);
+  const rightObstacles = layout.match(/const RIGHT_STACK_OBSTACLE_SELECTOR = \[([\s\S]*?)\]\.join/);
   assert.ok(leftObstacles && rightObstacles, 'responsive panel obstacle selectors are missing');
   assert.match(leftObstacles[1], /#cockpit-hud \.cockpit-topline/);
   assert.match(rightObstacles[1], /#cockpit-hud \.cockpit-topline/);
@@ -569,8 +573,8 @@ test('Cockpit panel corridors reserve the owned topline readouts', () => {
     /function isRenderedOnScreen\(element\) \{[\s\S]*?style\.display === 'none'\s*\|\|\s*style\.visibility === 'hidden'\s*\|\|\s*Number\(style\.opacity\) === 0[\s\S]*?rect\.width > 0 && rect\.height > 0;/,
   );
   assert.match(
-    ui,
-    /_leftStackHudTransitionHandler = \(event\) => \{[\s\S]*?_scheduleLeftPanelLayout\(\{ reconsiderAutoCollapse: true \}\);[\s\S]*?this\.cockpitView\?\.scheduleContextLayout\(\);/,
+    layout,
+    /_leftStackHudTransitionHandler = \(event\) => \{[\s\S]*?_scheduleLeftPanelLayout\(\{ reconsiderAutoCollapse: true \}\);[\s\S]*?this\.scheduleCockpitLayout\(\);/,
     'the strip must remeasure on the same HUD fade the accordion does — the REC '
       + 'readout keeps its rect until the transition ends',
   );
