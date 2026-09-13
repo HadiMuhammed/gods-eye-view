@@ -1,6 +1,7 @@
 import { terrainHeightsProxy } from './terrain.js';
 import { tomtomProxy } from './traffic.js';
 import { firmsProxy } from './firms.js';
+import { noaaHazardsProxy } from './noaa.js';
 import { gbfsProxy } from './gbfs.js';
 import { celestrakProxy, rocketLaunchesProxy } from './space.js';
 export { LL2_CACHE_TTL_MS, launchLibraryRequestHeaders } from './space.js';
@@ -4651,6 +4652,7 @@ export function localProviderPlugins() {
       celestrakProxy(),
       tomtomProxy(),
       firmsProxy(),
+      noaaHazardsProxy(),
       rocketLaunchesProxy(),
       terrainHeightsProxy(),
       adsbdbProxy(),
