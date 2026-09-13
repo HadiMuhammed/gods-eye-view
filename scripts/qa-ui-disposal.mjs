@@ -82,10 +82,13 @@ try {
         observersReleased: observed.every(
           (name) => counts[name] === 1 && ui[name] === null,
         ),
-        subscriptionReleased: counts.cctv === 1 && ui._cctvControls._cctvUnsubscribe === null,
+        subscriptionReleased:
+          counts.cctv === 1 && ui._cctvControls._cctvUnsubscribe === null,
         resizeReleased: counts.resize === 1 && ui._windowResizeHandler === null,
         controlsReleased:
-          ui._radioControls.destroyed && ui._locationControls.destroyed && ui._cctvControls.destroyed,
+          ui._radioControls.destroyed &&
+          ui._locationControls.destroyed &&
+          ui._cctvControls.destroyed,
         idempotent: once === JSON.stringify(counts),
       };
     } finally {
