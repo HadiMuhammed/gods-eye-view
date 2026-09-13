@@ -13,13 +13,27 @@ function environment() {
   globalThis.document = document;
   globalThis.window = window;
   const callbacks = new Set();
-  const event = { addEventListener(fn) { callbacks.add(fn); return () => callbacks.delete(fn); } };
+  const event = {
+    addEventListener(fn) {
+      callbacks.add(fn);
+      return () => callbacks.delete(fn);
+    },
+  };
   const viewer = {
-    scene: { preUpdate: event, screenSpaceCameraController: { enableInputs: false } },
+    scene: {
+      preUpdate: event,
+      screenSpaceCameraController: { enableInputs: false },
+    },
     trackedEntityChanged: event,
     entities: { contains: () => false },
   };
-  return { viewer, callbacks, restore() { Object.assign(globalThis, original); } };
+  return {
+    viewer,
+    callbacks,
+    restore() {
+      Object.assign(globalThis, original);
+    },
+  };
 }
 
 test('Cockpit subscriptions are released once and retained actions cannot restart it', () => {
@@ -35,7 +49,9 @@ test('Cockpit subscriptions are released once and retained actions cannot restar
     assert.equal(owner.toggleTrackedTr3b(), false);
     assert.equal(owner.update(), false);
     assert.equal(owner.active, false);
-  } finally { env.restore(); }
+  } finally {
+    env.restore();
+  }
 });
 
 test('disposing an active Cockpit releases the supplied render owner without retracking', () => {
@@ -43,33 +59,50 @@ test('disposing an active Cockpit releases the supplied render owner without ret
   try {
     const released = [];
     const owner = new CockpitViewController(env.viewer, {
-      services: { releaseContinuousRender: reason => released.push(reason) },
+      services: { releaseContinuousRender: (reason) => released.push(reason) },
     });
     owner.active = true;
     owner.dispose();
     owner.dispose();
     assert.deepEqual(released, ['cockpit']);
-    assert.equal(env.viewer.scene.screenSpaceCameraController.enableInputs, true);
+    assert.equal(
+      env.viewer.scene.screenSpaceCameraController.enableInputs,
+      true,
+    );
     assert.equal(env.viewer.trackedEntity, undefined);
     assert.equal(owner.active, false);
-  } finally { env.restore(); }
+  } finally {
+    env.restore();
+  }
 });
 
 test('aircraft identity is read from the supplied layer instances', () => {
   const env = environment();
   try {
-    const civilian = { icao24: 'abc123', layerId: 'flights', callsign: 'CIVIL' };
-    const military = { icao24: 'def456', layerId: 'military', callsign: 'MILITARY' };
-    const owner = new CockpitViewController(env.viewer, { services: {
-      flightsLayer: { getTrackedInfo: () => civilian },
-      militaryFlightsLayer: { getTrackedInfo: () => military },
-    } });
+    const civilian = {
+      icao24: 'abc123',
+      layerId: 'flights',
+      callsign: 'CIVIL',
+    };
+    const military = {
+      icao24: 'def456',
+      layerId: 'military',
+      callsign: 'MILITARY',
+    };
+    const owner = new CockpitViewController(env.viewer, {
+      services: {
+        flightsLayer: { getTrackedInfo: () => civilian },
+        militaryFlightsLayer: { getTrackedInfo: () => military },
+      },
+    });
     env.viewer.trackedEntity = { gevTrackedId: 'military:def456' };
     assert.deepEqual(owner.readAircraftInfo(), military);
     env.viewer.trackedEntity = { gevTrackedId: 'flights:abc123' };
     assert.deepEqual(owner.readAircraftInfo(), civilian);
     owner.dispose();
-  } finally { env.restore(); }
+  } finally {
+    env.restore();
+  }
 });
 
 test('an obsolete regional briefing cannot publish after Cockpit disposal', async () => {
@@ -77,23 +110,34 @@ test('an obsolete regional briefing cannot publish after Cockpit disposal', asyn
   try {
     let finish;
     let signal;
-    const owner = new CockpitViewController(env.viewer, { services: {
-      regionalDistanceM: () => Infinity,
-      fetchRegionalBrief: (_lat, _lon, options) => {
-        signal = options.signal;
-        return new Promise(resolve => { finish = resolve; });
+    const owner = new CockpitViewController(env.viewer, {
+      services: {
+        regionalDistanceM: () => Infinity,
+        fetchRegionalBrief: (_lat, _lon, options) => {
+          signal = options.signal;
+          return new Promise((resolve) => {
+            finish = resolve;
+          });
+        },
+        releaseContinuousRender() {},
       },
-      releaseContinuousRender() {},
-    } });
+    });
     const published = [];
-    owner.renderRegionalBrief = payload => published.push(payload);
+    owner.renderRegionalBrief = (payload) => published.push(payload);
     owner.active = true;
-    owner.maybeRefreshRegionalBrief({ layerId: 'flights', icao24: 'abc123', latitude: 30, longitude: -97 });
+    owner.maybeRefreshRegionalBrief({
+      layerId: 'flights',
+      icao24: 'abc123',
+      latitude: 30,
+      longitude: -97,
+    });
     owner.dispose();
     assert.equal(signal.aborted, true);
     finish({ articles: [] });
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     assert.deepEqual(published, []);
     assert.equal(owner.regionalBriefAbort, null);
-  } finally { env.restore(); }
+  } finally {
+    env.restore();
+  }
 });

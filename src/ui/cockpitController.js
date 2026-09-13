@@ -1,25 +1,65 @@
 /** Coordinate Cockpit lifecycle through supplied aircraft, terrain, rendering and briefing operations. */
-import { readAircraftInfo, dispatchCockpitModeChanged, toggleTrackedTr3b, syncTr3bToggle, syncEntry, navigateContext, _adoptTrackedEntity, enter, exit } from './cockpitTrackingController.js';
+import {
+  readAircraftInfo,
+  dispatchCockpitModeChanged,
+  toggleTrackedTr3b,
+  syncTr3bToggle,
+  syncEntry,
+  navigateContext,
+  _adoptTrackedEntity,
+  enter,
+  exit,
+} from './cockpitTrackingController.js';
 import { update } from './cockpitCamera.js';
-import { updateHud, updateRoute, syncWeatherToggle, setVisionMode, cycleVisionMode, clearPredictiveRoute } from './cockpitInstruments.js';
+import {
+  updateHud,
+  updateRoute,
+  syncWeatherToggle,
+  setVisionMode,
+  cycleVisionMode,
+  clearPredictiveRoute,
+} from './cockpitInstruments.js';
 import { updateContext } from './cockpitContext.js';
-import { showBriefPage, setBriefAutoRotate, startBriefRotation, stopBriefRotation, updateLocalPosition, maybeRefreshRegionalBrief, renderRegionalBriefStatus, renderRegionalBrief } from './cockpitBriefing.js';
-import { handleSignalClick, renderCockpitSignals, pushCockpitSignal, updateCockpitSignals } from './cockpitSignals.js';
-import { scheduleContextLayout, setContextCollapsed, setSignalCollapsed, syncContextLayout, syncSignalLayout } from './cockpitLayout.js';
+import {
+  showBriefPage,
+  setBriefAutoRotate,
+  startBriefRotation,
+  stopBriefRotation,
+  updateLocalPosition,
+  maybeRefreshRegionalBrief,
+  renderRegionalBriefStatus,
+  renderRegionalBrief,
+} from './cockpitBriefing.js';
+import {
+  handleSignalClick,
+  renderCockpitSignals,
+  pushCockpitSignal,
+  updateCockpitSignals,
+} from './cockpitSignals.js';
+import {
+  scheduleContextLayout,
+  setContextCollapsed,
+  setSignalCollapsed,
+  syncContextLayout,
+  syncSignalLayout,
+} from './cockpitLayout.js';
 import { onKeyDown } from './cockpitInput.js';
 import * as Cesium from 'cesium';
 
 export class CockpitViewController {
-  constructor(viewer, {
-    services,
-    onVisionChange = null,
-    onCameraTakeover = null,
-    isEntryAllowed = null,
-    onEntered = null,
-    onExited = null,
-    getInheritedVisionLabel = null,
-    restoreTrackingFrame = null,
-  } = {}) {
+  constructor(
+    viewer,
+    {
+      services,
+      onVisionChange = null,
+      onCameraTakeover = null,
+      isEntryAllowed = null,
+      onEntered = null,
+      onExited = null,
+      getInheritedVisionLabel = null,
+      restoreTrackingFrame = null,
+    } = {},
+  ) {
     this.viewer = viewer;
     this.services = services;
     this.destroyed = false;
@@ -48,11 +88,17 @@ export class CockpitViewController {
     this.speed = document.getElementById('cockpit-speed-value');
     this.speedRim = document.getElementById('cockpit-speed-rim');
     this.speedRimValue = document.getElementById('cockpit-speed-rim-value');
-    this.speedRimTicks = Array.from(document.querySelectorAll('[data-speed-rim-tick]'));
+    this.speedRimTicks = Array.from(
+      document.querySelectorAll('[data-speed-rim-tick]'),
+    );
     this.altitude = document.getElementById('cockpit-altitude-value');
     this.altitudeRim = document.getElementById('cockpit-altitude-rim');
-    this.altitudeRimValue = document.getElementById('cockpit-altitude-rim-value');
-    this.altitudeRimTicks = Array.from(document.querySelectorAll('[data-altitude-rim-tick]'));
+    this.altitudeRimValue = document.getElementById(
+      'cockpit-altitude-rim-value',
+    );
+    this.altitudeRimTicks = Array.from(
+      document.querySelectorAll('[data-altitude-rim-tick]'),
+    );
     this.headingValue = document.getElementById('cockpit-heading-value');
     this.compassTape = document.getElementById('cockpit-compass-tape');
     this.clock = document.getElementById('cockpit-clock');
@@ -63,33 +109,49 @@ export class CockpitViewController {
     this.routeTo = document.getElementById('cockpit-route-to');
     this.routeStatus = document.getElementById('cockpit-route-status');
     this.routeDirection = document.getElementById('cockpit-route-direction');
-    this.routeDirectionLabel = document.getElementById('cockpit-route-direction-label');
+    this.routeDirectionLabel = document.getElementById(
+      'cockpit-route-direction-label',
+    );
     this.visionPrevious = document.getElementById('cockpit-vision-previous');
     this.visionCurrent = document.getElementById('cockpit-vision-current');
-    this.visionCurrentLabel = document.getElementById('cockpit-vision-current-label');
+    this.visionCurrentLabel = document.getElementById(
+      'cockpit-vision-current-label',
+    );
     this.visionNext = document.getElementById('cockpit-vision-next');
     this.visionMode = 'optical';
     this.onVisionChange = onVisionChange;
     this.onCameraTakeover = onCameraTakeover;
     this.onEntered = onEntered;
     this.onExited = onExited;
-    this.getInheritedVisionLabel = typeof getInheritedVisionLabel === 'function'
-      ? getInheritedVisionLabel
-      : () => 'NORMAL';
-    this.restoreTrackingFrame = typeof restoreTrackingFrame === 'function'
-      ? restoreTrackingFrame
-      : () => false;
-    this.isEntryAllowed = typeof isEntryAllowed === 'function' ? isEntryAllowed : () => true;
+    this.getInheritedVisionLabel =
+      typeof getInheritedVisionLabel === 'function'
+        ? getInheritedVisionLabel
+        : () => 'NORMAL';
+    this.restoreTrackingFrame =
+      typeof restoreTrackingFrame === 'function'
+        ? restoreTrackingFrame
+        : () => false;
+    this.isEntryAllowed =
+      typeof isEntryAllowed === 'function' ? isEntryAllowed : () => true;
     this.context = document.getElementById('cockpit-context');
     this.contextSubject = document.getElementById('cockpit-context-subject');
-    this.contextNearestLabel = document.getElementById('cockpit-context-nearest-label');
+    this.contextNearestLabel = document.getElementById(
+      'cockpit-context-nearest-label',
+    );
     this.contextBearing = document.getElementById('cockpit-context-bearing');
     this.contextDistance = document.getElementById('cockpit-context-distance');
-    this.contextDirection = document.getElementById('cockpit-context-direction');
-    this.contextUncertainty = document.getElementById('cockpit-context-uncertainty');
+    this.contextDirection = document.getElementById(
+      'cockpit-context-direction',
+    );
+    this.contextUncertainty = document.getElementById(
+      'cockpit-context-uncertainty',
+    );
     this.contextUpdated = document.getElementById('cockpit-context-updated');
-    this.contextCohorts = new Map(Array.from(document.querySelectorAll('[data-context-cohort]'))
-      .map((element) => [element.dataset.contextCohort, element]));
+    this.contextCohorts = new Map(
+      Array.from(document.querySelectorAll('[data-context-cohort]')).map(
+        (element) => [element.dataset.contextCohort, element],
+      ),
+    );
     this.contextPrevious = document.getElementById('cockpit-context-previous');
     this.contextNext = document.getElementById('cockpit-context-next');
     this.contextToggle = document.getElementById('cockpit-context-toggle');
@@ -106,18 +168,30 @@ export class CockpitViewController {
     this.briefAutoToggle = document.getElementById('cockpit-brief-auto');
     this.briefPosition = document.getElementById('cockpit-brief-position');
     this.briefSource = document.getElementById('cockpit-brief-source');
-    this.briefPages = Array.from(document.querySelectorAll('[data-cockpit-brief-page]'));
-    this.briefTabs = Array.from(document.querySelectorAll('[data-cockpit-brief-index]'));
+    this.briefPages = Array.from(
+      document.querySelectorAll('[data-cockpit-brief-page]'),
+    );
+    this.briefTabs = Array.from(
+      document.querySelectorAll('[data-cockpit-brief-index]'),
+    );
     this.newsStatus = document.getElementById('cockpit-news-status');
     this.newsList = document.getElementById('cockpit-news-list');
     this.localPlace = document.getElementById('cockpit-local-place');
-    this.localCoordinates = document.getElementById('cockpit-local-coordinates');
-    this.localTemperature = document.getElementById('cockpit-local-temperature');
+    this.localCoordinates = document.getElementById(
+      'cockpit-local-coordinates',
+    );
+    this.localTemperature = document.getElementById(
+      'cockpit-local-temperature',
+    );
     this.localWind = document.getElementById('cockpit-local-wind');
-    this.localWindDirection = document.getElementById('cockpit-local-wind-direction');
+    this.localWindDirection = document.getElementById(
+      'cockpit-local-wind-direction',
+    );
     this.localCondition = document.getElementById('cockpit-local-condition');
     this.localCloud = document.getElementById('cockpit-local-cloud');
-    this.localPrecipitation = document.getElementById('cockpit-local-precipitation');
+    this.localPrecipitation = document.getElementById(
+      'cockpit-local-precipitation',
+    );
     this.signalCollapsed = false;
     this.signalUserCollapsed = false;
     this.signalItems = [];
@@ -166,32 +240,50 @@ export class CockpitViewController {
     this._listen(this.visionPrevious, 'click', () => this.cycleVisionMode(-1));
     this._listen(this.visionCurrent, 'click', () => this.cycleVisionMode(1));
     this._listen(this.visionNext, 'click', () => this.cycleVisionMode(1));
-    this._listen(this.contextPrevious, 'click', () => this.navigateContext(-1, { origin: 'user' }));
-    this._listen(this.contextNext, 'click', () => this.navigateContext(1, { origin: 'user' }));
-    this._listen(this.contextToggle, 'click', () => this.setContextCollapsed(!this.contextCollapsed));
+    this._listen(this.contextPrevious, 'click', () =>
+      this.navigateContext(-1, { origin: 'user' }),
+    );
+    this._listen(this.contextNext, 'click', () =>
+      this.navigateContext(1, { origin: 'user' }),
+    );
+    this._listen(this.contextToggle, 'click', () =>
+      this.setContextCollapsed(!this.contextCollapsed),
+    );
     this._listen(this.weatherToggle, 'click', () => {
-      const enabled = this.weatherToggle.getAttribute('aria-pressed') !== 'true';
+      const enabled =
+        this.weatherToggle.getAttribute('aria-pressed') !== 'true';
       this.syncWeatherToggle(enabled);
-      window.dispatchEvent(new CustomEvent('gev:cockpit-weather-toggle', {
-        detail: { enabled },
-      }));
+      window.dispatchEvent(
+        new CustomEvent('gev:cockpit-weather-toggle', {
+          detail: { enabled },
+        }),
+      );
     });
     this._listen(window, 'gev:cockpit-weather-state', (event) => {
       this.syncWeatherToggle(event?.detail?.enabled !== false);
     });
-    this._listen(this.signalToggle, 'click', () => this.setSignalCollapsed(
-      !this.signalCollapsed,
-      { user: true },
-    ));
-    this._listen(this.signalList, 'click', (event) => this.handleSignalClick(event));
-    this._listen(this.briefPrevious, 'click', () => this.showBriefPage(this.briefPageIndex - 1, { manual: true }));
-    this._listen(this.briefNext, 'click', () => this.showBriefPage(this.briefPageIndex + 1, { manual: true }));
+    this._listen(this.signalToggle, 'click', () =>
+      this.setSignalCollapsed(!this.signalCollapsed, { user: true }),
+    );
+    this._listen(this.signalList, 'click', (event) =>
+      this.handleSignalClick(event),
+    );
+    this._listen(this.briefPrevious, 'click', () =>
+      this.showBriefPage(this.briefPageIndex - 1, { manual: true }),
+    );
+    this._listen(this.briefNext, 'click', () =>
+      this.showBriefPage(this.briefPageIndex + 1, { manual: true }),
+    );
     this._listen(this.briefAutoToggle, 'click', () => {
       this.setBriefAutoRotate(!this.briefAutoRotateEnabled);
     });
-    this.briefTabs.forEach((button) => this._listen(button, 'click', () => {
-      this.showBriefPage(Number(button.dataset.cockpitBriefIndex), { manual: true });
-    }));
+    this.briefTabs.forEach((button) =>
+      this._listen(button, 'click', () => {
+        this.showBriefPage(Number(button.dataset.cockpitBriefIndex), {
+          manual: true,
+        });
+      }),
+    );
     this._listen(document, 'visibilitychange', () => {
       if (document.hidden) this.stopBriefRotation();
       else if (this.briefAutoRotateEnabled) this.startBriefRotation();
@@ -203,45 +295,117 @@ export class CockpitViewController {
   _listen(target, type, handler, options) {
     if (!target?.addEventListener) return;
     target.addEventListener(type, handler, options);
-    this._listenerRemovers.push(() => target.removeEventListener(type, handler, options));
+    this._listenerRemovers.push(() =>
+      target.removeEventListener(type, handler, options),
+    );
   }
 
-  readAircraftInfo() { return readAircraftInfo.call(this); }
-  dispatchCockpitModeChanged(active, info) { return dispatchCockpitModeChanged.call(this, active, info); }
-  toggleTrackedTr3b() { return toggleTrackedTr3b.call(this); }
-  syncTr3bToggle(info) { return syncTr3bToggle.call(this, info); }
-  syncEntry() { return syncEntry.call(this); }
-  navigateContext(direction, options) { return navigateContext.call(this, direction, options); }
-  _adoptTrackedEntity(nowMs, suppliedInfo) { return _adoptTrackedEntity.call(this, nowMs, suppliedInfo); }
-  enter() { return enter.call(this); }
-  exit(options) { return exit.call(this, options); }
-  update() { return update.call(this); }
-  updateHud(info, nowMs, forceContext) { return updateHud.call(this, info, nowMs, forceContext); }
-  updateRoute(info) { return updateRoute.call(this, info); }
-  syncWeatherToggle(enabled) { return syncWeatherToggle.call(this, enabled); }
-  setVisionMode(mode, options) { return setVisionMode.call(this, mode, options); }
-  cycleVisionMode(direction) { return cycleVisionMode.call(this, direction); }
-  clearPredictiveRoute() { return clearPredictiveRoute.call(this); }
-  updateContext(info, heading) { return updateContext.call(this, info, heading); }
-  showBriefPage(index, options) { return showBriefPage.call(this, index, options); }
-  setBriefAutoRotate(enabled) { return setBriefAutoRotate.call(this, enabled); }
-  startBriefRotation(options) { return startBriefRotation.call(this, options); }
-  stopBriefRotation() { return stopBriefRotation.call(this); }
-  updateLocalPosition(info) { return updateLocalPosition.call(this, info); }
-  maybeRefreshRegionalBrief(info) { return maybeRefreshRegionalBrief.call(this, info); }
-  renderRegionalBriefStatus(status, info) { return renderRegionalBriefStatus.call(this, status, info); }
-  renderRegionalBrief(payload, info) { return renderRegionalBrief.call(this, payload, info); }
-  renderCockpitSignals() { return renderCockpitSignals.call(this); }
-  pushCockpitSignal(key, tone, title, detail, target) { return pushCockpitSignal.call(this, key, tone, title, detail, target); }
-  updateCockpitSignals(snapshot, unknownCount) { return updateCockpitSignals.call(this, snapshot, unknownCount); }
-  scheduleContextLayout() { return scheduleContextLayout.call(this); }
-  setContextCollapsed(collapsed) { return setContextCollapsed.call(this, collapsed); }
-  setSignalCollapsed(collapsed, options) { return setSignalCollapsed.call(this, collapsed, options); }
-  syncContextLayout() { return syncContextLayout.call(this); }
-  syncSignalLayout() { return syncSignalLayout.call(this); }
-  onKeyDown(event) { return onKeyDown.call(this, event); }
+  readAircraftInfo() {
+    return readAircraftInfo.call(this);
+  }
+  dispatchCockpitModeChanged(active, info) {
+    return dispatchCockpitModeChanged.call(this, active, info);
+  }
+  toggleTrackedTr3b() {
+    return toggleTrackedTr3b.call(this);
+  }
+  syncTr3bToggle(info) {
+    return syncTr3bToggle.call(this, info);
+  }
+  syncEntry() {
+    return syncEntry.call(this);
+  }
+  navigateContext(direction, options) {
+    return navigateContext.call(this, direction, options);
+  }
+  _adoptTrackedEntity(nowMs, suppliedInfo) {
+    return _adoptTrackedEntity.call(this, nowMs, suppliedInfo);
+  }
+  enter() {
+    return enter.call(this);
+  }
+  exit(options) {
+    return exit.call(this, options);
+  }
+  update() {
+    return update.call(this);
+  }
+  updateHud(info, nowMs, forceContext) {
+    return updateHud.call(this, info, nowMs, forceContext);
+  }
+  updateRoute(info) {
+    return updateRoute.call(this, info);
+  }
+  syncWeatherToggle(enabled) {
+    return syncWeatherToggle.call(this, enabled);
+  }
+  setVisionMode(mode, options) {
+    return setVisionMode.call(this, mode, options);
+  }
+  cycleVisionMode(direction) {
+    return cycleVisionMode.call(this, direction);
+  }
+  clearPredictiveRoute() {
+    return clearPredictiveRoute.call(this);
+  }
+  updateContext(info, heading) {
+    return updateContext.call(this, info, heading);
+  }
+  showBriefPage(index, options) {
+    return showBriefPage.call(this, index, options);
+  }
+  setBriefAutoRotate(enabled) {
+    return setBriefAutoRotate.call(this, enabled);
+  }
+  startBriefRotation(options) {
+    return startBriefRotation.call(this, options);
+  }
+  stopBriefRotation() {
+    return stopBriefRotation.call(this);
+  }
+  updateLocalPosition(info) {
+    return updateLocalPosition.call(this, info);
+  }
+  maybeRefreshRegionalBrief(info) {
+    return maybeRefreshRegionalBrief.call(this, info);
+  }
+  renderRegionalBriefStatus(status, info) {
+    return renderRegionalBriefStatus.call(this, status, info);
+  }
+  renderRegionalBrief(payload, info) {
+    return renderRegionalBrief.call(this, payload, info);
+  }
+  renderCockpitSignals() {
+    return renderCockpitSignals.call(this);
+  }
+  pushCockpitSignal(key, tone, title, detail, target) {
+    return pushCockpitSignal.call(this, key, tone, title, detail, target);
+  }
+  updateCockpitSignals(snapshot, unknownCount) {
+    return updateCockpitSignals.call(this, snapshot, unknownCount);
+  }
+  scheduleContextLayout() {
+    return scheduleContextLayout.call(this);
+  }
+  setContextCollapsed(collapsed) {
+    return setContextCollapsed.call(this, collapsed);
+  }
+  setSignalCollapsed(collapsed, options) {
+    return setSignalCollapsed.call(this, collapsed, options);
+  }
+  syncContextLayout() {
+    return syncContextLayout.call(this);
+  }
+  syncSignalLayout() {
+    return syncSignalLayout.call(this);
+  }
+  onKeyDown(event) {
+    return onKeyDown.call(this, event);
+  }
 
-  handleSignalClick(event) { return handleSignalClick.call(this, event); }
+  handleSignalClick(event) {
+    return handleSignalClick.call(this, event);
+  }
 
   dispose() {
     if (this.destroyed) return;
@@ -251,9 +415,10 @@ export class CockpitViewController {
     this.regionalBriefAbort = null;
     this.regionalBriefRequestToken += 1;
     this.stopBriefRotation();
-    if (this.contextLayoutFrame !== null) cancelAnimationFrame(this.contextLayoutFrame);
+    if (this.contextLayoutFrame !== null)
+      cancelAnimationFrame(this.contextLayoutFrame);
     this.contextLayoutFrame = null;
-    for (const removeListener of this._listenerRemovers.splice(0)) removeListener?.();
+    for (const removeListener of this._listenerRemovers.splice(0))
+      removeListener?.();
   }
 }
-

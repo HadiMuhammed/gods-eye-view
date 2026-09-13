@@ -413,8 +413,6 @@
       "src/cockpitVisionPolicy.js",
       "src/ui/panelRailGeometry.js"
     ],
-    "external": [
-      "cesium"
-    ]
+    "external": ["cesium"]
   }
 }

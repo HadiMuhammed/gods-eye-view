@@ -31,9 +31,11 @@ export const COCKPIT_GROUND_WAIT_TIMEOUT_MS = 5000;
 
 export const COCKPIT_BRIEF_ROTATE_MS = 9000;
 
-export const COCKPIT_BRIEF_CYCLE_OFF_HELP = 'Cycle briefing pages automatically every 9 seconds (Signals → News → Local). Pauses while you hover or focus the panel. Live signal data refreshes continuously either way.';
+export const COCKPIT_BRIEF_CYCLE_OFF_HELP =
+  'Cycle briefing pages automatically every 9 seconds (Signals → News → Local). Pauses while you hover or focus the panel. Live signal data refreshes continuously either way.';
 
-export const COCKPIT_BRIEF_CYCLE_ON_HELP = 'Stop automatic page cycling. Previous, Next, and the SIG/NEWS/LOCAL tabs stay available.';
+export const COCKPIT_BRIEF_CYCLE_ON_HELP =
+  'Stop automatic page cycling. Previous, Next, and the SIG/NEWS/LOCAL tabs stay available.';
 
 export const COCKPIT_REGIONAL_REFRESH_MS = 5 * 60_000;
 
@@ -64,7 +66,11 @@ export function isRenderedOnScreen(element) {
   if (!element) return false;
   for (let node = element; node instanceof Element; node = node.parentElement) {
     const style = getComputedStyle(node);
-    if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
+    if (
+      style.display === 'none' ||
+      style.visibility === 'hidden' ||
+      Number(style.opacity) === 0
+    ) {
       return false;
     }
   }
@@ -88,45 +94,56 @@ export function formatCockpitWindDirection(value) {
   return `${labels[Math.round(normalized / 45) % labels.length]} · ${Math.round(normalized)}°`;
 }
 
-export function setCockpitRollingValue(element, text, numericValue, {
-  circularRange = null,
-  immediate = false,
-} = {}) {
+export function setCockpitRollingValue(
+  element,
+  text,
+  numericValue,
+  { circularRange = null, immediate = false } = {},
+) {
   if (!element) return;
   const nextText = String(text);
   const previousText = element.dataset.rollingText;
   const previousValue = Number(element.dataset.rollingValue);
   const nowMs = performance.now();
   const lastRollMs = Number(element.dataset.rollingAt);
-  if (!immediate
-    && previousText !== undefined
-    && previousText !== nextText
-    && Number.isFinite(lastRollMs)
-    && nowMs - lastRollMs < 220) {
+  if (
+    !immediate &&
+    previousText !== undefined &&
+    previousText !== nextText &&
+    Number.isFinite(lastRollMs) &&
+    nowMs - lastRollMs < 220
+  ) {
     return;
   }
   element.dataset.rollingText = nextText;
   element.dataset.rollingAt = String(nowMs);
-  if (Number.isFinite(numericValue)) element.dataset.rollingValue = String(numericValue);
+  if (Number.isFinite(numericValue))
+    element.dataset.rollingValue = String(numericValue);
   else delete element.dataset.rollingValue;
   element.setAttribute('aria-label', nextText);
 
   if (immediate || previousText === undefined || previousText === nextText) {
-    if (previousText !== nextText || !element.querySelector('.cockpit-roll-token')) {
-      element.replaceChildren(...Array.from(nextText, (character) => {
-        const token = document.createElement('span');
-        token.className = 'cockpit-roll-token';
-        token.setAttribute('aria-hidden', 'true');
-        token.textContent = character;
-        return token;
-      }));
+    if (
+      previousText !== nextText ||
+      !element.querySelector('.cockpit-roll-token')
+    ) {
+      element.replaceChildren(
+        ...Array.from(nextText, (character) => {
+          const token = document.createElement('span');
+          token.className = 'cockpit-roll-token';
+          token.setAttribute('aria-hidden', 'true');
+          token.textContent = character;
+          return token;
+        }),
+      );
     }
     return;
   }
 
-  let delta = Number.isFinite(numericValue) && Number.isFinite(previousValue)
-    ? numericValue - previousValue
-    : 0;
+  let delta =
+    Number.isFinite(numericValue) && Number.isFinite(previousValue)
+      ? numericValue - previousValue
+      : 0;
   if (Number.isFinite(circularRange) && circularRange > 0) {
     const halfRange = circularRange / 2;
     if (delta > halfRange) delta -= circularRange;
@@ -145,9 +162,11 @@ export function setCockpitRollingValue(element, text, numericValue, {
     token.className = 'cockpit-roll-token';
     token.setAttribute('aria-hidden', 'true');
 
-    if (previousCharacter === nextCharacter
-      || !/\d/.test(previousCharacter)
-      || !/\d/.test(nextCharacter)) {
+    if (
+      previousCharacter === nextCharacter ||
+      !/\d/.test(previousCharacter) ||
+      !/\d/.test(nextCharacter)
+    ) {
       token.textContent = nextCharacter === ' ' ? '\u00a0' : nextCharacter;
       fragment.append(token);
       continue;
