@@ -13,6 +13,8 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ## [Unreleased]
 
+- Extract Display control bindings with synchronous listener cleanup; preserve existing visual actions and native input behavior.
+
 - Extract application shortcuts and shader-parameter controls into reusable UI
   components, preserving inputs and cleaning up listeners on rebuild/disposal.
 

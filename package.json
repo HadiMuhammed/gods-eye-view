@@ -123,5 +123,6 @@
     "./ui/panels": "./src/ui/panelDisclosure.js",
     "./ui/surfaces": "./src/ui/surfaceKeyboard.js",
     "./ui/layout": "./src/ui/panelRails.js",
-    "./ui/input": "./src/ui/visualInput.js"
+    "./ui/input": "./src/ui/visualInput.js",
+    "./ui/display": "./src/ui/displayControls.js"
 }

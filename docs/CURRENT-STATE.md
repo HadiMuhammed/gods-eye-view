@@ -1,5 +1,12 @@
 # God's Eye View Current State
 
+## Display control ownership
+
+Display button, selector and slider listeners have a single destroyable owner.
+The application supplies actions and retains effect settings, restore claims and
+rendering. Native keyboard editing, model modes and current defaults are preserved.
+Destroying the UI removes these listeners before asynchronous teardown.
+
 ## Application shortcuts and shader parameter controls
 
 `ui/input` supplies the bubbling application shortcut listener and generated

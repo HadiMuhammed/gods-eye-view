@@ -243,3 +243,10 @@ Clearing permits reuse; destruction is final. Neither module imports the app,
 renderer, persistence or services. The facade retains panel visibility, share
 restore claims and render scheduling. Both controls are destroyed before the
 facade's asynchronous teardown can yield.
+
+## Display controls
+
+`ui/display` owns Display button, selector and slider subscriptions. It receives
+DOM elements and explicit actions, imports no application or effect singleton,
+and releases every listener on destruction. Settings and rendering remain with
+the caller.

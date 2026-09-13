@@ -419,16 +419,16 @@ test('every explicit visual UI gesture claims restore authority before it mutate
   const gestureRoutes = [
     ['toggleHud: () => {', 'toggleOrbit: () =>', 'this.hud.toggle()', 'HUD hotkey'],
     ['cycleDetection: () => {', 'toggleCctv: () =>', 'cycleDetectionMode()', 'detection hotkey'],
-    ['// Bloom toggle', '// Bloom intensity slider', 'this._setBloomEnabled(', 'bloom button'],
-    ['// Bloom intensity slider', '// Sharpen toggle', 'this._setBloomIntensity(', 'bloom slider'],
-    ['// Sharpen toggle', '// Scope mask', 'this._setSharpenEnabled(', 'sharpen button'],
-    ["this._scopeBtn?.addEventListener('click'", "this._scopeFeatherSlider?.addEventListener('input'", 'setScopeMaskEnabled(', 'scope button'],
-    ["this._scopeFeatherSlider?.addEventListener('input'", 'if (this._sharpenSlider)', 'setScopeMaskFeather(', 'scope feather slider'],
-    ["this._sharpenSlider.addEventListener('input'", 'if (this._hudLayoutSelect)', 'this._applySharpenIntensity(', 'sharpen slider'],
-    ["this._hudLayoutSelect.addEventListener('change'", 'if (this._cleanViewBtn)', 'this._setHudVariant(', 'HUD layout select'],
-    ["this._detectionDensitySlider.addEventListener('input'", 'for (const button of this._detectionAllocationBtns)', 'this._applyDetectionDensityFromUi()', 'detection density slider'],
-    ["button.addEventListener('click'", 'for (const slider of [this._detectionFadeSlider', 'this._setDetectionAllocation(', 'detection allocation button'],
-    ["slider?.addEventListener('input'", 'if (this._celestialBtn)', 'this._applyDetectionFadeFromUi()', 'detection fade controls'],
+    ['toggleBloom:', 'setBloomIntensity:', 'this._setBloomEnabled(', 'toggleBloom control'],
+    ['setBloomIntensity:', 'toggleSharpen:', 'this._setBloomIntensity(', 'setBloomIntensity control'],
+    ['toggleSharpen:', 'toggleScope:', 'this._setSharpenEnabled(', 'toggleSharpen control'],
+    ['toggleScope:', 'setScopeFeather:', 'setScopeMaskEnabled(', 'toggleScope control'],
+    ['setScopeFeather:', 'setSharpenIntensity:', 'setScopeMaskFeather(', 'setScopeFeather control'],
+    ['setSharpenIntensity:', 'setHudLayout:', 'this._applySharpenIntensity(', 'setSharpenIntensity control'],
+    ['setHudLayout:', 'toggleCleanView:', 'this._setHudVariant(', 'setHudLayout control'],
+    ['setDensity:', 'setAllocation:', 'this._applyDetectionDensityFromUi()', 'setDensity control'],
+    ['setAllocation:', 'setFade:', 'this._setDetectionAllocation(', 'setAllocation control'],
+    ['setFade:', 'toggleCelestial:', 'this._applyDetectionFadeFromUi()', 'setFade control'],
   ];
   for (const [start, end, mutation, label] of gestureRoutes) {
     const startIndex = initUi.indexOf(start);
@@ -437,23 +437,10 @@ test('every explicit visual UI gesture claims restore authority before it mutate
     assertClaimsBefore(initUi.slice(startIndex, endIndex), mutation, label);
   }
 
-  const hudToggle = sourceBlock('  _initHUDToggle() {', '  _initCockpitDisplayPortal() {');
-  assertClaimsBefore(
-    hudToggle.slice(
-      hudToggle.indexOf("this._hudBtn.addEventListener('click'"),
-      hudToggle.indexOf('if (this._hudLayoutSelect)'),
-    ),
-    'this.hud.toggle()',
-    'HUD button',
-  );
-  assertClaimsBefore(
-    hudToggle.slice(
-      hudToggle.indexOf("this._detectionBtn.addEventListener('click'"),
-      hudToggle.indexOf('this._cockpitDisplayToggleBtn'),
-    ),
-    'cycleDetectionMode()',
-    'detection button',
-  );
+  const displayActions = initUi.slice(initUi.indexOf('this._displayControls ='));
+  assertClaimsBefore(displayActions.slice(displayActions.indexOf('toggleHud:'), displayActions.indexOf('cycleDetection:')), 'this.hud.toggle()', 'HUD button');
+  assertClaimsBefore(displayActions.slice(displayActions.indexOf('cycleDetection:'), displayActions.indexOf('toggleModels:')), 'cycleDetectionMode()', 'detection button');
+
 });
 
 // Contacts OWNS detection while it is active (forced Dense @ 75%). That makes
@@ -703,5 +690,6 @@ test('visual input listeners are revoked before asynchronous UI teardown', () =>
   assert.ok(firstAwait > 0);
   const synchronous = disposal.slice(0, firstAwait);
   assert.match(synchronous, /this\._applicationShortcuts\?\.destroy\(\)/);
+  assert.match(synchronous, /this\._displayControls\?\.destroy\(\)/);
   assert.match(synchronous, /this\._styleParameters\?\.destroy\(\)/);
 });

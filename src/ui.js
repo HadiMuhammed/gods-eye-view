@@ -1,3 +1,4 @@
+import { bindDisplayControls } from './ui/displayControls.js';
 import { bindApplicationShortcuts, createStyleParameters } from './ui/visualInput.js';
 import { layoutLeftPanelRail, layoutRightPanelRail } from './ui/panelRails.js';
 import { bindPanelDisclosure, collapsePanelOnEscape, createHoverDisclosure } from './ui/panelDisclosure.js';
@@ -3394,11 +3395,6 @@ export class StyleManager {
    * @returns {void}
    */
   _initUI() {
-    // Style buttons
-    document.querySelectorAll('.style-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.setStyle(btn.dataset.style));
-    });
-
     this._applicationShortcuts?.destroy();
     this._applicationShortcuts = bindApplicationShortcuts({
       documentRef: document,
@@ -3431,108 +3427,109 @@ export class StyleManager {
       },
     });
 
-    // Bloom toggle
-    this._bloomBtn.addEventListener('click', () => {
-      this.shareLinkManager?.claimRestoreLane?.('visual');
-      this._setBloomEnabled(!this.bloomEnabled);
+    this._displayControls?.destroy();
+    this._displayControls = bindDisplayControls({
+      elements: {
+        styleButtons: document.querySelectorAll('.style-btn'),
+        bloomButton: this._bloomBtn, bloomSlider: this._bloomSlider,
+        sharpenButton: this._sharpenBtn, sharpenSlider: this._sharpenSlider,
+        scopeButton: this._scopeBtn, scopeFeatherSlider: this._scopeFeatherSlider,
+        hudLayout: this._hudLayoutSelect, hudButton: this._hudBtn,
+        cleanViewButton: this._cleanViewBtn, cleanViewExitButton: this._cleanViewExitBtn,
+        densitySlider: this._detectionDensitySlider, detectionButton: this._detectionBtn,
+        allocationButtons: this._detectionAllocationBtns,
+        fadeSliders: [this._detectionFadeSlider, this._detectionOpacitySlider],
+        celestialButton: this._celestialBtn,
+        modelsButton: this._models3dBtn,
+        modelModeButtons: this._models3dBtn ? this._models3dModeBtns : [],
+      },
+      actions: {
+        setStyle: (style) => this.setStyle(style),
+        toggleBloom: () => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this._setBloomEnabled(!this.bloomEnabled);
+        },
+        setBloomIntensity: (value) => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this._setBloomIntensity(value);
+        },
+        toggleSharpen: () => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this._setSharpenEnabled(!this.sharpenEnabled);
+        },
+        toggleScope: () => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          const next = !isScopeMaskEnabled();
+          setScopeMaskEnabled(next);
+          this._scopeBtn.classList.toggle('active', next);
+          this._scopeBtn.setAttribute('aria-pressed', String(next));
+          this._syncShareState();
+        },
+        setScopeFeather: (value) => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          const pct = Math.max(0, Math.min(100, value || 0));
+          if (this._scopeFeatherValue) this._scopeFeatherValue.textContent = `${pct}%`;
+          setScopeMaskFeather(pct / 100);
+          this._syncShareState();
+        },
+        setSharpenIntensity: (pct) => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          if (this._sharpenSliderValue) this._sharpenSliderValue.textContent = `${pct}%`;
+          this._applySharpenIntensity(pct / 100);
+          this._syncShareState();
+        },
+        setHudLayout: (value) => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this._setHudVariant(value);
+        },
+        toggleCleanView: () => this.toggleCleanView(),
+        exitCleanView: () => this.toggleCleanView(false),
+        setDensity: (value) => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this._detectionUserOverridden = true;
+          const pct = canonicalizeDensity(value);
+          this._detectionDensitySlider.value = String(pct);
+          if (this._detectionDensityValue) this._detectionDensityValue.textContent = `${pct}%`;
+          this._applyDetectionDensityFromUi();
+          this._syncShareState();
+        },
+        setAllocation: (value) => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this._detectionUserOverridden = true;
+          this._setDetectionAllocation(value);
+        },
+        setFade: () => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this._applyDetectionFadeFromUi();
+          this._syncShareState();
+        },
+        toggleCelestial: () => {
+          const ringIsVisible = !!this.celestialRing?.visible;
+          if (!this.celestialRingEnabled || !ringIsVisible) {
+            this.setCelestialRingEnabled(true, { focus: true });
+          } else {
+            this.setCelestialRingEnabled(false);
+          }
+        },
+        toggleHud: () => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this.hud.toggle();
+          this._updateHudButtonState();
+          this._syncShareState();
+        },
+        cycleDetection: () => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this._detectionUserOverridden = true;
+          cycleDetectionMode();
+          this._syncShareState();
+        },
+        toggleModels: () => {
+          this._setModels3dEnabled(!this._models3dEnabled);
+          this._syncModels3dModeRow();
+        },
+        setModelsMode: (mode) => this._setModels3dMode(mode),
+      },
     });
-
-    // Bloom intensity slider
-    this._bloomSlider.addEventListener('input', () => {
-      this.shareLinkManager?.claimRestoreLane?.('visual');
-      this._setBloomIntensity(parseInt(this._bloomSlider.value, 10));
-    });
-
-    // Sharpen toggle
-    this._sharpenBtn.addEventListener('click', () => {
-      this.shareLinkManager?.claimRestoreLane?.('visual');
-      this._setSharpenEnabled(!this.sharpenEnabled);
-    });
-
-    // Scope mask — the explicit circular viewport treatment (owner ask:
-    // standalone toggle + featherable edge; see src/scopeMask.js).
-    this._scopeBtn?.addEventListener('click', () => {
-      this.shareLinkManager?.claimRestoreLane?.('visual');
-      const next = !isScopeMaskEnabled();
-      setScopeMaskEnabled(next);
-      this._scopeBtn.classList.toggle('active', next);
-      this._scopeBtn.setAttribute('aria-pressed', String(next));
-      this._syncShareState();
-    });
-    this._scopeFeatherSlider?.addEventListener('input', () => {
-      this.shareLinkManager?.claimRestoreLane?.('visual');
-      const pct = Math.max(0, Math.min(100, parseInt(this._scopeFeatherSlider.value, 10) || 0));
-      if (this._scopeFeatherValue) this._scopeFeatherValue.textContent = `${pct}%`;
-      setScopeMaskFeather(pct / 100);
-      this._syncShareState();
-    });
-
-    if (this._sharpenSlider) {
-      this._sharpenSlider.addEventListener('input', () => {
-        this.shareLinkManager?.claimRestoreLane?.('visual');
-        const pct = parseInt(this._sharpenSlider.value, 10);
-        if (this._sharpenSliderValue) {
-          this._sharpenSliderValue.textContent = `${pct}%`;
-        }
-        this._applySharpenIntensity(pct / 100);
-        this._syncShareState();
-      });
-    }
-
-    if (this._hudLayoutSelect) {
-      this._hudLayoutSelect.addEventListener('change', () => {
-        this.shareLinkManager?.claimRestoreLane?.('visual');
-        this._setHudVariant(this._hudLayoutSelect.value);
-      });
-    }
-
-    if (this._cleanViewBtn) {
-      this._cleanViewBtn.addEventListener('click', () => this.toggleCleanView());
-    }
-    if (this._cleanViewExitBtn) {
-      this._cleanViewExitBtn.addEventListener('click', () => this.toggleCleanView(false));
-    }
-
-    if (this._detectionDensitySlider) {
-      this._detectionDensitySlider.addEventListener('input', () => {
-        this.shareLinkManager?.claimRestoreLane?.('visual');
-        this._detectionUserOverridden = true;
-        const pct = canonicalizeDensity(this._detectionDensitySlider.value);
-        this._detectionDensitySlider.value = String(pct);
-        if (this._detectionDensityValue) {
-          this._detectionDensityValue.textContent = `${pct}%`;
-        }
-        this._applyDetectionDensityFromUi();
-        this._syncShareState();
-      });
-    }
-
-    for (const button of this._detectionAllocationBtns) {
-      button.addEventListener('click', () => {
-        this.shareLinkManager?.claimRestoreLane?.('visual');
-        this._detectionUserOverridden = true;
-        this._setDetectionAllocation(button.dataset.allocation);
-      });
-    }
-
-    for (const slider of [this._detectionFadeSlider, this._detectionOpacitySlider]) {
-      slider?.addEventListener('input', () => {
-        this.shareLinkManager?.claimRestoreLane?.('visual');
-        this._applyDetectionFadeFromUi();
-        this._syncShareState();
-      });
-    }
-
-    if (this._celestialBtn) {
-      this._celestialBtn.addEventListener('click', () => {
-        const ringIsVisible = !!this.celestialRing?.visible;
-        if (!this.celestialRingEnabled || !ringIsVisible) {
-          this.setCelestialRingEnabled(true, { focus: true });
-        } else {
-          this.setCelestialRingEnabled(false);
-        }
-      });
-    }
   }
 
   /**
@@ -9387,26 +9384,15 @@ export class StyleManager {
     this._layoutRightPanels();
   }
 
+  _syncModels3dModeRow() {
+    if (this._models3dModeRow) this._models3dModeRow.classList.toggle('visible', this._models3dEnabled);
+    this._layoutRightPanels();
+  }
+
   _initModels3dToggle() {
     if (!this._models3dBtn) return;
-    // The Proximity/All mode row is revealed only while 3D is on (mirrors the DETECT slider row).
-    const syncModeRow = () => {
-      if (this._models3dModeRow) this._models3dModeRow.classList.toggle('visible', this._models3dEnabled);
-      this._layoutRightPanels();
-    };
-    this._models3dBtn.addEventListener('click', () => {
-      this._setModels3dEnabled(!this._models3dEnabled);
-      syncModeRow();
-    });
-    for (const btn of this._models3dModeBtns) {
-      if (!btn) continue;
-      btn.addEventListener('click', () => {
-        const mode = btn.dataset.mode === 'all' ? 'all' : 'proximity';
-        this._setModels3dMode(mode);
-      });
-    }
     this._syncModels3dButtonState();
-    syncModeRow();
+    this._syncModels3dModeRow();
   }
 
   _setModels3dEnabled(enabled) {
@@ -9439,13 +9425,6 @@ export class StyleManager {
   }
 
   _initHUDToggle() {
-    this._hudBtn.addEventListener('click', () => {
-      this.shareLinkManager?.claimRestoreLane?.('visual');
-      this.hud.toggle();
-      this._updateHudButtonState();
-      this._syncShareState();
-    });
-
     if (this._hudLayoutSelect) {
       this._hudLayoutSelect.value = 'tactical';
     }
@@ -9453,13 +9432,6 @@ export class StyleManager {
     this.hud.setMode('on');
     this._updateHudButtonState();
 
-    // Detection toggle button
-    this._detectionBtn.addEventListener('click', () => {
-      this.shareLinkManager?.claimRestoreLane?.('visual');
-      this._detectionUserOverridden = true;
-      cycleDetectionMode();
-      this._syncShareState();
-    });
     this._cockpitDisplayToggleBtn?.addEventListener('click', () => {
       const open = this._cockpitDisplayToggleBtn.getAttribute('aria-expanded') === 'true';
       this._setCockpitDisclosure?.('display', !open);
@@ -9682,6 +9654,7 @@ export class StyleManager {
     if (this._globalLoadingStatus) this._globalLoadingStatus.hidden = true;
     this._disposed = true;
     this._applicationShortcuts?.destroy();
+    this._displayControls?.destroy();
     this._styleParameters?.destroy();
     for (const control of this._panelDisclosureControls || []) control.destroy();
     this._panelDisclosureControls = [];

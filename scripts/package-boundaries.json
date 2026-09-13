@@ -290,5 +290,10 @@
       "src/ui/styleParameters.js"
     ],
     "external": []
+  },
+  "display-controls": {
+    "exports": ["./ui/display"],
+    "modules": ["src/ui/displayControls.js"],
+    "external": []
   }
 }
