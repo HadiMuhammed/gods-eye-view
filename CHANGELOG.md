@@ -13,6 +13,9 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ## [Unreleased]
 
+- Extract application shortcuts and shader-parameter controls into reusable UI
+  components, preserving inputs and cleaning up listeners on rebuild/disposal.
+
 - Extract adaptive panel rail placement and measurement into reusable UI modules,
   preserving obstacle clearance, responsive allocation, disclosure and scroll behavior.
 

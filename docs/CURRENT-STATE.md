@@ -1,5 +1,18 @@
 # God's Eye View Current State
 
+## Application shortcuts and shader parameter controls
+
+`ui/input` supplies the bubbling application shortcut listener and generated
+shader-parameter rows. Number/style keys, H/O/V/F/D/C actions, native form-control
+typing and Escape behavior retain their existing mappings. Capture-phase
+surfaces continue to arbitrate their own keyboard events first.
+
+The UI facade retains shader values, share-restore authority, render requests,
+search dismissal, visibility and Cockpit portal policy. Parameter rows preserve
+labels, bounds, steps and precision. Rebuilding rows removes their previous
+listeners; disposal removes shortcuts and parameter listeners synchronously
+before asynchronous application teardown.
+
 ## Adaptive panel rail layout
 
 `ui/layout` supplies the left/right rail layout passes, natural-height

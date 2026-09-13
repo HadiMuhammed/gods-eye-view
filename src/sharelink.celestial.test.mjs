@@ -417,8 +417,8 @@ test('newer visual, map, and individual panel actions suppress only their owned 
 test('every explicit visual UI gesture claims restore authority before it mutates state', () => {
   const initUi = sourceBlock('  _initUI() {', '  _initMapStackControl() {');
   const gestureRoutes = [
-    ["if (e.key.toLowerCase() === 'h')", "if (e.key.toLowerCase() === 'o')", 'this.hud.toggle()', 'HUD hotkey'],
-    ["if (e.key.toLowerCase() === 'd')", "if (e.key.toLowerCase() === 'c')", 'cycleDetectionMode()', 'detection hotkey'],
+    ['toggleHud: () => {', 'toggleOrbit: () =>', 'this.hud.toggle()', 'HUD hotkey'],
+    ['cycleDetection: () => {', 'toggleCctv: () =>', 'cycleDetectionMode()', 'detection hotkey'],
     ['// Bloom toggle', '// Bloom intensity slider', 'this._setBloomEnabled(', 'bloom button'],
     ['// Bloom intensity slider', '// Sharpen toggle', 'this._setBloomIntensity(', 'bloom slider'],
     ['// Sharpen toggle', '// Scope mask', 'this._setSharpenEnabled(', 'sharpen button'],
@@ -694,4 +694,14 @@ test('destroy cancels only a still-owned share flight and ignores delayed comple
   generation = 8;
   newerManager.destroy();
   assert.equal(cancellations, 1, 'newer navigation must not be cancelled');
+});
+
+
+test('visual input listeners are revoked before asynchronous UI teardown', () => {
+  const disposal = uiSource.slice(uiSource.indexOf('  async dispose() {'));
+  const firstAwait = disposal.indexOf('await ');
+  assert.ok(firstAwait > 0);
+  const synchronous = disposal.slice(0, firstAwait);
+  assert.match(synchronous, /this\._applicationShortcuts\?\.destroy\(\)/);
+  assert.match(synchronous, /this\._styleParameters\?\.destroy\(\)/);
 });

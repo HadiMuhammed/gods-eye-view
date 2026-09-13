@@ -569,7 +569,13 @@ try {
       trusted: event.isTrusted, detail: event.detail ?? null,
       style: event.target.closest('.style-btn')?.dataset.style || null,
     });
-    for (const type of ['keydown', 'keyup', 'click']) grid.addEventListener(type, record, true);
+    // A claimed hold deliberately blurs the button. Repeats and release then
+    // target the document body, so observe Space beyond the original grid.
+    const recordSpace = (event) => {
+      if (event.code === 'Space') record(event);
+    };
+    for (const type of ['keydown', 'keyup']) document.addEventListener(type, recordSpace, true);
+    grid.addEventListener('click', record, true);
     manager.setStyle = function (...args) {
       probe.activations.push(args[0]);
       return originalSetStyle.apply(this, args);
@@ -609,7 +615,8 @@ try {
       manager.setStyle = originalSetStyle;
       voice.start = originalVoiceStart;
       observer.disconnect();
-      for (const type of ['keydown', 'keyup', 'click']) grid.removeEventListener(type, record, true);
+      for (const type of ['keydown', 'keyup']) document.removeEventListener(type, recordSpace, true);
+      grid.removeEventListener('click', record, true);
     };
     window.__qaStyleKeyProbe = probe;
   });

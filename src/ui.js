@@ -1,3 +1,4 @@
+import { bindApplicationShortcuts, createStyleParameters } from './ui/visualInput.js';
 import { layoutLeftPanelRail, layoutRightPanelRail } from './ui/panelRails.js';
 import { bindPanelDisclosure, collapsePanelOnEscape, createHoverDisclosure } from './ui/panelDisclosure.js';
 import * as Cesium from 'cesium';
@@ -3398,51 +3399,37 @@ export class StyleManager {
       btn.addEventListener('click', () => this.setStyle(btn.dataset.style));
     });
 
-    // Keyboard shortcuts: 1-7, H, Escape
-    this._globalKeydownHandler = (e) => {
-      // Ignore when interacting with a form control (except Escape). Global
-      // hotkeys ('1'-'7', 'h', 'o', 'v', 'd', 'c', 'f') otherwise fire while a
-      // <select> dropdown (e.g. HUD layout) is focused and its native
-      // type-ahead is in use, or while typing in a text field (M9).
-      const isFormControl = e.target?.matches?.('select, input, textarea')
-        || e.target === this._locationSearch;
-      if (isFormControl && e.key !== 'Escape') return;
-
-      const keyMap = {
-        '1': 'normal', '2': 'retro', '3': 'surveillance',
-        '4': 'thermal', '5': 'anime', '6': 'noir',
-        '7': 'snow',
-      };
-      if (keyMap[e.key]) this.setStyle(keyMap[e.key]);
-      if (e.key === 'Escape') {
-        if (this._locationSearch.classList.contains('expanded')) {
-          this._locationSearch.classList.remove('expanded');
-          this._locationSearch.value = '';
-          this._locationSearch.blur();
-        }
-      }
-      if (e.key.toLowerCase() === 'h') {
-        this.shareLinkManager?.claimRestoreLane?.('visual');
-        this.hud.toggle();
-        this._updateHudButtonState();
-        this._syncShareState();
-      }
-      if (e.key.toLowerCase() === 'o') this._toggleOrbit();
-      if (e.key.toLowerCase() === 'v') this.toggleCleanView();
-      if (e.key.toLowerCase() === 'f') {
-        document.getElementById('data-panel').classList.toggle('active');
-      }
-      if (e.key.toLowerCase() === 'd') {
-        this.shareLinkManager?.claimRestoreLane?.('visual');
-        this._detectionUserOverridden = true;
-        cycleDetectionMode();
-        this._syncShareState();
-      }
-      if (e.key.toLowerCase() === 'c') {
-        this._toggleCctvEnabled();
-      }
-    };
-    document.addEventListener('keydown', this._globalKeydownHandler);
+    this._applicationShortcuts?.destroy();
+    this._applicationShortcuts = bindApplicationShortcuts({
+      documentRef: document,
+      searchInput: this._locationSearch,
+      actions: {
+        setStyle: (style) => this.setStyle(style),
+        dismissSearch: () => {
+          if (this._locationSearch.classList.contains('expanded')) {
+            this._locationSearch.classList.remove('expanded');
+            this._locationSearch.value = '';
+            this._locationSearch.blur();
+          }
+        },
+        toggleHud: () => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this.hud.toggle();
+          this._updateHudButtonState();
+          this._syncShareState();
+        },
+        toggleOrbit: () => this._toggleOrbit(),
+        toggleCleanView: () => this.toggleCleanView(),
+        toggleLayers: () => document.getElementById('data-panel').classList.toggle('active'),
+        cycleDetection: () => {
+          this.shareLinkManager?.claimRestoreLane?.('visual');
+          this._detectionUserOverridden = true;
+          cycleDetectionMode();
+          this._syncShareState();
+        },
+        toggleCctv: () => this._toggleCctvEnabled(),
+      },
+    });
 
     // Bloom toggle
     this._bloomBtn.addEventListener('click', () => {
@@ -8506,7 +8493,8 @@ export class StyleManager {
    * @returns {void}
    */
   _updateSliderPanel(styleName, { reveal = false } = {}) {
-    this._sliderContainer.innerHTML = '';
+    this._styleParameters ||= createStyleParameters({ container: this._sliderContainer });
+    this._styleParameters.clear();
     const shader = STYLES[styleName];
 
     if (!shader || !shader.uniforms || styleName === 'normal') {
@@ -8515,44 +8503,19 @@ export class StyleManager {
       return;
     }
 
-    for (const [uName, uMeta] of Object.entries(shader.uniforms)) {
-      const row = document.createElement('div');
-      row.className = 'param-slider-row';
-
-      const label = document.createElement('span');
-      label.className = 'param-label';
-      label.textContent = uMeta.label;
-
-      const slider = document.createElement('input');
-      slider.type = 'range';
-      slider.className = 'param-slider';
-      slider.setAttribute('aria-label', uMeta.label);
-      slider.min = uMeta.min;
-      slider.max = uMeta.max;
-      slider.step = uMeta.max <= 1 ? '0.01' : '0.1';
-      slider.value = this.stages[styleName].uniforms[uName];
-
-      const valueDisplay = document.createElement('span');
-      valueDisplay.className = 'param-value';
-      valueDisplay.textContent = parseFloat(slider.value).toFixed(uMeta.max <= 1 ? 2 : 1);
-
-      slider.addEventListener('input', () => {
+    this._styleParameters.render({
+      uniforms: shader.uniforms,
+      readValue: (uName) => this.stages[styleName].uniforms[uName],
+      writeValue: (uName, val) => {
         this.shareLinkManager?.claimRestoreLane?.('visual');
-        const val = parseFloat(slider.value);
         this.stages[styleName].uniforms[uName] = val;
-        valueDisplay.textContent = val.toFixed(uMeta.max <= 1 ? 2 : 1);
-        // Uniform writes don't auto-render under the idle governor —
-        // without this the slider visibly does nothing until the next
-        // camera move (browser finding). (perf wave 2)
+      },
+      onChange: () => {
+        // Uniform writes need an explicit render under the idle governor.
         governorRequestRender('style-param-slider');
         this._syncShareState();
-      });
-
-      row.appendChild(label);
-      row.appendChild(slider);
-      row.appendChild(valueDisplay);
-      this._sliderContainer.appendChild(row);
-    }
+      },
+    });
 
     this._sliderPanel.classList.add('active');
     this._scheduleRightPanelLayout();
@@ -9718,6 +9681,8 @@ export class StyleManager {
     this._globalStatusNotice = null;
     if (this._globalLoadingStatus) this._globalLoadingStatus.hidden = true;
     this._disposed = true;
+    this._applicationShortcuts?.destroy();
+    this._styleParameters?.destroy();
     for (const control of this._panelDisclosureControls || []) control.destroy();
     this._panelDisclosureControls = [];
     this._hoverPanelControls?.forEach((control) => control.destroy());
@@ -9827,10 +9792,6 @@ export class StyleManager {
       this._loadingVisibilityHandler = null;
     }
     this._stopLoadingFeedbackTicker();
-    if (this._globalKeydownHandler) {
-      document.removeEventListener('keydown', this._globalKeydownHandler);
-      this._globalKeydownHandler = null;
-    }
     if (this._poiKeydownHandler) {
       document.removeEventListener('keydown', this._poiKeydownHandler);
       this._poiKeydownHandler = null;

@@ -231,3 +231,15 @@ or observers; construction/import does no work. Scheduling, preference writes,
 share restoration and movement of controls between containers remain caller-owned.
 Existing helper imports from `cockpitMath.js` and `rightRailPolicy.js` remain
 compatible through re-exports.
+
+## Visual input
+
+`gods-eye-view/ui/input` exports `bindApplicationShortcuts` and
+`createStyleParameters`. The shortcut binder owns one bubbling keydown listener
+and receives the document, editing target and explicit action callbacks.
+Parameter controls own only the supplied container's generated rows/listeners;
+uniform metadata and read/write/change operations come from the caller.
+Clearing permits reuse; destruction is final. Neither module imports the app,
+renderer, persistence or services. The facade retains panel visibility, share
+restore claims and render scheduling. Both controls are destroyed before the
+facade's asynchronous teardown can yield.
