@@ -13,6 +13,9 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ## [Unreleased]
 
+- Extract shared surface keyboard handling for the welcome launcher and Provider
+  Settings, preserving Tab/Escape behavior and releasing the listener on teardown.
+
 ### Security
 
 - Validate configured Google Places coordinates and text queries before rate

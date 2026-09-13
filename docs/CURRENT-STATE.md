@@ -1,5 +1,17 @@
 # God's Eye View Current State
 
+## Surface keyboard lifecycle
+
+`ui/surfaces` owns the capture-phase keyboard listener, Tab cycling and return
+focus shared by the first-run launcher and Provider Settings. Each caller
+activates it while open and deactivates it on dismissal; destruction releases
+keyboard ownership without moving focus. Reopening captures the current opener.
+The launcher retains its hit-test/exclusive-surface arbitration and dismissal
+preferences. Provider Settings retains its existing visibility and save policy.
+Initial focus, transitions and DOM content remain with each screen. This
+component does not add modal semantics or make the map inert.
+
+
 ## Panel disclosure lifecycle
 
 Panel collapse buttons, nested Escape handling and dock hover/focus timing now

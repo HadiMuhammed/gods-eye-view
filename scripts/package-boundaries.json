@@ -264,5 +264,10 @@
     "exports": ["./ui/panels"],
     "modules": ["src/ui/panelDisclosure.js"],
     "external": []
+  },
+  "surface-keyboard": {
+    "exports": ["./ui/surfaces"],
+    "modules": ["src/ui/surfaceKeyboard.js"],
+    "external": []
   }
 }

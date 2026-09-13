@@ -195,3 +195,21 @@ or moving focus. Call it before removing or replacing the controls.
 reactions to state changes. Map Source selection and Location draft cleanup are
 provided through callbacks. The component imports no globe, data, application
 or server modules. Package checks and scoped formatting cover this entry.
+
+## Surface keyboard handling
+
+`gods-eye-view/ui/surfaces` exports `createSurfaceKeyboard` from
+`src/ui/surfaceKeyboard.js`. It receives a root DOM node, an optional document,
+an `isActive` predicate, an `onEscape` action and an optional return-focus fallback.
+Construction is inert. `activate()` remembers the opener and installs one capture
+listener; repeated activation is harmless. `deactivate({ restoreFocus: true })`
+removes that listener and restores the opener when connected, otherwise invoking
+the supplied fallback. Omit return focus when yielding to another surface.
+`destroy()` permanently releases ownership without moving focus.
+
+The welcome launcher and Provider Settings retain content, visibility, initial
+focus, animation and screen-specific policy. Tab boundaries are read from the
+current visible/enabled controls for each key; ordinary movement within those
+boundaries remains native. The component honors already-handled keys and has no
+app, server, storage or network dependencies. Its package boundary is checked
+independently from the standalone screens that consume it.

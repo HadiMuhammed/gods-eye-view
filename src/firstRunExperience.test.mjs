@@ -217,14 +217,16 @@ test('exclusiveSurfaceActive reads the live body classes', () => {
 
 test('the key handler refuses to act for a card that is not really on screen', () => {
   const module = fs.readFileSync(new URL('./firstRunExperience.js', import.meta.url), 'utf8');
+  assert.match(module, /isActive: \(\) => !closing && isTopmost\(\)/);
   // Real visibility, not just the class: the class survives while CSS hides the
   // card, which is precisely how a Scene left an invisible ESC handler armed.
   assert.match(module, /const isTopmost = \(\) => root\.isConnected/);
   assert.match(module, /&& root\.getClientRects\(\)\.length > 0\s*\n\s*&& !coveredByOverlay\(\);/);
-  const handler = module.slice(module.indexOf('function onKeyDown(event) {'));
+  const keyboard = fs.readFileSync(new URL('./ui/surfaceKeyboard.js', import.meta.url), 'utf8');
+  const handler = keyboard.slice(keyboard.indexOf('const onKeyDown = (event) => {'));
   assert.match(
     handler.slice(0, handler.indexOf("if (event.key === 'Escape')")),
-    /if \(closing \|\| !isTopmost\(\)\) return;/,
+    /!isActive\(\)/,
     'the handler must bail before consuming anything when it is not topmost',
   );
 });
@@ -277,10 +279,11 @@ test('one ESC does one thing — the radio disclosure stops the launcher outrigh
 
   // Belt on the launcher side: a key another surface already marked is not ours,
   // whether or not that surface remembered to silence us.
-  const handler = module.slice(module.indexOf('function onKeyDown(event) {'));
+  const keyboard = fs.readFileSync(new URL('./ui/surfaceKeyboard.js', import.meta.url), 'utf8');
+  const handler = keyboard.slice(keyboard.indexOf('const onKeyDown = (event) => {'));
   assert.match(
     handler.slice(0, handler.indexOf("if (event.key === 'Escape')")),
-    /if \(event\.defaultPrevented\) return;/,
+    /event\.defaultPrevented\) return;/,
     'a marked key must be somebody else\'s key',
   );
 });
@@ -311,7 +314,7 @@ test('a refused write takes the tick back instead of promising "never again"', (
 
   const handler = module.slice(
     module.indexOf('const onSuppressChange = (event) => {'),
-    module.indexOf('function onKeyDown(event) {'),
+    module.indexOf('  const keyboard = createSurfaceKeyboard({'),
   );
   assert.match(handler, /if \(setFirstRunSuppressed\(wanted, storage\)\) return;/);
   assert.match(handler, /box\.checked = !wanted;/, 'a refused write must revert the tick');
@@ -617,11 +620,14 @@ test('the launcher keeps focus, restores it, and never disables the focused butt
   assert.match(module, /button\.setAttribute\('aria-disabled', String\(next\)\)/);
   assert.doesNotMatch(module, /button\.disabled = /);
   // Tab is confined to the launcher, and ESC always releases it.
-  assert.match(module, /event\.key !== 'Tab'/);
-  assert.match(module, /event\.key === 'Escape'/);
-  assert.match(module, /previouslyFocused\?\.focus/);
+  const keyboard = fs.readFileSync(new URL('./ui/surfaceKeyboard.js', import.meta.url), 'utf8');
+  assert.match(module, /keyboard\.activate\(\)/);
+  assert.match(module, /keyboard\.deactivate\(\{ restoreFocus \}\)/);
+  assert.match(keyboard, /event\.key !== 'Tab'/);
+  assert.match(keyboard, /event\.key === 'Escape'/);
+  assert.match(keyboard, /target\?\.focus/);
   // Capture phase, so the app's global letter hotkeys cannot eat the launcher's keys.
-  assert.match(module, /addEventListener\('keydown', onKeyDown, true\)/);
+  assert.match(keyboard, /addEventListener\('keydown', onKeyDown, true\)/);
 });
 
 test('the DISPLAY rail starts collapsed on a first run, and a stored choice wins', () => {
