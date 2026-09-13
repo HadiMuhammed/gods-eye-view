@@ -116,6 +116,56 @@ try {
       window.__godsEyeView.styleManager.mapStackController.getActiveId() ===
       'osm',
   );
+  await page.evaluate(async () => {
+    const manager = window.__godsEyeView.styleManager;
+    await manager.setMapStack('photoreal');
+    manager.setPanelCollapsed('control-panel', false, {
+      persist: false,
+      syncShare: false,
+    });
+    document.querySelector('.map-stack-chip.active')?.focus();
+  });
+  await page.evaluate(() => {
+    const viewer = window.__godsEyeView.viewer;
+    viewer.camera.cancelFlight?.();
+    viewer.scene.tweens?.removeAll?.();
+    viewer.camera.setView({
+      destination: viewer.scene.globe.ellipsoid.cartographicToCartesian({
+        longitude: (-97.7431 * Math.PI) / 180,
+        latitude: (30.2568 * Math.PI) / 180,
+        height: 1200,
+      }),
+      orientation: { heading: 0, pitch: -0.85, roll: 0 },
+    });
+    viewer.scene.requestRender();
+  });
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  const settled = await page
+    .waitForFunction(
+      () => {
+        const primitives = window.__godsEyeView.viewer.scene.primitives;
+        for (let i = 0; i < primitives.length; i++) {
+          const primitive = primitives.get(i);
+          if (
+            typeof primitive.tilesLoaded === 'boolean' &&
+            !primitive.tilesLoaded
+          )
+            return false;
+        }
+        return true;
+      },
+      { timeout: 60_000 },
+    )
+    .then(
+      () => true,
+      () => false,
+    );
+  check('visible tile content settles before visual captures', settled);
   fs.mkdirSync('qa-shots/map-source-controls', { recursive: true });
   await page.screenshot({ path: 'qa-shots/map-source-controls/desktop.png' });
   await page.setViewport({ width: 620, height: 900 });
@@ -123,6 +173,13 @@ try {
     () =>
       document.getElementById('left-panel-stack')?.dataset.layoutMode ===
       'mobile',
+  );
+  await page.evaluate(() =>
+    window.__godsEyeView.styleManager.setPanelCollapsed(
+      'control-panel',
+      false,
+      { persist: false, syncShare: false },
+    ),
   );
   await page.screenshot({ path: 'qa-shots/map-source-controls/narrow.png' });
   check(
