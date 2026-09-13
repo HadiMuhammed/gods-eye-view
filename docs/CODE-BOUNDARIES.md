@@ -276,3 +276,6 @@ the supplied controller.
 snapshots, row descriptors, subscriptions and actions; the component imports no
 layer implementation or application bootstrap. Layer transactions remain with
 the caller. Hidden-page refresh scheduling remains an explicit callback.
+
+`ui/layers/feedback` exposes the existing pure loading/notice reducers separately
+from DOM controls. Scheduling and presentation stay with their callers.

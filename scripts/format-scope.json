@@ -157,5 +157,7 @@
   "src/ui/layers.js",
   "src/ui/layerPanel.js",
   "src/ui/clearLayersControl.js",
-  "scripts/qa-layer-panel.mjs"
+  "scripts/qa-layer-panel.mjs",
+  "src/loadingFeedback.js",
+  "src/data/installationFeedback.js"
 ]

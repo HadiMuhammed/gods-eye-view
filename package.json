@@ -2,7 +2,7 @@
   "name": "gods-eye-view",
   "private": true,
   "version": "0.1.1",
-  "description": "A real-time intelligence console for planet Earth — photorealistic 3D globe, live aircraft/ships/satellites/earthquakes/CCTV, and hands-free voice control. Runs in a browser.",
+  "description": "A real-time intelligence console for planet Earth \u2014 photorealistic 3D globe, live aircraft/ships/satellites/earthquakes/CCTV, and hands-free voice control. Runs in a browser.",
   "type": "module",
   "license": "MIT",
   "author": "Bilawal Sidhu",
@@ -128,6 +128,7 @@
     "./ui/effects": "./src/ui/effects.js",
     "./ui/effects/bloom": "./src/bloom.js",
     "./ui/maps": "./src/ui/mapSource.js",
-    "./ui/layers": "./src/ui/layers.js"
+    "./ui/layers": "./src/ui/layers.js",
+    "./ui/layers/feedback": "./src/loadingFeedback.js"
   
 }
