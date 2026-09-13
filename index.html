@@ -53,12 +53,12 @@
       </button>
       <div id="language-menu" data-language-menu="true" role="menu" aria-label="Select language" hidden>
         <span data-language-menu-label="true">Select language</span>
-        <button type="button" role="menuitemradio" data-locale="en" aria-checked="true">English</button>
-        <button type="button" role="menuitemradio" data-locale="es" aria-checked="false">Español</button>
-        <button type="button" role="menuitemradio" data-locale="fr" aria-checked="false">Français</button>
-        <button type="button" role="menuitemradio" data-locale="de" aria-checked="false">Deutsch</button>
-        <button type="button" role="menuitemradio" data-locale="ja" aria-checked="false">日本語</button>
-        <button type="button" role="menuitemradio" data-locale="ar" aria-checked="false">العربية</button>
+        <button type="button" role="menuitemradio" data-locale="en" aria-checked="true"><span class="language-option-icon language-flag-en" aria-hidden="true"></span><span>English</span></button>
+        <button type="button" role="menuitemradio" data-locale="es" aria-checked="false"><span class="language-option-icon language-flag-es" aria-hidden="true"></span><span>Español</span></button>
+        <button type="button" role="menuitemradio" data-locale="fr" aria-checked="false"><span class="language-option-icon language-flag-fr" aria-hidden="true"></span><span>Français</span></button>
+        <button type="button" role="menuitemradio" data-locale="de" aria-checked="false"><span class="language-option-icon language-flag-de" aria-hidden="true"></span><span>Deutsch</span></button>
+        <button type="button" role="menuitemradio" data-locale="ja" aria-checked="false"><span class="language-option-icon language-flag-ja" aria-hidden="true"></span><span>日本語</span></button>
+        <button type="button" role="menuitemradio" data-locale="ar" aria-checked="false"><span class="language-option-icon language-flag-ar" aria-hidden="true"></span><span>العربية</span></button>
       </div>
     </div>
   </nav>
@@ -321,7 +321,7 @@
     <aside id="cockpit-utility-controls" class="cockpit-utility-controls" aria-label="Cockpit display and Radio controls">
       <div class="cockpit-utility-control">
         <div class="cockpit-utility-launcher" data-cockpit-launcher="display">
-          <span>DISPLAY</span>
+          <span data-i18n="display">DISPLAY</span>
           <span class="cockpit-utility-divider" aria-hidden="true"></span>
           <button id="cockpit-display-toggle-btn" class="cockpit-utility-glyph" type="button" aria-expanded="false" aria-controls="cockpit-display-panel" aria-label="Expand Cockpit display options" title="Expand Cockpit display options">◀</button>
         </div>
@@ -334,7 +334,7 @@
       </div>
       <div class="cockpit-utility-control">
         <div class="cockpit-utility-launcher" data-cockpit-launcher="radio">
-          <span>RADIO</span>
+          <span data-i18n="radio">RADIO</span>
           <span class="cockpit-utility-divider" aria-hidden="true"></span>
           <button id="cockpit-radio-toggle-btn" class="cockpit-utility-glyph" type="button" aria-expanded="false" aria-controls="cockpit-radio-panel" aria-label="Expand Cockpit Radio controls" title="Expand Cockpit Radio controls">◀</button>
         </div>
@@ -371,39 +371,39 @@
   <!-- Post-processing toggles (top-right) -->
   <div id="pp-toggles" class="panel-collapsible collapsed" data-panel-id="pp-toggles">
     <div class="compact pp-header-row">
-      <span class="pp-header-label">DISPLAY</span>
+      <span class="pp-header-label" data-i18n="display">DISPLAY</span>
       <span class="panel-divider" aria-hidden="true"></span>
       <button class="panel-collapse-btn pp-collapse-btn" data-collapse-target="pp-toggles" title="Collapse panel">&#x25C0;</button>
     </div>
     <div class="pp-toggle-group">
       <button class="pp-toggle-btn" id="hud-toggle" title="Intelligence HUD (H)">
         <span class="pp-icon">&#x25CE;</span>
-        <span class="pp-label">HUD</span>
+        <span class="pp-label" data-i18n="hud">HUD</span>
       </button>
       <div class="pp-slider-row" id="hud-layout-row">
-        <span class="pp-slider-mini-label">Layout</span>
+        <span class="pp-slider-mini-label" data-i18n="layout">Layout</span>
         <select id="hud-layout-select" class="pp-select" aria-label="HUD layout">
-          <option value="tactical">Tactical</option>
-          <option value="operator">Operator</option>
-          <option value="minimal">Minimal</option>
+          <option value="tactical" data-i18n="tactical">Tactical</option>
+          <option value="operator" data-i18n="operator">Operator</option>
+          <option value="minimal" data-i18n="minimal">Minimal</option>
         </select>
       </div>
     </div>
     <div class="pp-toggle-group">
       <button class="pp-toggle-btn" id="detection-toggle" title="Detection Overlay (D)" aria-label="Detection overlay" aria-pressed="false">
         <span class="pp-icon">&#x25A3;</span>
-        <span class="pp-label">DETECT</span>
+        <span class="pp-label" data-i18n="detect">DETECT</span>
       </button>
       <div class="pp-slider-row detection-slider-row" id="detection-slider-row">
-        <label class="pp-slider-mini-label" for="detection-density-slider">Density</label>
+        <label class="pp-slider-mini-label" for="detection-density-slider" data-i18n="density">Density</label>
         <input type="range" class="pp-slider" id="detection-density-slider" min="0" max="100" step="25" value="50" aria-label="Detection label density" />
         <span class="pp-slider-value" id="detection-density-value">50%</span>
       </div>
       <div class="pp-slider-row detection-allocation-row" id="detection-allocation-row">
-        <span class="pp-slider-mini-label">Allocation</span>
+        <span class="pp-slider-mini-label" data-i18n="allocation">Allocation</span>
         <div class="pp-mode-seg detection-allocation-seg" role="radiogroup" aria-label="Detection label allocation">
-          <button class="pp-mode-btn active" id="detection-allocation-elastic" data-allocation="ELASTIC" role="radio" aria-checked="true">Elastic</button>
-          <button class="pp-mode-btn" id="detection-allocation-weighted" data-allocation="WEIGHTED" role="radio" aria-checked="false">Weighted</button>
+          <button class="pp-mode-btn active" id="detection-allocation-elastic" data-allocation="ELASTIC" role="radio" aria-checked="true" data-i18n="elastic">Elastic</button>
+          <button class="pp-mode-btn" id="detection-allocation-weighted" data-allocation="WEIGHTED" role="radio" aria-checked="false" data-i18n="weighted">Weighted</button>
         </div>
       </div>
       <div class="pp-slider-row detection-fade-row" id="detection-fade-row">
@@ -420,7 +420,7 @@
     <!-- The one shared preset-parameter surface is inserted here at runtime. -->
     <div id="param-slider-panel">
       <div class="param-panel-header">
-        <span class="param-panel-title">PARAMETERS</span>
+        <span class="param-panel-title" data-i18n="parameters">PARAMETERS</span>
         <span class="param-panel-divider"></span>
         <button class="panel-collapse-btn" id="param-panel-collapse-btn" data-collapse-target="param-slider-panel" title="Collapse panel">−</button>
       </div>
@@ -436,20 +436,20 @@
         <span class="pp-label">3D</span>
       </button>
       <div class="pp-slider-row visible" id="models3d-mode-row">
-        <span class="pp-slider-mini-label">Models</span>
+        <span class="pp-slider-mini-label" data-i18n="models">Models</span>
         <div class="pp-mode-seg" role="radiogroup" aria-label="3D model coverage">
-          <button class="pp-mode-btn active" id="models3d-mode-proximity" data-mode="proximity" role="radio" aria-checked="true">Proximity</button>
-          <button class="pp-mode-btn" id="models3d-mode-all" data-mode="all" role="radio" aria-checked="false">All</button>
+          <button class="pp-mode-btn active" id="models3d-mode-proximity" data-mode="proximity" role="radio" aria-checked="true" data-i18n="proximity">Proximity</button>
+          <button class="pp-mode-btn" id="models3d-mode-all" data-mode="all" role="radio" aria-checked="false" data-i18n="all">All</button>
         </div>
       </div>
     </div>
     <div class="pp-toggle-group">
       <button class="pp-toggle-btn active" id="scope-toggle" title="Scope — the circular viewport mask" aria-pressed="true">
         <span class="pp-icon material-symbols-outlined" aria-hidden="true">adjust</span>
-        <span class="pp-label">Scope</span>
+        <span class="pp-label" data-i18n="scope">Scope</span>
       </button>
       <div class="pp-slider-row visible" id="scope-slider-row">
-        <span class="pp-slider-mini-label">Feather</span>
+        <span class="pp-slider-mini-label" data-i18n="feather">Feather</span>
         <!-- Feather starts at an 11% soft scope-mask edge (owner final lock
              2026-08-24, superseding the 08-22 hard-crop and 08-23 8% rulings);
              mirrors SCOPE_FEATHER_RATIO_DEFAULT in src/scopeMask.js. Feather
@@ -462,17 +462,17 @@
     <div class="pp-toggle-group">
       <button class="pp-toggle-btn" id="celestial-toggle" title="Celestial ring — reveal the full globe" aria-pressed="false">
         <span class="pp-icon material-symbols-outlined" aria-hidden="true">flare</span>
-        <span class="pp-label">Celestial</span>
+        <span class="pp-label" data-i18n="celestial">Celestial</span>
       </button>
     </div>
     <button class="pp-toggle-btn" id="clean-view-toggle" title="Hide UI chrome">
       <span class="pp-icon">&#x25A1;</span>
-      <span class="pp-label">Clean UI</span>
+      <span class="pp-label" data-i18n="cleanUi">Clean UI</span>
     </button>
     <div class="pp-toggle-group">
       <button class="pp-toggle-btn" id="bloom-toggle" title="Bloom / Glow">
         <span class="pp-icon">&#x2728;</span>
-        <span class="pp-label">Bloom</span>
+        <span class="pp-label" data-i18n="bloom">Bloom</span>
       </button>
       <div class="pp-slider-row" id="bloom-slider-row">
         <input type="range" class="pp-slider" id="bloom-intensity-slider" min="0" max="200" value="0" aria-label="Bloom intensity" />
@@ -482,7 +482,7 @@
     <div class="pp-toggle-group">
       <button class="pp-toggle-btn" id="sharpen-toggle" title="Sharpening">
         <span class="pp-icon">&#x1F50D;</span>
-        <span class="pp-label">Sharpen</span>
+        <span class="pp-label" data-i18n="sharpen">Sharpen</span>
       </button>
       <div class="pp-slider-row" id="sharpen-slider-row">
         <input type="range" class="pp-slider" id="sharpen-intensity-slider" min="0" max="100" value="49" aria-label="Sharpen intensity" />
@@ -490,7 +490,7 @@
       </div>
     </div>
   </div>
-  <button id="clean-view-exit" title="Return UI controls">EXIT CLEAN VIEW</button>
+  <button id="clean-view-exit" title="Return UI controls" data-i18n="exitCleanView">EXIT CLEAN VIEW</button>
 
   <!-- Unified bottom command dock: locations, voice (injected at runtime), visual presets -->
   <div id="command-dock" aria-label="Navigation, voice, and visual preset controls">
@@ -609,37 +609,37 @@
     <div class="panel-glow"></div>
     <div class="cctv-panel-inner">
       <div class="panel-header">
-        <span class="panel-title">CCTV</span>
+        <span class="panel-title" data-i18n="cctv">CCTV</span>
         <span class="panel-divider"></span>
         <button class="panel-collapse-btn" data-collapse-target="cctv-panel" title="Collapse panel">+</button>
       </div>
       <div id="cctv-frame-wrap" class="cctv-frame-wrap">
         <img id="cctv-frame" alt="CCTV feed frame" />
       </div>
-      <div id="cctv-source-badge" role="status" aria-live="polite">SOURCE · UNKNOWN</div>
-      <div id="cctv-meta">Enable CCTV to load camera intersections</div>
+      <div id="cctv-source-badge" role="status" aria-live="polite" data-i18n="sourceUnknown">SOURCE · UNKNOWN</div>
+      <div id="cctv-meta" data-i18n="enableCctv">Enable CCTV to load camera intersections</div>
       <div class="cctv-controls">
         <button id="cctv-enable-btn" class="scene-btn">CCTV OFF</button>
-        <button id="cctv-nearest-btn" class="scene-btn">NEAREST</button>
+        <button id="cctv-nearest-btn" class="scene-btn" data-i18n="nearest">NEAREST</button>
       </div>
       <div class="cctv-controls">
-        <button id="cctv-prev-btn" class="scene-btn">PREV</button>
+        <button id="cctv-prev-btn" class="scene-btn" data-i18n="prev">PREV</button>
         <select id="cctv-camera-select" aria-label="CCTV camera"></select>
-        <button id="cctv-next-btn" class="scene-btn">NEXT</button>
+        <button id="cctv-next-btn" class="scene-btn" data-i18n="next">NEXT</button>
       </div>
       <div class="cctv-controls">
-        <button id="cctv-focus-btn" class="scene-btn">FOCUS</button>
-        <button id="cctv-coverage-btn" class="scene-btn">COVERAGE OFF</button>
-        <button id="cctv-auto-hop-btn" class="scene-btn">AUTO HOP OFF</button>
+        <button id="cctv-focus-btn" class="scene-btn" data-i18n="focus">FOCUS</button>
+        <button id="cctv-coverage-btn" class="scene-btn" data-i18n="coverageOff">COVERAGE OFF</button>
+        <button id="cctv-auto-hop-btn" class="scene-btn" data-i18n="autoHopOff">AUTO HOP OFF</button>
       </div>
       <div class="cctv-controls">
-        <button id="cctv-projection-btn" class="scene-btn">PROJECTION ON</button>
+        <button id="cctv-projection-btn" class="scene-btn" data-i18n="projectionOn">PROJECTION ON</button>
         <span id="cctv-quality-chip">CAL · --</span>
       </div>
       <div class="cctv-calibration-block">
         <div class="cctv-calibration-header">
-          <div class="cctv-summary-label">CALIBRATION</div>
-          <button id="cctv-adjust-btn" class="scene-btn" title="Drag the camera in the world: rings rotate, arrows move, handles set range/FOV">ADJUST</button>
+          <div class="cctv-summary-label" data-i18n="calibration">CALIBRATION</div>
+          <button id="cctv-adjust-btn" class="scene-btn" title="Drag the camera in the world: rings rotate, arrows move, handles set range/FOV" data-i18n="adjust">ADJUST</button>
         </div>
         <div id="cctv-cal-readout" class="cctv-cal-readout" aria-label="Camera pose — click a value to type">
           <button class="cctv-cal-value" data-cal-field="heading" title="Heading (compass °) — click to type">HDG --</button>
@@ -651,11 +651,11 @@
           <button class="cctv-cal-value" data-cal-field="east" title="East offset from catalog position (m) — click to type">ΔE --</button>
         </div>
         <div class="cctv-controls cctv-calibration-actions">
-          <button id="cctv-calib-save-btn" class="scene-btn">SAVE CAL</button>
-          <button id="cctv-calib-reset-btn" class="scene-btn">RESET CAL</button>
+          <button id="cctv-calib-save-btn" class="scene-btn" data-i18n="saveCal">SAVE CAL</button>
+          <button id="cctv-calib-reset-btn" class="scene-btn" data-i18n="resetCal">RESET CAL</button>
         </div>
       </div>
-      <div class="cctv-summary-label">SCENE SUMMARY</div>
+      <div class="cctv-summary-label" data-i18n="sceneSummary">SCENE SUMMARY</div>
       <div id="cctv-summary">Enable CCTV to start camera-linked intelligence summaries.</div>
     </div>
   </div>
@@ -705,7 +705,7 @@
       <div class="panel-glow"></div>
       <div class="global-context-panel-inner">
         <div class="panel-header">
-          <span class="panel-title">CONTEXT</span>
+          <span class="panel-title" data-i18n="context">CONTEXT</span>
           <span class="panel-divider"></span>
           <div id="context-radio-dock" class="context-radio-dock">
             <button id="context-radio-toggle-btn" class="context-radio-toggle" type="button" aria-expanded="false" aria-controls="context-radio-mini" aria-label="Open compact Radio controls" title="Open compact Radio controls">
@@ -713,7 +713,7 @@
             </button>
             <div id="context-radio-mini" class="context-radio-mini" role="group" aria-label="Compact Radio controls" hidden>
               <div class="context-radio-mini-heading">
-                <span>RADIO</span>
+                <span data-i18n="radio">RADIO</span>
                 <strong id="context-radio-mini-station">RADIO READY</strong>
                 <span class="context-radio-mini-actions">
                   <button id="context-radio-details-btn" type="button" aria-label="Open detailed Radio controls" aria-expanded="false" aria-controls="radio-panel" title="Open detailed Radio controls">
@@ -742,16 +742,16 @@
         <div class="global-context-modes" role="tablist" aria-label="Context mode">
           <button id="global-context-flights-btn" class="context-mode-button" type="button" role="tab" tabindex="0" aria-selected="false" aria-controls="context-flights-view" aria-label="CONTACTS" title="Cycles the nearest contacts of whatever type you select — planes, vessels, installations. Satellites track independently.">
             <span class="material-symbols-outlined" aria-hidden="true">radar</span>
-            <span>CONTACTS</span>
+            <span data-i18n="contacts">CONTACTS</span>
           </button>
           <button id="global-context-missions-btn" class="context-mode-button" type="button" role="tab" tabindex="0" aria-selected="false" aria-controls="context-missions-view">
             <span class="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
-            <span>SPACE MISSIONS</span>
+            <span data-i18n="spaceMissions">SPACE MISSIONS</span>
           </button>
         </div>
         <div id="context-mode-standby" class="context-mode-standby">
-          <strong>SELECT CONTEXT</strong>
-          <span>CONTACTS — nearest planes · vessels · sites<br>SPACE MISSIONS — launches &amp; orbital assets</span>
+          <strong data-i18n="selectContext">SELECT CONTEXT</strong>
+          <span><span data-i18n="contactsSummary">CONTACTS — nearest planes · vessels · sites</span><br><span data-i18n="spaceMissionsSummary">SPACE MISSIONS — launches &amp; orbital assets</span></span>
         </div>
         <section id="context-flights-view" class="context-mode-view" role="tabpanel" aria-labelledby="global-context-flights-btn" hidden>
           <div class="global-context-actions" aria-label="Contact Context actions">
@@ -759,13 +759,13 @@
               <span class="material-symbols-outlined" aria-hidden="true">flight</span>
               <span>COCKPIT</span>
             </button>
-            <button id="installations-search-btn" class="panel-layer-toggle" type="button">SEARCH NEARBY SITES</button>
+            <button id="installations-search-btn" class="panel-layer-toggle" type="button" data-i18n="searchNearbySites">SEARCH NEARBY SITES</button>
             <button id="tr3b-toggle" class="tr3b-toggle" type="button" aria-pressed="false" hidden aria-label="Reclassify tracked contact as TR-3B" title="Reclassify as TR-3B">🛸</button>
           </div>
           <aside id="military-awareness-panel">
             <div class="military-awareness-standby">
-              <strong>CONTACTS CONTEXT OFF</strong>
-              <span>SELECT CONTACTS TO LOAD OBSERVED / MAPPED PROXIMITY</span>
+              <strong data-i18n="contactsContextOff">CONTACTS CONTEXT OFF</strong>
+              <span data-i18n="selectContacts">SELECT CONTACTS TO LOAD OBSERVED / MAPPED PROXIMITY</span>
             </div>
           </aside>
         </section>
@@ -774,15 +774,15 @@
             <div id="space-mission-roster" class="space-mission-roster" aria-label="Available Space Missions">
               <div class="space-mission-roster-header">
                 <div>
-                  <strong>AVAILABLE MISSIONS</strong>
-                  <span>SELECT A MISSION TO INSPECT</span>
+                    <strong data-i18n="availableMissions">AVAILABLE MISSIONS</strong>
+                    <span data-i18n="selectMission">SELECT A MISSION TO INSPECT</span>
                 </div>
                 <output data-mission-roster-count>—</output>
               </div>
               <div class="space-mission-roster-list" data-mission-roster-list>
-                <div class="space-mission-roster-empty">LOADING 30-DAY MISSION INDEX</div>
+                <div class="space-mission-roster-empty" data-i18n="loadingMissionIndex">LOADING 30-DAY MISSION INDEX</div>
               </div>
-              <p class="space-mission-roster-focus-continuation" tabindex="-1" data-mission-roster-focus-continuation>TAB PREVIEWS · ENTER / SPACE SELECTS</p>
+              <p class="space-mission-roster-focus-continuation" tabindex="-1" data-mission-roster-focus-continuation data-i18n="tabPreviews">TAB PREVIEWS · ENTER / SPACE SELECTS</p>
             </div>
           </div>
         </section>

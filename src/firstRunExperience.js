@@ -1,4 +1,5 @@
 import { createSurfaceKeyboard } from './ui/surfaceKeyboard.js';
+import { t } from './i18n.js';
 
 // First-run mission launcher.
 //
@@ -338,12 +339,12 @@ export function initFirstRunExperience({
   // The tile name is owner-switchable from one constant, so paint it from the
   // module rather than trusting the markup to have been edited to match.
   const environmentalTitle = root.querySelector('[data-first-run-environmental-title]');
-  if (environmentalTitle) environmentalTitle.textContent = environmentalLabel().title;
+  if (environmentalTitle) environmentalTitle.textContent = t('environmental');
 
   const status = root.querySelector('[data-first-run-status]');
   const suppressBox = root.querySelector('[data-first-run-suppress]');
   const buttons = [...root.querySelectorAll('[data-first-run-choice]')];
-  const defaultStatus = status?.textContent || '';
+  const defaultStatusKey = 'firstRunTip';
   let busy = false;
   let closing = false;
 
@@ -418,8 +419,8 @@ export function initFirstRunExperience({
     // <body> mid-flight and strands a keyboard visitor outside the launcher.
     for (const button of buttons) button.setAttribute('aria-disabled', String(next));
     if (!status) return;
-    if (next) status.textContent = FIRST_RUN_MISSIONS[choice]?.busyText || 'Working…';
-    else if (status.dataset.sticky !== 'true') status.textContent = defaultStatus;
+    if (next) status.textContent = t({ contacts: 'startingLiveContacts', 'space-missions': 'openingSpaceMissions', environmental: 'scanningActiveEvents' }[choice] || 'working');
+    else if (status.dataset.sticky !== 'true') status.textContent = t(defaultStatusKey);
   };
 
   const onChoice = async (event) => {
@@ -463,7 +464,7 @@ export function initFirstRunExperience({
     const detail = Array.isArray(failed) && failed.length ? ` (${failed.join(', ')})` : '';
     if (status) {
       status.dataset.sticky = 'true';
-      status.textContent = `Could not open that mission${detail}. Retry or explore manually.`;
+      status.textContent = t('missionOpenFailed').replace('{detail}', detail);
     }
     setBusy(false);
   };
@@ -479,7 +480,7 @@ export function initFirstRunExperience({
     if (box) box.checked = !wanted;
     if (!status) return;
     status.dataset.sticky = 'true';
-    status.textContent = 'This browser is blocking storage, so that could not be saved.';
+    status.textContent = t('storageBlocked');
   };
 
   const keyboard = createSurfaceKeyboard({

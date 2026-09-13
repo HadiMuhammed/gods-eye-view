@@ -86,18 +86,22 @@
 
 #first-run-launcher h2 {
   margin-top: 0.6rem;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: clamp(1.25rem, 2.4vw, 1.75rem);
   font-weight: 500;
   letter-spacing: -0.045rem;
+  overflow-wrap: anywhere;
 }
 
 #first-run-description {
+  min-width: 0;
   max-width: 29rem;
   margin-top: 0.3rem;
   color: rgba(215, 231, 235, 0.66);
   font-size: 0.78rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .first-run-choices {
@@ -126,10 +130,11 @@
 
 .first-run-choices button {
   display: grid;
-  grid-template-columns: 1.7rem 1fr 1.3rem;
+  grid-template-columns: 1.7rem minmax(0, 1fr) 1.3rem;
   align-items: center;
   gap: 0.7rem;
   width: 100%;
+  min-width: 0;
   min-height: 3.55rem;
   padding: 0.6rem 0.7rem;
   color: rgba(225, 244, 248, 0.92);
@@ -167,6 +172,7 @@
 }
 
 .first-run-choices button > span:nth-child(2) {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -177,9 +183,11 @@
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.08rem;
+  overflow-wrap: anywhere;
 }
 
 .first-run-choices small {
+  overflow-wrap: anywhere;
   color: rgba(198, 220, 226, 0.55);
   font-size: 0.66rem;
 }
@@ -235,6 +243,7 @@
 /* The live region carries mission progress and failures, so it owns a full row
    and reserves its height — otherwise the card resizes as it speaks. */
 .first-run-note {
+  overflow-wrap: anywhere;
   min-height: 1.1rem;
   margin-top: 0.5rem;
   color: rgba(199, 225, 231, 0.62);

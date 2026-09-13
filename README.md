@@ -34,7 +34,7 @@ Photorealistic 3D globe. Live aircraft, ships, satellites, earthquakes, traffic,
 
 <div align="center">
 
-**[Quick Start](#-quick-start) · [First Five Minutes](#-the-first-five-minutes) · [Talk to It](#-talk-to-it) · [What's Live](#-whats-on-the-globe) · [Under the Hood](#-under-the-hood) · [Keys & Costs](#-api-keys)**
+**[Quick Start](#-quick-start) · [First Five Minutes](#-the-first-five-minutes) · [Talk to It](#-talk-to-it) · [What's Live](#-whats-on-the-globe) · [Languages](#-languages) · [Under the Hood](#-under-the-hood) · [Keys & Costs](#-api-keys)**
 
 </div>
 
@@ -335,6 +335,17 @@ Once the basics click, run these:
 *Walk the boneyard: rows of retired airframes, fully resolved in 3D.*
 
 ---
+
+## 🌍 Languages
+
+The interface supports English, Spanish, French, German, Japanese, and Arabic.
+English is the default, and the selected language is remembered in the browser.
+Stable interface text, data-layer names, scene titles, and accessibility labels
+use the local translation catalog. Dynamic provider text can optionally use the
+server-side hybrid translation proxy with an English fallback.
+
+See [docs/I18N.md](docs/I18N.md) for the supported locale keys, contributor
+guidance, and optional `TRANSLATION_API_URL` configuration.
 
 ## 🔧 Under the Hood
 

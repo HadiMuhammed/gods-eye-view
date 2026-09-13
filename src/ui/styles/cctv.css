@@ -66,8 +66,17 @@
 
 .cctv-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 0;
+}
+
+#cctv-panel .scene-btn {
+  min-width: 0;
+  flex: 1 1 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 
 .cctv-calibration-block {
@@ -303,10 +312,14 @@
 }
 
 #cctv-meta {
+  min-width: 0;
+  max-width: 100%;
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 1px;
   color: var(--text-secondary);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 #cctv-source-badge {
@@ -319,6 +332,9 @@
   font-size: 8px;
   letter-spacing: 1.3px;
   padding: 4px 8px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 #cctv-source-badge[data-frame-state='loading'] {
@@ -334,13 +350,16 @@
 }
 
 .cctv-summary-label {
+  max-width: 100%;
   font-family: var(--font-mono);
   font-size: 8px;
   letter-spacing: 1.7px;
   color: var(--text-dim);
+  overflow-wrap: anywhere;
 }
 
 #cctv-summary {
+  max-width: 100%;
   min-height: 38px;
   font-family: var(--font-mono);
   font-size: 10px;
@@ -348,4 +367,5 @@
   line-height: 1.45;
   color: #a8f7ff;
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.18);
+  overflow-wrap: anywhere;
 }

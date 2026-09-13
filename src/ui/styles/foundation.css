@@ -36,6 +36,30 @@
   box-sizing: border-box;
 }
 
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', 'Material Icons Round', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'liga';
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+:where([data-i18n], [data-language-label]) {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 /* Keyboard focus is an app-wide state and must survive selected/active button
    skins. Individual controls can choose an inset/outset offset, but no local
    `outline: none` rule may erase the ring. */

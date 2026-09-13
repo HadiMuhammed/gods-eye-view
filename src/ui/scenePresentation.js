@@ -1,4 +1,6 @@
 /** Scene panel elements and text-only project presentation. */
+import { localizedSceneTitle, t } from '../i18n.js';
+
 export function sceneElements(root = document) {
   const ids = {
     panel: 'scene-panel',
@@ -30,7 +32,7 @@ export function renderSceneOptions(element, { scenes, selectedSceneId }) {
   for (const scene of scenes) {
     const option = document.createElement('option');
     option.value = scene.id;
-    option.textContent = scene.title;
+    option.textContent = localizedSceneTitle(scene.id, scene.title);
     element.appendChild(option);
   }
   if (selectedSceneId) element.value = selectedSceneId;
@@ -47,7 +49,7 @@ export function renderSceneShots(
   if (!scene || scene.shots.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'scene-shot-empty';
-    empty.textContent = 'No shots yet. Use CAPTURE SHOT to save current look.';
+    empty.textContent = t('noShotsYet');
     element.appendChild(empty);
     return;
   }
