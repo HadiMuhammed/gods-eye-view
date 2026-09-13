@@ -338,3 +338,28 @@ Panel layout, position/drag, notices, recording and deferred UI work have separa
 owners with synchronous cleanup. Existing scene, share and HUD engines retain
 their entry points. `ui/styles` loads the ordered stylesheet entry; component
 files retain the original cascade, including responsive and dock refinements.
+
+## UI state and Scene actions
+
+`StyleManager.subscribeShareState(listener)` supplies the current shareable
+visual preferences and subsequent settings changes. The built-in share manager
+consumes the same updates. `subscribeLocationSearch(listener)` follows the
+current lookup owner across control replacement. `LocationSearch.subscribe`
+provides the corresponding per-owner contract. Changes identify `started`,
+`found`, `missing`, `failed`, `settled`, and the shell's `reset`; request IDs
+belong to their lookup owner. Only current requests publish accepted results.
+
+`gods-eye-view/scenes` exports `SceneDirector`. Its `subscribe(listener)` supplies
+small playback snapshots plus editing outcomes. Scene controls consume these
+updates to render the affected presentation; progress does not copy the project
+or rebuild shot rows. Project import/export outcomes include the project;
+shot editing outcomes include the affected shot and its index before deletion.
+Camera, layer sequencing, storage and run-file download retain their existing
+owners. Cesium remains an external dependency supplied by the application.
+
+Each listener receives `{ state, change, revision, initial }` and subscriptions
+return an unsubscribe function. Initial state is emitted by default; pass
+`{ emitCurrent: false }` to receive only changes. Snapshots and outcomes are
+immutable plain data. Reentrant publications retain delivery order; removing a
+listener or destroying its owner prevents further queued delivery. These APIs
+perform no network requests and discover no additional modules.

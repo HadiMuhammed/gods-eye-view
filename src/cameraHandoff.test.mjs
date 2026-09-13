@@ -29,7 +29,7 @@ function body(source, pattern, label) {
 function ordered(source, needles, label) {
   let previous = -1;
   for (const needle of needles) {
-    const index = source.indexOf(needle);
+    const index = source.indexOf(needle, previous + 1);
     assert.ok(index >= 0, `${label}: missing ${needle}`);
     assert.ok(index > previous, `${label}: ${needle} is out of order`);
     previous = index;
@@ -247,18 +247,18 @@ test('deferred search releases only after its final authority check', () => {
   const search = fs.readFileSync(path.join(ROOT, 'src', 'ui', 'locationSearch.js'), 'utf8');
   ordered(search, [
     'const authority = this.begin();',
-    'this.onStart(authority);',
+    'this.onStart?.(authority);',
     'await this.search(query',
     'beforeFly: () => current() && this.beforeFly(authority)',
     'if (!current() || controller.signal.aborted) return;',
     'destination?.cancelled',
     'finally',
-    'this.onSettled(authority)',
+    'this.onSettled?.(authority)',
   ], 'deferred search component');
   assert.match(ui, /begin: \(\) => this\._beginDeferredNavigation\('location'\)/);
   assert.match(ui, /beforeFly: \(generation\) => this\._reassertNavigationHandoff\(generation\)/);
   assert.match(ui, /isCurrent: \(generation\) =>\s*!this\._disposed && generation === this\._navigationGeneration/);
-  assert.match(ui, /onSettled: \(generation\) => this\._settleLocationSearchUi\(generation\)/);
+  assert.match(ui, /change\.type === 'settled'\)\s*this\._settleLocationSearchUi\(change\.generation\)/);
   assert.doesNotMatch(search.slice(0, search.indexOf('await this.search')), /_releaseFollowCamera/);
 });
 
@@ -346,7 +346,7 @@ test('teardown refuses deferred location work before geocoding begins', () => {
     'const authority = this.begin();',
     'if (authority === false)',
     'this.input.blur();',
-    'this.onStart(authority);',
+    'this.onStart?.(authority);',
     'await this.search(query',
   ], 'disposed search refusal');
   assert.match(search, /if \(authority === false\) \{[\s\S]*?return;[\s\S]*?\}\s*this\.controller/);

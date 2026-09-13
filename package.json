@@ -140,6 +140,7 @@
     "./ui/cockpit/vision": "./src/cockpitVisionPolicy.js",
     "./ui/scenes": "./src/ui/scenes.js",
     "./ui/shell": "./src/ui/applicationShell.js",
-    "./ui/styles": "./src/ui/styles.js"
+    "./ui/styles": "./src/ui/styles.js",
+    "./scenes": "./src/scenes/director.js"
   }
 }

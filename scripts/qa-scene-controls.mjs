@@ -39,6 +39,12 @@ try {
       document.getElementById('loading-screen')?.classList.contains('hidden'),
     { timeout: 60000 },
   );
+  await page.evaluate(() => {
+    window.__qaSceneState = [];
+    window.__godsEyeView.sceneDirector.subscribe((notification) =>
+      window.__qaSceneState.push(notification),
+    );
+  });
   await page.click('[data-collapse-target="scene-panel"]');
   await page.click('#scene-new-btn');
   await page.waitForFunction(
@@ -303,6 +309,31 @@ try {
         document.querySelectorAll('#scene-select option').length > 0,
     ),
   );
+  check(
+    'Scene subscriptions include current state and the completed native editing actions',
+    await page.evaluate(() => {
+      const seen = window.__qaSceneState;
+      const types = new Set(seen.map(({ change }) => change?.type));
+      return (
+        seen[0].initial &&
+        Object.isFrozen(seen[0].state) &&
+        [
+          'scene-created',
+          'shot-captured',
+          'shot-renamed',
+          'shot-updated',
+          'project-exported',
+          'project-imported',
+          'shot-deleted',
+          'scene-deleted',
+          'run-event',
+        ].every((type) => types.has(type)) &&
+        seen
+          .filter(({ change }) => change?.shot)
+          .every(({ change }) => Object.isFrozen(change.shot))
+      );
+    }),
+  );
   const teardown = await page.evaluate(async () => {
     const director = window.__godsEyeView.sceneDirector;
     const controls = director._controls;
@@ -320,6 +351,7 @@ try {
       },
     });
     const stopping = director.destroy();
+    const notificationsAtStop = window.__qaSceneState.length;
     const stoppedSynchronously =
       controls.destroyed &&
       controls.removers.length === 0 &&
@@ -332,6 +364,7 @@ try {
     await director.destroy();
     return {
       stoppedSynchronously,
+      stateStopped: window.__qaSceneState.length === notificationsAtStop,
       sameProject: director._project === project,
       noLateStatus:
         document.getElementById('scene-status').textContent === previousStatus,
@@ -345,6 +378,10 @@ try {
   check(
     'Late import completion cannot replace the disposed project or status',
     teardown.sameProject && teardown.noLateStatus,
+  );
+  check(
+    'Scene subscriptions stop before late imports settle',
+    teardown.stateStopped,
   );
   check(
     'Scene control interaction produces no uncaught browser errors',

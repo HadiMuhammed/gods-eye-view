@@ -1,5 +1,19 @@
 # God's Eye View Current State
 
+## State and action outcomes
+
+Share preferences, place lookups and Scene playback expose immutable snapshots
+and disposable subscriptions. Share settings drive URL updates; lookup outcomes
+drive Location labels and busy/error feedback. Superseded or disposed lookups
+cannot publish accepted destinations. Each completion carries its own request
+identity so an older completion cannot clear the current search indicator.
+
+Scene controls consume playback state and editing outcomes from the director.
+Progress updates carry a small playback snapshot and preserve shot-row identity;
+editing outcomes include a copy of the affected scene or shot. Subscriptions
+start with current state, isolate listener failures and stop on disposal.
+`gods-eye-view/scenes` exports the same director used by the standalone app.
+
 ## UI shell and component ownership
 
 The standalone entry composes the UI with the application's existing layer,

@@ -246,5 +246,7 @@
   "src/ui/styles/responsive.css",
   "src/ui/styles/voice-cost.css",
   "src/ui/styles/cockpit.css",
-  "src/ui/styles/command-dock-compact.css"
+  "src/ui/styles/command-dock-compact.css",
+  "src/app/stateChannel.js",
+  "src/app/stateChannel.test.mjs"
 ]

@@ -11,7 +11,7 @@ const director = fs.readFileSync(path.join(ROOT, 'src', 'scenes', 'director.js')
 
 /** Source of the free-text LOCATION search handler (Enter on #location-search). */
 function locationSearchHandler() {
-  const start = ui.indexOf('searchAndFlyTo(this.viewer, query, {');
+  const start = ui.indexOf('  _handleLocationSearchState(state, change) {');
   assert.ok(start > 0, 'free-text location search handler is missing');
   const end = ui.indexOf('_beginWorldJumpTransition() {', start);
   assert.ok(end > start, 'could not bound the location search handler');
@@ -39,7 +39,7 @@ test('a free-text search records its destination for the LOCATION mini-status', 
   // own refresh would otherwise repaint the readout as "Location: --".
   assert.match(
     handler,
-    /this\._searchedLocationLabel = destination\.label[\s\S]{0,120}?this\._setActiveLocation\(null\);/,
+    /this\._searchedLocationLabel = state\.destination\.label[\s\S]{0,120}?this\._setActiveLocation\(null\);/,
   );
   assert.match(handler, /this\._updateLocationMiniStatus\(\);/);
 });

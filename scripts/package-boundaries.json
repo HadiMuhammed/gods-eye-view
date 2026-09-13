@@ -343,7 +343,8 @@
       "src/ui/location.js",
       "src/ui/locationControls.js",
       "src/ui/locationSearch.js",
-      "src/locationStatus.js"
+      "src/locationStatus.js",
+      "src/app/stateChannel.js"
     ],
     "external": []
   },
@@ -518,7 +519,8 @@
       "src/ui/visualInput.js",
       "src/ui/visualPresets.js",
       "src/worldFocus.js",
-      "src/ui/uiLifetime.js"
+      "src/ui/uiLifetime.js",
+      "src/app/stateChannel.js"
     ],
     "external": ["cesium"]
   },
@@ -548,5 +550,20 @@
       "src/ui/styles/provider-settings.css"
     ],
     "external": []
+  },
+  "scenes": {
+    "exports": ["./scenes"],
+    "modules": [
+      "src/scenes/director.js",
+      "src/scenes/recipes.js",
+      "src/scenes/scenePolicy.js",
+      "src/bloom.js",
+      "src/app/stateChannel.js",
+      "src/ui/scenes.js",
+      "src/ui/sceneControls.js",
+      "src/ui/scenePresentation.js",
+      "src/contextModePolicy.js"
+    ],
+    "external": ["cesium"]
   }
 }
