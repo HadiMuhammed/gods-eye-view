@@ -156,5 +156,6 @@
   "scripts/qa-map-source-controls.mjs",
   "src/ui/layers.js",
   "src/ui/layerPanel.js",
-  "src/ui/clearLayersControl.js"
+  "src/ui/clearLayersControl.js",
+  "scripts/qa-layer-panel.mjs"
 ]
