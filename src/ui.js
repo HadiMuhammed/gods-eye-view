@@ -1,3 +1,4 @@
+import { LocationControls, LocationSearch } from './ui/location.js';
 import { bindClearLayersControl } from './ui/layers.js';
 import { createMapSourceControls } from './ui/mapSource.js';
 import { VisualEffects, STYLES, GLOBAL_POST_DEFAULTS, STYLE_PRESET_DEFAULTS, MILITARY_DETECTION_PRESET } from './ui/effects.js';
@@ -13,7 +14,6 @@ import {
   decodeBloomIntensity,
 } from './bloom.js';
 import { LOCATIONS, CITY_POIS, GLOBE_VIEW, flyToGlobeView, flyToPresetLocation, flyToPOI, searchAndFlyTo } from './locations.js';
-import { locationMiniStatus } from './locationStatus.js';
 import { interruptCameraMotion } from './cameraVerbs.js';
 import {
   aircraftTrackingTarget,
@@ -2086,7 +2086,6 @@ export class StyleManager {
     this._shareTrackingAcquiringKey = null;
     this._shareTrackingNoticeGeneration = 0;
     this._globeResetPromise = null;
-    this._globeResetHandler = null;
     this._clearSelectedLayersPromise = null;
     this._clearSelectedLayersManagerPromise = null;
     this._dataManager = null;
@@ -2566,7 +2565,6 @@ export class StyleManager {
     this._initLocationBar();
     this._initShareButton();
     this._initClearSelectedLayersButton();
-    this._initResetGlobeButton();
     this._initHUDToggle();
     this._initModels3dToggle();
     this._applyGlobalPostDefaults();
@@ -8529,90 +8527,45 @@ export class StyleManager {
    * @returns {void}
    */
   _initLocationBar() {
-    const QWERTY_KEYS = ['Q', 'W', 'E', 'R', 'T'];
-
-    // Render city pills (no submenu wrappers — POI row is separate)
-    for (const [cityId, city] of Object.entries(CITY_POIS)) {
-      const pill = document.createElement('button');
-      pill.className = 'location-pill';
-      pill.dataset.locationId = cityId;
-      pill.textContent = city.name;
-      pill.addEventListener('click', () => this._onCityPillClick(cityId));
-      this._locationPills.appendChild(pill);
-    }
-
-    // QWERTY keyboard navigation for POIs
-    this._poiKeydownHandler = (e) => {
-      if (!this._expandedCityId) return;
-      // Bail while a form control is focused so POI hotkeys don't fire from a
-      // <select> dropdown's type-ahead or while typing in a field (M9).
-      const isFormControl = e.target?.matches?.('select, input, textarea')
-        || e.target === this._locationSearch;
-      if (isFormControl) return;
-
-      const keyIndex = QWERTY_KEYS.indexOf(e.key.toUpperCase());
-      if (keyIndex === -1) return;
-
-      const city = CITY_POIS[this._expandedCityId];
-      if (city && keyIndex < city.pois.length) {
-        this._onPoiClick(this._expandedCityId, keyIndex);
-      }
-    };
-    document.addEventListener('keydown', this._poiKeydownHandler);
-
-    // Search toggle (expand/collapse)
-    this._searchToggle.addEventListener('click', () => {
-      this._locationSearch.classList.toggle('expanded');
-      if (this._locationSearch.classList.contains('expanded')) {
-        this._locationSearch.focus();
-      }
+    this._locationControls?.destroy();
+    this._locationLookup?.destroy();
+    this._locationLookup = new LocationSearch({
+      input: this._locationSearch,
+      begin: () => this._beginDeferredNavigation('location'),
+      isCurrent: (generation) => !this._disposed && generation === this._navigationGeneration,
+      beforeFly: (generation) => this._reassertNavigationHandoff(generation),
+      search: (query, options) => searchAndFlyTo(this.viewer, query, {
+        placeSearch: this.placeSearch,
+        ...options,
+      }),
+      onStart: (generation) => { this._activeLocationSearchGeneration = generation; },
+      onResult: (destination, query) => {
+        this._searchedLocationLabel = destination.label || query;
+        this._setActiveLocation(null);
+        this._currentPoi = null;
+        this._collapsePOIRow();
+        this._updateLocationMiniStatus();
+      },
+      onMissing: () => this._showToast('Location not found'),
+      onError: (error) => {
+        console.error('[Search] Geocoding failed:', error);
+        this._showToast('Search failed');
+      },
+      onSettled: (generation) => this._settleLocationSearchUi(generation),
     });
-
-    // Search submit on Enter
-    this._locationSearch.addEventListener('keydown', async (e) => {
-      if (e.key === 'Enter') {
-        const query = this._locationSearch.value.trim();
-        if (!query) return;
-        const generation = this._beginDeferredNavigation('location');
-        if (generation === false) {
-          this._locationSearch.classList.remove('searching');
-          this._locationSearch.blur();
-          return;
-        }
-        this._activeLocationSearchGeneration = generation;
-        this._locationSearch.classList.add('searching');
-        try {
-          const destination = await searchAndFlyTo(this.viewer, query, {
-            beforeFly: () => this._reassertNavigationHandoff(generation),
-          });
-          if (this._disposed || generation !== this._navigationGeneration) return;
-          if (destination?.cancelled) {
-            // Authority changed while the lookup was resolving; remain inert.
-          } else if (destination) {
-            // The ACTIVE STYLE indicator reports the STYLE and nothing else.
-            // Writing the searched city here made the top-right corner read
-            // "ACTIVE STYLE / TOKYO"; where the camera is belongs to the
-            // LOCATION panel's own readout, which is updated below.
-            //
-            // Set before _setActiveLocation(null) so its own mini-status
-            // refresh already sees the destination — the readout never blinks
-            // through "Location: --" on the way to the searched place.
-            this._searchedLocationLabel = destination.label || query;
-            this._setActiveLocation(null);
-            this._currentPoi = null;
-            this._collapsePOIRow();
-            this._updateLocationMiniStatus();
-          } else {
-            this._showToast('Location not found');
-          }
-        } catch (err) {
-          console.error('[Search] Geocoding failed:', err);
-          if (this._disposed || generation !== this._navigationGeneration) return;
-          this._showToast('Search failed');
-        } finally {
-          this._settleLocationSearchUi(generation);
-        }
-      }
+    this._locationControls = new LocationControls({
+      elements: {
+        pills: this._locationPills, poiRow: this._poiRow, divider: this._locationBarDivider,
+        search: this._locationSearch, searchToggle: this._searchToggle,
+        resetButtons: [this._resetGlobeBtn, this._cockpitResetGlobeBtn],
+        statusCity: this._locationMiniCity, statusPoi: this._locationMiniPoi,
+      },
+      cities: CITY_POIS,
+      getExpandedCity: () => this._expandedCityId,
+      onCity: (id) => this._onCityPillClick(id),
+      onPoi: (id, index) => this._onPoiClick(id, index),
+      onSearch: (query) => this._locationLookup.run(query),
+      onReset: () => this.resetToGlobeView(),
     });
   }
 
@@ -8739,28 +8692,9 @@ export class StyleManager {
    * @returns {void}
    */
   _expandPOIRow(cityId) {
-    const QWERTY_KEYS = ['Q', 'W', 'E', 'R', 'T'];
-    const city = CITY_POIS[cityId];
-    if (!city) return;
-
+    if (!CITY_POIS[cityId]) return;
     this._expandedCityId = cityId;
-
-    // Build POI pill buttons
-    this._poiRow.innerHTML = '';
-    city.pois.forEach((poi, idx) => {
-      const pill = document.createElement('button');
-      pill.className = 'poi-pill';
-      pill.dataset.poiIndex = idx;
-      pill.innerHTML = `<span class="poi-pill-key">${QWERTY_KEYS[idx] || idx + 1}</span><span class="poi-pill-name">${poi.name}</span>`;
-      pill.addEventListener('click', () => this._onPoiClick(cityId, idx));
-      this._poiRow.appendChild(pill);
-    });
-
-    // Animate expansion
-    requestAnimationFrame(() => {
-      this._poiRow.classList.add('expanded');
-      this._locationBarDivider.classList.add('visible');
-    });
+    this._locationControls.showPois(cityId);
   }
 
   /**
@@ -8770,8 +8704,7 @@ export class StyleManager {
   _collapsePOIRow() {
     this._expandedCityId = null;
     this._activePoiIndex = null;
-    this._poiRow.classList.remove('expanded');
-    this._locationBarDivider.classList.remove('visible');
+    this._locationControls.hidePois();
   }
 
   /**
@@ -8779,9 +8712,7 @@ export class StyleManager {
    * @returns {void}
    */
   _updatePoiHighlight() {
-    this._poiRow.querySelectorAll('.poi-pill').forEach(pill => {
-      pill.classList.toggle('active', parseInt(pill.dataset.poiIndex) === this._activePoiIndex);
-    });
+    this._locationControls.highlightPoi(this._activePoiIndex);
   }
 
   /**
@@ -8807,9 +8738,7 @@ export class StyleManager {
     // free-text destination has been superseded. Clearing only on a real id
     // leaves the search path's own _setActiveLocation(null) untouched.
     if (locationId) this._searchedLocationLabel = null;
-    this._locationPills.querySelectorAll('.location-pill').forEach(pill => {
-      pill.classList.toggle('active', pill.dataset.locationId === locationId);
-    });
+    this._locationControls?.highlightCity(locationId);
     this._updateLocationMiniStatus();
   }
 
@@ -8819,14 +8748,11 @@ export class StyleManager {
    * @returns {void}
    */
   _updateLocationMiniStatus() {
-    if (!this._locationMiniCity || !this._locationMiniPoi) return;
-    const lines = locationMiniStatus({
+    this._locationControls?.renderStatus({
       city: this._activeLocationId ? CITY_POIS[this._activeLocationId] : null,
       currentPoi: this._currentPoi,
       searchedLabel: this._searchedLocationLabel,
     });
-    this._locationMiniCity.textContent = lines.city;
-    this._locationMiniPoi.textContent = lines.poi;
   }
 
   /**
@@ -8846,11 +8772,7 @@ export class StyleManager {
    * @returns {void}
    */
   _initOrbit() {
-    // Create orbit indicator element
-    this._orbitIndicator = document.createElement('div');
-    this._orbitIndicator.id = 'orbit-indicator';
-    this._orbitIndicator.innerHTML = '<span class="orbit-icon">&#x21BB;</span> ORBIT';
-    document.body.appendChild(this._orbitIndicator);
+    this._orbitIndicator = this._locationControls.createOrbitIndicator();
   }
 
   /**
@@ -8880,14 +8802,6 @@ export class StyleManager {
     if (this.orbitController.active) {
       this.orbitController.stop();
       this._orbitIndicator.classList.remove('active');
-    }
-  }
-
-  /** Wire the persistent reset control to the same route used by voice. */
-  _initResetGlobeButton() {
-    this._globeResetHandler = () => { this.resetToGlobeView(); };
-    for (const button of [this._resetGlobeBtn, this._cockpitResetGlobeBtn]) {
-      button?.addEventListener('click', this._globeResetHandler);
     }
   }
 
@@ -9368,13 +9282,14 @@ export class StyleManager {
     this._displayControls?.destroy();
     this._mapSourceControls?.destroy();
     this._clearLayersControl?.destroy();
+    this._locationControls?.destroy();
     this._visualEffects.stop();
     this._styleParameters?.destroy();
     for (const control of this._panelDisclosureControls || []) control.destroy();
     this._panelDisclosureControls = [];
     this._hoverPanelControls?.forEach((control) => control.destroy());
     this._hoverPanelControls?.clear();
-    this._locationSearchController?.abort();
+    this._locationLookup?.destroy();
     this._cancelMapSourceFocus?.();
     // Revoke persistence/hash authority before teardown can emit manager changes.
     this._layerStateCoordinator?.destroy();
@@ -9452,31 +9367,13 @@ export class StyleManager {
     this._dataManagerVisibilityRequestUnsubscribe = null;
     this._dataManagerUnsubscribe?.();
     this._dataManagerUnsubscribe = null;
-    if (this._globeResetHandler) {
-      this._resetGlobeBtn?.removeEventListener('click', this._globeResetHandler);
-      this._cockpitResetGlobeBtn?.removeEventListener('click', this._globeResetHandler);
-      this._globeResetHandler = null;
-    }
 
-    this._cctvUnsubscribe?.();
-    this._cctvUnsubscribe = null;
-    this._commandDockTrayObserver?.disconnect?.();
-    this._commandDockTrayObserver = null;
-    this._draggableResizeObserver?.disconnect();
-    this._draggableResizeObserver = null;
-    if (this._windowResizeHandler) {
-      window.removeEventListener('resize', this._windowResizeHandler);
-      this._windowResizeHandler = null;
-    }
     if (this._loadingVisibilityHandler) {
       document.removeEventListener('visibilitychange', this._loadingVisibilityHandler);
       this._loadingVisibilityHandler = null;
     }
     this._stopLoadingFeedbackTicker();
-    if (this._poiKeydownHandler) {
-      document.removeEventListener('keydown', this._poiKeydownHandler);
-      this._poiKeydownHandler = null;
-    }
+
     // Stop the independently owned traffic and loading feedback tickers.
 
     if (this._trafficChipTicker) {

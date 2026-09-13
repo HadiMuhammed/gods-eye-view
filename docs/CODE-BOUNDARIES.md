@@ -279,3 +279,11 @@ the caller. Hidden-page refresh scheduling remains an explicit callback.
 
 `ui/layers/feedback` exposes the existing pure loading/notice reducers separately
 from DOM controls. Scheduling and presentation stay with their callers.
+
+## Location controls
+
+`ui/location` exports Location controls, the cancellable lookup controller and
+the existing location-status formatter. Callers supply city data, search and
+navigation operations. The component owns DOM listeners and pending expansion;
+it imports no geocoder, camera engine, layer or application bootstrap. Existing
+camera authority and search providers remain supplied by the application.

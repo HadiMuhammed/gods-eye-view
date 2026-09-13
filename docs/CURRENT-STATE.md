@@ -1,5 +1,15 @@
 # God's Eye View Current State
 
+## Location control ownership
+
+City/POI rows, search/reset bindings, location readouts and the orbit indicator
+have a dedicated component with explicit navigation actions. A separate lookup
+controller cancels superseded searches and checks camera authority before flight
+and result presentation. Existing search providers and camera handoff policy are
+preserved. Replacing or closing a POI row cancels its pending expansion frame;
+destruction releases listeners, pending searches and the orbit indicator.
+
+
 ## Layer panel ownership
 
 Layer rows, feed feedback, counts, focus-preserving chips and toggle listeners

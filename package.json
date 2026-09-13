@@ -129,6 +129,7 @@
     "./ui/effects/bloom": "./src/bloom.js",
     "./ui/maps": "./src/ui/mapSource.js",
     "./ui/layers": "./src/ui/layers.js",
-    "./ui/layers/feedback": "./src/loadingFeedback.js"
+    "./ui/layers/feedback": "./src/loadingFeedback.js",
+    "./ui/location": "./src/ui/location.js"
   
 }
