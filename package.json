@@ -132,6 +132,7 @@
     "./ui/layers/feedback": "./src/loadingFeedback.js",
     "./ui/location": "./src/ui/location.js",
     "./ui/radio": "./src/ui/radio.js",
-    "./ui/cctv": "./src/ui/cctv.js"
-  
+    "./ui/cctv": "./src/ui/cctv.js",
+    "./ui/context": "./src/ui/context.js",
+    "./ui/context/policy": "./src/contextModePolicy.js"
 }

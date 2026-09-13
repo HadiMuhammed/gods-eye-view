@@ -1,5 +1,15 @@
 # God's Eye View Current State
 
+## Context coordination
+
+Context controls own Contacts/Space Missions state, entry and exit transactions,
+layer snapshots and restoration. The application supplies the existing manager,
+installations search and camera/panel actions. Tab listeners and pending
+presentation work stop during disposal; layer restoration retains its existing
+compensation and latest-intent rules. Clear Selected Layers shares this owner,
+so an older restore cannot replay over a newer Clear action.
+
+
 ## Camera panel ownership
 
 CCTV controls receive the existing camera port and explicit application actions.

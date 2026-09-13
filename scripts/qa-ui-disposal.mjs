@@ -58,6 +58,13 @@ try {
         counts.cctv++;
         return cctvUnsubscribe();
       };
+    const contextFields = ['_contextManagerUnsubscribe', '_dataManagerVisibilityRequestUnsubscribe', '_dataManagerVisibilityGuardUnsubscribe', '_dataManagerBeforeDestroyUnsubscribe'];
+    const contextConnected = contextFields.every((field) => typeof ui._contextControls[field] === 'function');
+    for (const field of contextFields) {
+      const unsubscribe = ui._contextControls[field];
+      counts[field] = 0;
+      ui._contextControls[field] = () => { counts[field]++; return unsubscribe?.(); };
+    }
     const resizeHandler = ui._windowResizeHandler;
     const removeEventListener = window.removeEventListener;
     counts.resize = 0;
@@ -79,6 +86,8 @@ try {
           resizeHandler &&
           observed.includes('_commandDockTrayObserver'),
         ),
+        contextReleased: contextConnected && ui._contextControls.destroyed
+          && contextFields.every((field) => counts[field] === 1 && ui._contextControls[field] === null),
         observersReleased: observed.every(
           (name) => counts[name] === 1 && ui[name] === null,
         ),
@@ -99,6 +108,7 @@ try {
     'real UI has the expected live resources before disposal',
     result.connected,
   );
+  check('UI disposal releases all Context subscriptions and stops its controls', result.contextReleased);
   check(
     'UI disposal disconnects each active panel observer once',
     result.observersReleased,

@@ -302,3 +302,11 @@ subscriptions before ending the active tuning interaction.
 presentation. It receives DOM elements, the existing camera port and explicit
 application actions; it imports no provider, layer or camera engine. Selection,
 placement, navigation and storage policy remain outside the component family.
+
+### Context coordination
+
+`ui/context` owns mode controls, transactions, session restoration and manager
+subscriptions. Composition supplies the manager, installations search and
+explicit visual/panel actions. `ui/context/policy` exposes the existing pure
+mode and restoration rules. No source transport or renderer is imported by
+these components; initial state and action results retain their existing shape.

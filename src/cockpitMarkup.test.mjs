@@ -1,3 +1,7 @@
+import { _handleContextLayerChange } from './ui/contextLayerChanges.js';
+import { clearSelectedLayers } from './ui/contextActions.js';
+import { _selectContextMode } from './ui/contextTransactions.js';
+import { _restoreContextSession } from './ui/contextSession.js';
 import { readFileSync as readRadioSource } from 'node:fs';
 const radioBindings = readRadioSource(new URL('./ui/radioBindings.js', import.meta.url), 'utf8');
 const radioPresentation = readRadioSource(new URL('./ui/radioPresentation.js', import.meta.url), 'utf8');
@@ -183,9 +187,7 @@ test('the cockpit reads its aircraft from the layer that owns Cesium tracking', 
 });
 
 test('programmatic Context layer changes cannot bypass explicit expansion policy', () => {
-  const handler = ui.match(/_handleContextLayerChange\(change\) \{([\s\S]*?)\n  \}\n\n  _syncContextModeButtons/);
-  assert.ok(handler, 'Context layer state handler is missing');
-  assert.doesNotMatch(handler[1], /setPanelCollapsed\('global-context-panel', false\)/);
+  assert.doesNotMatch(_handleContextLayerChange.toString(), /setPanelCollapsed\('global-context-panel', false\)/);
 });
 
 test('share startup isolates panel defaults from recipient-local collapse preferences', () => {
@@ -305,13 +307,13 @@ test('Clear Selected Layers uses one adopted batch and discards Context restorat
     manager,
     /for \(const \{ layerId, intentEpoch \} of targets\)[\s\S]*?visibilityIntentEpoch !== intentEpoch[\s\S]*?await this\.setEnabled\(layerId, false/,
   );
-  assert.match(ui, /if \(this\._clearSelectedLayersPromise\) return this\._clearSelectedLayersPromise/);
-  assert.match(ui, /async _selectContextMode\([\s\S]*?if \(this\._clearSelectedLayersPromise\) return false/);
-  assert.match(ui, /this\._contextModeGeneration[\s\S]*?this\._contextSessionSnapshot = null;[\s\S]*?this\._contextRestoreState = null;/);
-  assert.match(ui, /if \(this\._contextRestoreState\) this\._contextRestoreState\.cancelled = true/);
-  assert.match(ui, /if \(restoreState\.cancelled\) return;[\s\S]*?settleContextIntentReplay/);
+  assert.match(clearSelectedLayers.toString(), /if \(this\._clearSelectedLayersPromise\) return this\._clearSelectedLayersPromise/);
+  assert.match(_selectContextMode.toString(), /async function _selectContextMode\([\s\S]*?if \(this\._clearSelectedLayersPromise\) return false/);
+  assert.match(clearSelectedLayers.toString(), /this\._contextModeGeneration[\s\S]*?this\._contextSessionSnapshot = null;[\s\S]*?this\._contextRestoreState = null;/);
+  assert.match(clearSelectedLayers.toString(), /if \(this\._contextRestoreState\) this\._contextRestoreState\.cancelled = true/);
+  assert.match(_restoreContextSession.toString(), /if \(restoreState\.cancelled\) return;[\s\S]*?settleContextIntentReplay/);
   assert.match(radioPresentation, /!this\.actions\.preservePanelStateDuringClear\(\)[\s\S]*?this\.actions\.setPanelCollapsed\('radio-panel', true\)/);
-  assert.match(ui, /this\._userFacingContextNotificationTokens\.add\(notificationToken\)/);
+  assert.match(clearSelectedLayers.toString(), /this\._userFacingContextNotificationTokens\.add\(notificationToken\)/);
 });
 
 test('Cockpit Display portal retains both scroll owners across round trips', () => {

@@ -300,7 +300,7 @@ test('newer navigation, reset, Cockpit, and teardown share one generation', () =
     'this._disposed = true;',
     'this._stampNavigation();',
     'this._removeWorldRequestFocusListener?.();',
-    'await this._restoreContextSession();',
+    'await this._contextControls.restoreForDisposal();',
   ], 'dispose invalidation');
 });
 
@@ -311,7 +311,7 @@ test('teardown synchronously closes immediate camera entry points', () => {
     'this._removeCctvRequestFocusListener?.();',
     'this._removeWorldRequestFocusListener?.();',
     'this._navigationOwnerChangedRemover?.();',
-    'await this._restoreContextSession();',
+    'await this._contextControls.restoreForDisposal();',
   ], 'synchronous teardown barrier');
 
   const navigation = body(
