@@ -378,6 +378,22 @@ try {
       return rect.width > 0 && rect.left >= 0 && rect.right <= innerWidth + 1;
     }),
   );
+  check(
+    'rebuilding Radio preserves the active camera controller and subscription',
+    await page.evaluate(() => {
+      const ui = window.__godsEyeView.styleManager;
+      const camera = ui._cctvControls;
+      const cameraId = camera.getState()?.activeCameraId;
+      ui._initRadioPanel();
+      ui._radioControls.connect();
+      return (
+        ui._cctvControls === camera &&
+        !camera.destroyed &&
+        Boolean(camera._cctvUnsubscribe) &&
+        camera.getState()?.activeCameraId === cameraId
+      );
+    }),
+  );
   await page.evaluate(() => window.__godsEyeView.styleManager.dispose());
   check(
     'CCTV controller is destroyed with the real UI',
