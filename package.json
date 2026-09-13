@@ -121,6 +121,7 @@
     },
     "./search": "./src/search/index.js",
     "./ui/panels": "./src/ui/panelDisclosure.js",
-    "./ui/surfaces": "./src/ui/surfaceKeyboard.js"
+    "./ui/surfaces": "./src/ui/surfaceKeyboard.js",
+    "./ui/layout": "./src/ui/panelRails.js"
   
 }

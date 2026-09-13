@@ -213,3 +213,21 @@ current visible/enabled controls for each key; ordinary movement within those
 boundaries remains native. The component honors already-handled keys and has no
 app, server, storage or network dependencies. Its package boundary is checked
 independently from the standalone screens that consume it.
+
+## Panel rail layout
+
+`gods-eye-view/ui/layout` exports synchronous `layoutLeftPanelRail` and
+`layoutRightPanelRail` passes, `measurePanelNaturalHeight`, and the existing pure
+corridor/allocation helpers. Separate modules own left placement, right placement,
+DOM height measurement and rail geometry. They import no application, renderer,
+server, storage or network modules; package checks build this entry independently.
+
+Callers supply rail/obstacle DOM nodes, the viewport, HUD state, the preferred
+panel, disclosure/retry callbacks and the left measurement cache. Right layout
+reads the caller's Display scroll value at measurement time and restores it
+within the resulting scroll range. The left pass notifies its caller after
+alignment so the right pass can follow. Neither pass installs listeners, timers
+or observers; construction/import does no work. Scheduling, preference writes,
+share restoration and movement of controls between containers remain caller-owned.
+Existing helper imports from `cockpitMath.js` and `rightRailPolicy.js` remain
+compatible through re-exports.

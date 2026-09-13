@@ -525,12 +525,10 @@ test('Cockpit panel corridors reserve the owned topline readouts', () => {
   assert.match(rightObstacles[1], /#cockpit-hud \.cockpit-topline/);
   assert.match(leftObstacles[1], /#cockpit-hud \.cockpit-topline > div/);
   assert.match(rightObstacles[1], /#cockpit-hud \.cockpit-topline > div/);
-  const leftLayout = ui.match(
-    /_syncLeftPanelAdaptiveLayout\(\) \{([\s\S]*?)\n  \}\n\n  \/\*\*/,
-  );
+  const leftLayout = fs.readFileSync(new URL('./ui/leftPanelRail.js', import.meta.url), 'utf8');
   assert.ok(leftLayout, 'left accordion layout pass is missing');
   assert.doesNotMatch(
-    leftLayout[1],
+    leftLayout,
     /setProperty\('--cockpit-utility-top'/,
     'the right margin must not borrow the left accordion corridor: it is solved '
       + 'against left-lane obstacles and put the strip through the briefing card',
@@ -585,17 +583,15 @@ test('an expanded Cockpit left panel stays above Contact, HUD, and attribution',
     /COCKPIT_PASSABLE_LEFT_OBSTACLE_SELECTOR|cockpitOverlaysPassable/,
     'Cockpit obstacles must never be bypassed by an expanded map panel',
   );
-  const leftLayout = ui.match(
-    /_syncLeftPanelAdaptiveLayout\(\) \{([\s\S]*?)\n  \}\n\n  \/\*\*/,
-  );
+  const leftLayout = fs.readFileSync(new URL('./ui/leftPanelRail.js', import.meta.url), 'utf8');
   assert.ok(leftLayout, 'left accordion layout pass is missing');
   assert.match(
-    leftLayout[1],
+    leftLayout,
     /rect\.top >= baseTop\) \{\s*\n\s*bottomObstacles\.push\(\{ top: rect\.top \}\);/,
     'every rendered lower-lane obstacle must constrain the panel corridor',
   );
   assert.match(
-    leftLayout[1],
+    leftLayout,
     /safeBottom = resolveLeftStackBottomBoundary\(\{[\s\S]*?safeGap,\s*\n\s*\}\);/,
   );
   const cockpitHud = css.match(/#cockpit-hud\s*\{[\s\S]*?z-index:\s*(\d+);/);
