@@ -1,5 +1,5 @@
 import { governorRequestRender } from '../renderGovernor.js';
-import { LayerPanel, layerFeedState } from '../ui/layers.js';
+import { LayerPanel } from '../ui/layers.js';
 export { layerFeedState } from '../ui/layers.js';
 import { markDetectionSourcesChanged } from './detection.js';
 function cloneLayerParams(value) {

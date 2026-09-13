@@ -82,6 +82,20 @@ try {
         'feed state reflects the settled layer snapshot',
         row().querySelector('.data-toggle-btn').dataset.feedState === 'stale',
       ]);
+      const ui = window.__godsEyeView.styleManager;
+      ui._clearSelectedLayersBtn.click();
+      result.push([
+        'native clear activation presents busy state',
+        ui._clearSelectedLayersBtn.getAttribute('aria-busy') === 'true' &&
+          !!ui._clearSelectedLayersPromise,
+      ]);
+      await ui._clearSelectedLayersPromise;
+      result.push([
+        'clear settles through the existing layer transaction',
+        !manager.isEnabled(id) &&
+          ui._clearSelectedLayersBtn.getAttribute('aria-busy') === 'false',
+      ]);
+      await manager.setEnabled(id, true);
       const final = row().querySelector('.data-toggle-btn');
       manager._layerPanel.destroy();
       final.click();
