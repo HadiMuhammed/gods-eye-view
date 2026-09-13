@@ -1922,7 +1922,10 @@ async function main() {
         hudVariant: manager.hud.getVariant(),
         focusId: document.activeElement?.id || null,
       };
-      const waitForLayout = () => new Promise((resolve) => setTimeout(resolve, 320));
+      const waitForLayout = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 320));
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      };
       const cases = [];
 
       manager.setPanelCollapsed('global-context-panel', true);
@@ -1999,7 +2002,10 @@ async function main() {
       // owns the real tracked-aircraft camera session. Hold the frame update so
       // the intentionally synthetic Cockpit shell is not auto-exited mid-check.
       const realCockpitUpdate = manager.cockpitView.update;
-      const waitForLayout = () => new Promise((resolve) => setTimeout(resolve, 320));
+      const waitForLayout = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 320));
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      };
       const prior = {
         cockpit: document.body.classList.contains('cockpit-mode'),
         cockpitActive: manager.cockpitView.active,
@@ -2104,7 +2110,10 @@ async function main() {
       };
       // The Intel HUD fades over 400ms and keeps its readout rects for the
       // whole transition, so both lanes are measured only once it has settled.
-      const waitForHudSettle = () => new Promise((resolve) => setTimeout(resolve, 560));
+      const waitForHudSettle = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 560));
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      };
       for (let index = 0; index < 5; index += 1) {
         recordLayoutStep();
         if (index < 4) {
@@ -2255,14 +2264,17 @@ async function main() {
         const stableTop = utility.getBoundingClientRect().top;
         const transitionTops = [];
         let sampling = true;
+        let sampleFrame = null;
         const sampleTop = () => {
+          if (!sampling) return;
           transitionTops.push(utility.getBoundingClientRect().top);
-          if (sampling) requestAnimationFrame(sampleTop);
+          sampleFrame = requestAnimationFrame(sampleTop);
         };
-        requestAnimationFrame(sampleTop);
+        sampleFrame = requestAnimationFrame(sampleTop);
         await manager._setMapStack('osm', { syncShare: false });
         await waitForLayout();
         sampling = false;
+        cancelAnimationFrame(sampleFrame);
         mapProviderUtilityStable = transitionTops.length > 1
           && transitionTops.every((top) => Math.abs(top - stableTop) < 1);
       }
