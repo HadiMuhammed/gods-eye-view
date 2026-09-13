@@ -468,11 +468,11 @@ test('Reset releases Contact camera ownership through its selection-preserving r
   assert.ok(contextRelease > resetStart);
   assert.ok(satelliteRelease > contextRelease);
   assert.match(ui, /this\._cockpitResetGlobeBtn = document\.getElementById\('cockpit-reset-globe'\)/);
-  assert.match(
-    ui,
-    /for \(const button of \[this\._resetGlobeBtn, this\._cockpitResetGlobeBtn\]\) \{[\s\S]*?addEventListener\('click', this\._globeResetHandler\)/,
-    'both reset controls must delegate to the one shared reset route',
-  );
+  const controls = fs.readFileSync(path.join(ROOT, 'src', 'ui', 'locationControls.js'), 'utf8');
+  assert.match(ui, /resetButtons: \[this\._resetGlobeBtn, this\._cockpitResetGlobeBtn\]/);
+  assert.match(ui, /onReset: \(\) => this\.resetToGlobeView\(\)/);
+  assert.match(controls, /for \(const button of elements\.resetButtons\)[\s\S]*?this\.bind\(button, 'click', onReset\)/,
+    'both reset controls delegate to the same supplied reset action');
   assert.match(ui, /if \(this\.resetGlobeButton\) this\.resetGlobeButton\.hidden = false;/);
   assert.match(ui, /if \(this\.resetGlobeButton\) this\.resetGlobeButton\.hidden = true;/);
 });
@@ -496,7 +496,10 @@ test('Location navigation releases immediate routes before flight and deferred r
   const poiHandler = ui.slice(ui.indexOf('_onPoiClick(cityId, poiIndex) {'), ui.indexOf('_expandPOIRow(cityId) {'));
   assert.match(cityHandler, /if \(result === false\) return;[\s\S]*?_setActiveLocation/);
   assert.match(poiHandler, /if \(result === false\) return;[\s\S]*?_setActiveLocation/);
-  assert.match(ui.slice(search, search + 320), /beforeFly: \(\) => this\._reassertNavigationHandoff\(generation\)/);
+  assert.match(ui, /beforeFly: \(generation\) => this\._reassertNavigationHandoff\(generation\)/);
+  assert.match(ui.slice(search, search + 180), /\.\.\.options/);
+  const lookup = fs.readFileSync(path.join(ROOT, 'src', 'ui', 'locationSearch.js'), 'utf8');
+  assert.match(lookup, /beforeFly: \(\) => current\(\) && this\.beforeFly\(authority\)/);
   assert.ok(voiceStart >= 0, 'voice Location must use the same handoff');
   assert.match(voiceActions, /styleManager\.reassertDeferredLocationNavigation\(generation\)/);
 });
