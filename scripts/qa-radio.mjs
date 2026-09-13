@@ -2699,9 +2699,15 @@ async function main() {
       const radio = window.__godsEyeView.dataManager.layers.get('radio').module;
       await radio.play();
       const beforeSpace = radio.getUIState().audioState;
-      document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, code: 'Space', key: ' ' }));
+      // Simulate an already-started hold-Space session; click-started open mic
+      // deliberately ignores Space takeover, and short taps never claim voice.
+      const priorPushToTalkMode = voice.pushToTalkMode;
+      voice.pushToTalkMode = true;
+      document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, code: 'Space', key: ' ' }));
+      await new Promise((resolve) => setTimeout(resolve, 700));
       const afterSpace = radio.getUIState().audioState;
-      document.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, code: 'Space', key: ' ' }));
+      document.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, cancelable: true, code: 'Space', key: ' ' }));
+      voice.pushToTalkMode = priorPushToTalkMode;
       await radio.play();
       voice.setVoiceSpeaker('ai');
       return { beforeSpace, afterSpace, afterAi: radio.getUIState().audioState };
@@ -3369,6 +3375,7 @@ async function main() {
       const slider = document.getElementById('radio-tuner-slider');
       const key = (type, value) => slider.dispatchEvent(new KeyboardEvent(type, {
         bubbles: true,
+        cancelable: true,
         key: value,
       }));
       const markerId = () => gev.viewer.entities.values
@@ -3423,7 +3430,8 @@ async function main() {
         previewAndCancel('PageUp', Math.min(count - 1, base + pageStep)),
         previewAndCancel('PageDown', Math.max(0, base - pageStep)),
       ];
-      return { startIndex, expectedIndex, expectedId, preview, committed, cancelled, navigation };
+      return { startIndex, expectedIndex, expectedId, preview, committed, cancelled, navigation,
+        panelStayedOpen: !document.getElementById('radio-panel').classList.contains('collapsed') };
     });
     check(
       'keyboard preview is silent, key release commits once, and Escape restores the committed station',
@@ -3435,7 +3443,8 @@ async function main() {
         && !tunerKeyboard.committed.tuningActive && tunerKeyboard.committed.playDelta === 1
         && tunerKeyboard.cancelled.selectedId === tunerKeyboard.expectedId
         && tunerKeyboard.cancelled.slot === tunerKeyboard.expectedIndex
-        && !tunerKeyboard.cancelled.tuningActive && tunerKeyboard.cancelled.playDelta === 0,
+        && !tunerKeyboard.cancelled.tuningActive && tunerKeyboard.cancelled.playDelta === 0
+        && tunerKeyboard.panelStayedOpen,
       JSON.stringify(tunerKeyboard),
     );
     check(
@@ -4437,7 +4446,10 @@ async function main() {
     });
     await page.click('#context-radio-toggle-btn');
     await page.waitForFunction(() => !document.getElementById('radio-panel').classList.contains('collapsed'));
-    await sleep(450);
+    await page.waitForFunction((priorScroll) => (
+      document.activeElement?.getAttribute('data-collapse-target') === 'radio-panel'
+      && document.querySelector('#global-context-panel .global-context-panel-inner').scrollTop > priorScroll
+    ), { timeout: 10_000 }, expandedContextRadioBefore.scrollTop);
     const expandedContextRadioAfter = await page.evaluate(() => {
       const gev = window.__godsEyeView;
       gev.styleManager._renderRadioState(gev.dataManager.layers.get('radio').module.getUIState());
