@@ -374,6 +374,7 @@ test('Scene controls consume current state, preserve rows on progress, and unsub
     f.state.progress = 0.5;
     channel.publish({ type: 'progress-changed' });
     assert.equal(f.elements.shots.children[0], row);
+    f.state.status = 'Project exported';
     channel.publish({ type: 'project-exported' });
     assert.equal(f.elements.status.textContent, 'Project exported');
     owner.destroy();

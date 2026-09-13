@@ -404,6 +404,7 @@ export class SceneDirector {
   _publish(change) { this._state?.publish(change); }
 
   _shotOutcome(type, scene, shot, index = scene.shots.indexOf(shot)) {
+    if (type === 'shot-loaded') this._presentation.status = `Loaded: ${scene.title} / ${shot.title}`;
     this._publish({ type, sceneId: scene.id, sceneTitle: scene.title, shot, index });
   }
 
@@ -979,6 +980,7 @@ export class SceneDirector {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+    this._presentation.status = 'Project exported';
     this._publish({ type: 'project-exported', project: this._project });
   }
 

@@ -339,7 +339,6 @@ owners with synchronous cleanup. Existing scene, share and HUD engines retain
 their entry points. `ui/styles` loads the ordered stylesheet entry; component
 files retain the original cascade, including responsive and dock refinements.
 
-
 ## UI state and Scene actions
 
 `StyleManager.subscribeShareState(listener)` supplies the current shareable

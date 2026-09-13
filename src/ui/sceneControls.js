@@ -100,9 +100,8 @@ export class SceneControls {
       this.setPlaybackActive(state.playbackActive);
     if (initial || type === 'playback-keyboard')
       this.setPlaybackKeyboardEnabled(state.keyboardEnabled);
-    if (type === 'project-exported') this.updateStatus('Project exported');
-    if (type === 'shot-loaded')
-      this.updateStatus(`Loaded: ${change.sceneTitle} / ${change.shot.title}`);
+    if (type === 'project-exported') this.updateStatus(state.status);
+    if (type === 'shot-loaded') this.updateStatus(state.status);
     if (type === 'run-event' && change.event === 'shot_start')
       this.setButtons(state.running);
   }
