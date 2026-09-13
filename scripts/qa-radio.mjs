@@ -25,6 +25,10 @@ const option = (name, fallback) => {
 };
 const APP_URL = option('--url', process.env.QA_BASE_URL || 'http://localhost:4173');
 const APP_ORIGIN = new URL(APP_URL).origin;
+// Radio owns this harness's keyboard and pointer actions; the welcome dialog
+// has its own acceptance harness and must not intercept those gestures.
+const RADIO_URL = new URL(APP_URL);
+RADIO_URL.searchParams.set('welcome', '0');
 const HEADFUL = args.includes('--headful');
 
 const chromeCandidates = [
@@ -216,7 +220,7 @@ async function main() {
       }
     });
 
-    await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+    await page.goto(RADIO_URL.href, { waitUntil: 'domcontentloaded', timeout: 60_000 });
     await page.waitForFunction(() => window.__godsEyeView?.dataManager, { timeout: 60_000 });
     await page.waitForFunction(() => window.__godsEyeView?.styleManager?._dataManager?.layers?.has('radio'), { timeout: 60_000 });
     await page.waitForFunction(
@@ -574,7 +578,14 @@ async function main() {
     await page.evaluate(() => window.__qaReleaseRadioEnable?.());
     await page.waitForFunction(() => window.__godsEyeView.dataManager.isEnabled('radio'));
     await page.evaluate(() => window.__qaRestoreRadioEnable?.());
-    await sleep(650);
+    await page.waitForFunction(() => {
+      const scroller = document.querySelector('#global-context-panel .global-context-panel-inner');
+      const viewport = scroller.getBoundingClientRect();
+      const directory = document.querySelector('#radio-panel .radio-directory-row').getBoundingClientRect();
+      const play = document.getElementById('radio-play-btn').getBoundingClientRect();
+      return directory.top >= viewport.top && directory.bottom <= viewport.bottom
+        && play.top >= viewport.top && play.bottom <= viewport.bottom;
+    }, { timeout: 10_000 });
     const explicitRevealAfter = await page.evaluate(() => {
       const gev = window.__godsEyeView;
       const scroller = document.querySelector('#global-context-panel .global-context-panel-inner');
