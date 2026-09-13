@@ -87,7 +87,10 @@ async function main() {
     headless: HEADFUL ? false : 'new',
     ...(chrome ? { executablePath: chrome } : {}),
     args: [
-      '--no-sandbox', '--disable-setuid-sandbox', '--use-gl=angle',
+      '--no-sandbox', '--disable-setuid-sandbox',
+      ...(process.platform === 'darwin'
+        ? ['--use-angle=metal', '--enable-gpu']
+        : ['--use-gl=angle', '--use-angle=swiftshader']),
       '--disable-dev-shm-usage', '--disable-background-timer-throttling',
       '--disable-renderer-backgrounding', '--window-size=1440,900',
     ],
