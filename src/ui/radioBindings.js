@@ -10,6 +10,7 @@ export function bindRadioControls() {
   if (!this._radioPanel) return;
   const tunerListenerOptions = {};
   const setRadioDisclosure = (expanded, { returnFocus = false } = {}) => {
+    if (this.destroyed) return;
     const open = Boolean(expanded);
     this._contextRadioDock?.classList.toggle('disclosure-open', open);
     if (this._contextRadioMini) this._contextRadioMini.hidden = !open;
@@ -23,6 +24,7 @@ export function bindRadioControls() {
     expanded,
     { returnFocus = false } = {},
   ) => {
+    if (this.destroyed) return;
     const displayOpen = kind === 'display' && Boolean(expanded);
     const radioOpen = kind === 'radio' && Boolean(expanded);
     if (displayOpen || radioOpen) this.actions.setSignalCollapsed(true);

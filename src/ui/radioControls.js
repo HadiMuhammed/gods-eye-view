@@ -156,7 +156,7 @@ export class RadioControls {
 
   /** Keep the Context header Radio shortcut truthful for its current route. */
   _syncContextRadioLauncherState() {
-    if (!this._contextRadioToggleBtn) return;
+    if (this.destroyed || !this._contextRadioToggleBtn) return;
     const contextPanel = document.getElementById('global-context-panel');
     const contextExpanded = Boolean(
       contextPanel && !contextPanel.classList.contains('collapsed'),
