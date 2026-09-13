@@ -132,7 +132,8 @@ try {
       const ui = window.__godsEyeView.styleManager;
       return (
         ui._searchedLocationLabel === 'Second landmark, Test city' &&
-        ui._locationMiniPoi.textContent.includes('Second landmark') &&
+        ui._locationMiniCity.textContent.includes('Second landmark') &&
+        ui._locationMiniPoi.textContent === 'Test city' &&
         ui.activeStyle === 'normal' &&
         !ui._locationSearch.classList.contains('searching')
       );
