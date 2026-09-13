@@ -124,5 +124,8 @@
     "./ui/surfaces": "./src/ui/surfaceKeyboard.js",
     "./ui/layout": "./src/ui/panelRails.js",
     "./ui/input": "./src/ui/visualInput.js",
-    "./ui/display": "./src/ui/displayControls.js"
+    "./ui/display": "./src/ui/displayControls.js",
+    "./ui/effects": "./src/ui/effects.js",
+    "./ui/effects/bloom": "./src/bloom.js"
+  
 }

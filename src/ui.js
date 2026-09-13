@@ -1,18 +1,12 @@
+import { VisualEffects, STYLES, GLOBAL_POST_DEFAULTS, STYLE_PRESET_DEFAULTS, MILITARY_DETECTION_PRESET } from './ui/effects.js';
 import { bindDisplayControls } from './ui/displayControls.js';
 import { bindApplicationShortcuts, createStyleParameters } from './ui/visualInput.js';
 import { layoutLeftPanelRail, layoutRightPanelRail } from './ui/panelRails.js';
 import { bindPanelDisclosure, collapsePanelOnEscape, createHoverDisclosure } from './ui/panelDisclosure.js';
 import * as Cesium from 'cesium';
-import { retroShader } from './styles/retro.js';
-import { animeShader } from './styles/anime.js';
-import { noirShader } from './styles/noir.js';
-import { snowShader } from './styles/snow.js';
-import { nightVisionShader } from './styles/surveillance.js';
-import { thermalShader } from './styles/thermal.js';
 import {
   BLOOM_INTENSITY_DEFAULT,
   BLOOM_SCALE_VERSION,
-  bloomStrengthFromIntensity,
   clampBloomIntensity,
   decodeBloomIntensity,
 } from './bloom.js';
@@ -192,10 +186,6 @@ import {
   speedRulerTicks,
 } from './cockpitMath.js';
 
-/** Duration (ms) for shader intensity crossfade between style presets. */
-const TRANSITION_DURATION_MS = 500;
-/** Map of style name to its GLSL shader module for post-process stages. */
-const STYLES = { retro: retroShader, surveillance: nightVisionShader, thermal: thermalShader, anime: animeShader, noir: noirShader, snow: snowShader };
 /** Versioned localStorage namespace prefix to invalidate stale panel layouts. */
 const PANEL_LAYOUT_STORAGE_VERSION = 'v6';
 const SHARE_PANEL_STATE_SPECS = Object.freeze([
@@ -361,135 +351,13 @@ const STYLE_STATUS_LABELS = {
   noir: 'NOIR',
   snow: 'SNOW',
 };
-/**
- * The tactical detection look: Dense at 75%.
- *
- * Owner playtest 2026-08-18: "detection mode… 75% weighted, with the 16% fade
- * and 5% outside, whatever we had. I want that as the default. It should just
- * happen." Fade and outside opacity live in GLOBAL_POST_DEFAULTS, so "whatever
- * we had" still needs nothing here — but they are 7% and 1% now, the outside
- * default having moved 5 → 3 → 1 as the owner locked final tuning after field trials (2026-08-24). What the quote asked for is the
- * baseline of the day, not the two numbers it happened to name.
- *
- * ONE object, shared by the first-load baseline below, by every military style,
- * AND by the Contacts context mode (which OWNS detection while active and
- * restores the prior state on exit — see contactsDetectionPolicy.js). Cockpit
- * deliberately does NOT touch detection: entering it with SPARSE selected leaves
- * SPARSE. Declared ahead of GLOBAL_POST_DEFAULTS because that baseline now reads
- * from it.
- */
-const MILITARY_DETECTION_PRESET = Object.freeze({ mode: 'dense', densityPct: 75 });
 
-/** Baseline post-processing settings applied on first load (before share-link restore). */
-const GLOBAL_POST_DEFAULTS = {
-  bloom: { enabled: false, intensity: BLOOM_INTENSITY_DEFAULT },
-  sharpen: { enabled: true, intensity: 49 },
-  hudVariant: 'tactical',
-  hudVisible: true,
-  // Detection is ON for EVERY style on a first run, Normal included (owner
-  // directive 2026-08-22: "detect should also be on by default"). It is the
-  // same preset object the military styles and Contacts already apply, so there
-  // is one tactical look, not several that can drift.
-  //
-  // This is a first-LOAD baseline, not an override: `_applyGlobalPostDefaults`
-  // runs before any share-link restore, so a link's `dm`/`dd` still lands on top
-  // of it. It also deliberately leaves `_detectionUserOverridden` alone — the
-  // flag means the OPERATOR hand-edited detection, and a factory default is not
-  // that. Turning detection off by hand therefore still sets the flag and still
-  // suppresses the military-style auto-enable for the rest of the session.
-  detectionMode: MILITARY_DETECTION_PRESET.mode.toUpperCase(),
-  detectionDensity: MILITARY_DETECTION_PRESET.densityPct,
-  detectionAllocation: 'ELASTIC',
-  detectionFadePct: 7,
-  detectionOutsideOpacityPct: 1,
-  celestialRing: false,
-};
-
-// Tactical style defaults applied when users select military style presets.
-const STYLE_PRESET_DEFAULTS = {
-  retro: {
-    bloom: { enabled: false, intensity: BLOOM_INTENSITY_DEFAULT },
-    sharpen: { enabled: true, intensity: 49 },
-    styleParams: {
-      retro: {
-        pixelation: 1.0,
-        distortion: 0,
-        instability: 0.42,
-      },
-    },
-    hudVariant: 'tactical',
-    hudVisible: true,
-    detection: MILITARY_DETECTION_PRESET,
-  },
-  surveillance: {
-    bloom: { enabled: false, intensity: BLOOM_INTENSITY_DEFAULT },
-    sharpen: { enabled: true, intensity: 49 },
-    styleParams: {
-      surveillance: {
-        gain: 0.18,
-        bloom: 0.22,
-        scanlineStr: 0.96,
-        pixelation: 1.0,
-      },
-    },
-    hudVariant: 'tactical',
-    hudVisible: true,
-    detection: MILITARY_DETECTION_PRESET,
-  },
-  thermal: {
-    bloom: { enabled: false, intensity: BLOOM_INTENSITY_DEFAULT },
-    sharpen: { enabled: true, intensity: 49 },
-    styleParams: {
-      thermal: {
-        sensitivity: 0.85,
-        bloom: 0.2,
-        mode: 0.33,
-        pixelation: 1.0,
-      },
-    },
-    hudVariant: 'tactical',
-    hudVisible: true,
-    detection: MILITARY_DETECTION_PRESET,
-  },
-};
-
-/**
- * GLSL fragment shader implementing an unsharp-mask sharpening filter.
- * Samples a 3x3 neighborhood, computes box blur, then adds the
- * difference (center - blur) scaled by `amount` for edge enhancement.
- */
-const SHARPEN_SHADER = /* glsl */ `
-  uniform sampler2D colorTexture;
-  uniform vec2 colorTextureDimensions;
-  uniform float amount;
-  in vec2 v_textureCoordinates;
-
-  void main() {
-    vec2 uv = v_textureCoordinates;
-    vec2 texel = 1.0 / colorTextureDimensions;
-    vec4 center = texture(colorTexture, uv);
-    vec4 blur = (
-      texture(colorTexture, uv + vec2(-texel.x, -texel.y)) +
-      texture(colorTexture, uv + vec2( 0.0,     -texel.y)) +
-      texture(colorTexture, uv + vec2( texel.x, -texel.y)) +
-      texture(colorTexture, uv + vec2(-texel.x,  0.0))     +
-      center +
-      texture(colorTexture, uv + vec2( texel.x,  0.0))     +
-      texture(colorTexture, uv + vec2(-texel.x,  texel.y)) +
-      texture(colorTexture, uv + vec2( 0.0,      texel.y)) +
-      texture(colorTexture, uv + vec2( texel.x,  texel.y))
-    ) / 9.0;
-    vec4 sharpened = center + (center - blur) * amount;
-    out_FragColor = vec4(clamp(sharpened.rgb, 0.0, 1.0), center.a);
-  }
-`;
 
 /**
  * Central UI orchestrator for the God's Eye View application.
  *
  * Responsibilities:
- * - CesiumJS PostProcessStage pipeline: registers per-style GLSL stages
- *   (NVG, FLIR, CRT, anime, noir, snow) and manages intensity crossfades.
+ * - Visual controls and presets backed by the VisualEffects controller.
  * - Bloom and sharpen post-processing toggle/intensity control.
  * - Draggable/collapsible panel system with localStorage persistence,
  *   z-order stacking, and viewport-clamped positioning.
@@ -2189,26 +2057,29 @@ export class StyleManager {
   constructor(viewer, { mapStackController = null } = {}) {
     this.viewer = viewer;
     this.mapStackController = mapStackController;
+<<<<<<< HEAD
     this.stages = {};
+=======
+    this.placeSearch = placeSearch;
+    this._visualEffects = new VisualEffects({
+      viewer,
+      requestRender: governorRequestRender,
+      holdRender: holdContinuousRender,
+      releaseRender: releaseContinuousRender,
+    });
+>>>>>>> c30f7cc (refactor(ui): separate visual effects and animation ownership)
     this.activeStyle = 'normal';
     document.documentElement.dataset.gevStyle = this.activeStyle;
-    this.transitions = new Map();
-    this.startTime = Date.now();
 
     // True once the user manually changes detection (button/key/slider/voice).
     // Gates per-style detection defaults so they never stomp an explicit choice.
     this._detectionUserOverridden = false;
 
     // Bloom/sharpen state
-    this.bloomEnabled = false;
-    this.sharpenEnabled = false;
-    this._bloomStage = null;
-    this._sharpenStage = null;
     this._recordingMode = false;
     this._recordingConfig = { hidePanels: true, hudMode: 'minimal', safeFrame: '16:9' };
     this._preRecordingHudState = null;
     this._panelZCounter = PANEL_Z_BASE + 10;
-    this._animFrameId = null;
     this._lastLoadingFeedbackUpdateAt = 0;
     this._loadingFeedbackState = createLoadingFeedbackState();
     this._loadingFeedbackEvent = null;
@@ -2829,6 +2700,15 @@ export class StyleManager {
     );
   }
 
+  // Compatibility reads for existing controls, scene snapshots and Cockpit.
+  get stages() { return this._visualEffects.stages; }
+  get transitions() { return this._visualEffects.transitions; }
+  get bloomEnabled() { return this._visualEffects.bloomEnabled; }
+  get sharpenEnabled() { return this._visualEffects.sharpenEnabled; }
+  get _bloomStage() { return this._visualEffects.bloomStage; }
+  get _sharpenStage() { return this._visualEffects.sharpenStage; }
+
+
   /** Advance camera authority and settle any older search UI immediately. */
   _stampNavigation({ cancelPendingSelection = true, clearSearchedLocation = true } = {}) {
     this._navigationGeneration += 1;
@@ -3016,42 +2896,7 @@ export class StyleManager {
    * @returns {void}
    */
   _initStages() {
-    for (const [name, shader] of Object.entries(STYLES)) {
-      const uniforms = { intensity: 0.0 };
-
-      // Auto-detect time uniform — animated shaders (CRT scanlines, snow, etc.)
-      // declare `uniform float time` and receive elapsed seconds each frame.
-      if (shader.fragmentShader.includes('uniform float time')) {
-        uniforms.time = 0.0;
-      }
-
-      // Initialize custom uniforms from shader metadata (e.g. gain, pixelation)
-      if (shader.uniforms) {
-        for (const [uName, uMeta] of Object.entries(shader.uniforms)) {
-          uniforms[uName] = uMeta.default;
-        }
-      }
-
-      const stage = new Cesium.PostProcessStage({
-        name: `godsEyeView_${name}`,
-        fragmentShader: shader.fragmentShader,
-        uniforms,
-      });
-
-      // Zero-intensity stages are DISABLED (perf wave 1). History: the
-      // first attempt at this deleted the product's signature scope — the
-      // circular starfield mask was an EMERGENT artifact of these six
-      // stacked "identity" passes, not an implemented feature. The owner
-      // ruled to reimplement the scope explicitly (src/scopeMask.js, a
-      // featherable zero-per-frame canvas), which frees these passes for
-      // real. If the scope ever looks wrong, look there — not here.
-      stage.enabled = false;
-      this.viewer.scene.postProcessStages.add(stage);
-      this.stages[name] = stage;
-    }
-    // Frozen after init — cached so the per-frame animation loop doesn't
-    // rebuild Object.entries arrays every frame.
-    this._stageEntries = Object.entries(this.stages);
+    this._visualEffects.initStyles();
   }
 
   /**
@@ -3064,13 +2909,7 @@ export class StyleManager {
    * @returns {void}
    */
   _setStageIntensity(stage, value) {
-    if (!stage) return;
-    stage.uniforms.intensity = value;
-    stage.enabled = value > 0.001;
-    // An animated shader becoming visible needs the style loop (its clock)
-    // running again; the loop self-stops when nothing visible animates.
-    if (stage.enabled && stage.uniforms.time !== undefined) this._startAnimationLoop();
-    governorRequestRender('style-stage');
+    this._visualEffects.setStageIntensity(stage, value);
   }
 
   /**
@@ -3086,10 +2925,7 @@ export class StyleManager {
    * @returns {void}
    */
   _syncStagesEnabledFromIntensity() {
-    if (!this.stages) return;
-    for (const stage of Object.values(this.stages)) {
-      this._setStageIntensity(stage, stage.uniforms.intensity);
-    }
+    this._visualEffects.syncStagesEnabledFromIntensity();
   }
 
   /**
@@ -3251,37 +3087,15 @@ export class StyleManager {
    * @returns {void}
    */
   _initBloomSharpen() {
-    // Bloom — use Cesium's built-in bloom
-    this._bloomStage = this.viewer.scene.postProcessStages.bloom;
-    this._bloomStage.enabled = false;
-    this._bloomStage.uniforms.glowOnly = false;
-    this._bloomStage.uniforms.contrast = 256.0;
-    this._bloomStage.uniforms.brightness = -0.35;
-    this._bloomStage.uniforms.delta = 0.25;
-    this._bloomStage.uniforms.sigma = 0.35;
-    this._bloomStage.uniforms.stepSize = 1.0;
-
-    // Sharpen — custom unsharp mask PostProcessStage
-    this._sharpenStage = new Cesium.PostProcessStage({
-      name: 'godsEyeView_sharpen',
-      fragmentShader: SHARPEN_SHADER,
-      uniforms: {
-        amount: 1.3,
-      },
-    });
-    this._sharpenStage.enabled = false;
-    this.viewer.scene.postProcessStages.add(this._sharpenStage);
-    if (this._sharpenSlider) {
-      this._applySharpenIntensity(parseInt(this._sharpenSlider.value, 10) / 100);
-    }
+    this._visualEffects.initPostProcess(this._sharpenSlider ? parseInt(this._sharpenSlider.value, 10) / 100 : 0.6);
   }
 
   /**
-   * Reads the current bloom intensity percentage from the UI slider.
+   * Reads the current bloom intensity percentage from the effects controller.
    * @returns {number} Clamped bloom intensity (0-200).
    */
   _getBloomIntensity() {
-    return clampBloomIntensity(parseInt(this._bloomSlider?.value || `${BLOOM_INTENSITY_DEFAULT}`, 10));
+    return this._visualEffects.bloomIntensity;
   }
 
   /**
@@ -3290,9 +3104,7 @@ export class StyleManager {
    * @returns {void}
    */
   _syncBloomStageEnabled() {
-    if (!this._bloomStage) return;
-    const strength = bloomStrengthFromIntensity(this._getBloomIntensity());
-    this._bloomStage.enabled = this.bloomEnabled && strength > 0.06;
+    this._visualEffects.syncBloomEnabled();
   }
 
   /**
@@ -3319,22 +3131,7 @@ export class StyleManager {
    * @returns {void}
    */
   _applyBloomIntensity(intensity) {
-    if (!this._bloomStage) return;
-    const rawStrength = bloomStrengthFromIntensity(intensity);
-    // Dead-zone: strengths below 0.06 are imperceptible, clamp to zero.
-    const strength = rawStrength <= 0.06 ? 0.0 : ((rawStrength - 0.06) / 0.94);
-    // Smoothstep easing for perceptually linear bloom ramp
-    const eased = strength * strength * (3.0 - 2.0 * strength);
-
-    // Mapping tuned for intuitive UX:
-    // 0 => effectively no glow, 200 => strong glow.
-    // Keep threshold strict at low values so only very bright highlights bloom.
-    this._bloomStage.uniforms.contrast = 255.0 - (eased * 168.0);
-    this._bloomStage.uniforms.brightness = -0.5 + (eased * 0.36);
-    this._bloomStage.uniforms.sigma = 0.28 + (eased * 6.3);
-    this._bloomStage.uniforms.delta = 0.2 + (eased * 2.25);
-    this._bloomStage.uniforms.stepSize = 1.0 + (eased * 1.25);
-    this._syncBloomStageEnabled();
+    this._visualEffects.applyBloomIntensity(intensity);
   }
 
   /**
@@ -3344,7 +3141,7 @@ export class StyleManager {
    */
   _setBloomEnabled(enabled) {
     governorRequestRender('bloom');
-    this.bloomEnabled = !!enabled;
+    this._visualEffects.setBloomEnabled(enabled);
     this._syncBloomStageEnabled();
     this._bloomBtn.classList.toggle('active', this.bloomEnabled);
     this._bloomSliderRow.classList.toggle('visible', this.bloomEnabled);
@@ -3362,9 +3159,7 @@ export class StyleManager {
    * @returns {void}
    */
   _applySharpenIntensity(val) {
-    governorRequestRender('sharpen');
-    if (!this._sharpenStage || !this._sharpenStage.uniforms) return;
-    this._sharpenStage.uniforms.amount = 0.1 + val * 2.0;
+    this._visualEffects.applySharpenIntensity(val);
   }
 
   /**
@@ -3374,8 +3169,7 @@ export class StyleManager {
    */
   _setSharpenEnabled(enabled) {
     governorRequestRender('sharpen');
-    this.sharpenEnabled = !!enabled;
-    this._sharpenStage.enabled = this.sharpenEnabled;
+    this._visualEffects.setSharpenEnabled(enabled);
     this._sharpenBtn.classList.toggle('active', this.sharpenEnabled);
     if (this._sharpenSliderRow) {
       this._sharpenSliderRow.classList.toggle('visible', this.sharpenEnabled);
@@ -8623,12 +8417,7 @@ export class StyleManager {
    * @returns {void}
    */
   _startTransition(styleName, fromValue, toValue) {
-    this.transitions.set(styleName, {
-      start: performance.now(),
-      from: fromValue,
-      to: toValue,
-    });
-    this._startAnimationLoop();
+    this._visualEffects.startTransition(styleName, fromValue, toValue);
   }
 
   /**
@@ -8698,53 +8487,7 @@ export class StyleManager {
    * interval (see _startTrafficChipTicker).
    */
   _startAnimationLoop() {
-    if (this._animFrameId) return; // already running
-    const update = () => {
-      const now = performance.now();
-      const elapsedSec = (Date.now() - this.startTime) / 1000.0;
-
-      // Update transitions — interpolate each active crossfade
-      for (const [styleName, transition] of this.transitions) {
-        const elapsed = now - transition.start;
-        const t = Math.min(elapsed / TRANSITION_DURATION_MS, 1.0);
-        // Ease-in-out quadratic: smooth acceleration then deceleration
-        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-        const value = transition.from + (transition.to - transition.from) * eased;
-
-        this._setStageIntensity(this.stages[styleName], value);
-
-        if (t >= 1.0) {
-          this._setStageIntensity(this.stages[styleName], transition.to);
-          this.transitions.delete(styleName);
-        }
-      }
-
-      // Update time uniforms for animated shaders. Zero-intensity stages
-      // are disabled (see _initStages — the scope is now the explicit
-      // scopeMask canvas), so enabled === visible here; only these keep
-      // the loop and its continuous-render hold alive.
-      let animatedStageVisible = false;
-      for (const [, stage] of this._stageEntries) {
-        if (stage.enabled && stage.uniforms.time !== undefined) {
-          stage.uniforms.time = elapsedSec;
-          // Chain mode keeps zero-intensity stages ENABLED for pass parity —
-          // only a stage that is actually VISIBLE keeps the loop (and the
-          // continuous-render hold) alive, or a settled CRT session would
-          // hold the loop forever via an invisible snow stage.
-          if (stage.uniforms.intensity > 0.001) animatedStageVisible = true;
-        }
-      }
-
-      const needed = this.transitions.size > 0 || animatedStageVisible;
-      if (needed) holdContinuousRender('style-anim');
-      else releaseContinuousRender('style-anim');
-      if (!needed) {
-        this._animFrameId = null;
-        return; // settled — the next transition/animated stage re-arms us
-      }
-      this._animFrameId = requestAnimationFrame(update);
-    };
-    this._animFrameId = requestAnimationFrame(update);
+    this._visualEffects.startAnimationLoop();
   }
 
   /**
@@ -9655,6 +9398,7 @@ export class StyleManager {
     this._disposed = true;
     this._applicationShortcuts?.destroy();
     this._displayControls?.destroy();
+    this._visualEffects.stop();
     this._styleParameters?.destroy();
     for (const control of this._panelDisclosureControls || []) control.destroy();
     this._panelDisclosureControls = [];
@@ -9769,13 +9513,8 @@ export class StyleManager {
       document.removeEventListener('keydown', this._poiKeydownHandler);
       this._poiKeydownHandler = null;
     }
-    // Cancel the rAF animation loop and release its governor hold; also stop
-    // the traffic-chip ticker the loop no longer carries. (perf wave 2 fix)
-    if (this._animFrameId) {
-      cancelAnimationFrame(this._animFrameId);
-      this._animFrameId = null;
-    }
-    releaseContinuousRender('style-anim');
+    // Stop the independently owned traffic and loading feedback tickers.
+
     if (this._trafficChipTicker) {
       clearInterval(this._trafficChipTicker);
       this._trafficChipTicker = null;
@@ -9839,7 +9578,6 @@ export class StyleManager {
     destroyTrackedReadout();
     destroyDetection();
     destroyWorldOverlay();
-    // Clear transitions
-    this.transitions.clear();
+    this._visualEffects.destroy();
   }
 }

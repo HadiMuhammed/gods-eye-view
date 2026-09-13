@@ -250,3 +250,13 @@ facade's asynchronous teardown can yield.
 DOM elements and explicit actions, imports no application or effect singleton,
 and releases every listener on destruction. Settings and rendering remain with
 the caller.
+
+## Visual effects
+
+`ui/effects` exports the effects controller and existing preset definitions.
+It owns shader stages and their clock, with explicit render ownership callbacks.
+Construction installs no stages or frame callbacks. Stop animation before
+releasing UI consumers, then destroy to remove owned stages and restore the
+borrowed bloom state. `ui/effects/bloom` exposes the pure intensity/version helpers
+without loading the renderer. UI presentation and product-action coordination
+remain in their callers.
