@@ -13,6 +13,8 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ## [Unreleased]
 
+- Separate Layers panel presentation and clear-control bindings from layer lifecycle operations; revoke listeners and subscriptions on replacement or teardown.
+
 - Extract Map Source controls with listener cleanup and protection against obsolete selection feedback.
 
 - Separate visual effects, presets and animation from Display controls, with explicit stage ownership and teardown.

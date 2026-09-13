@@ -1,5 +1,14 @@
 # God's Eye View Current State
 
+## Layer panel ownership
+
+Layer rows, feed feedback, counts, focus-preserving chips and toggle listeners
+are owned by a renderer-free panel component. The layer manager supplies current
+snapshots, lifecycle actions and row descriptors. Remount and teardown remove
+listeners and row subscriptions; obsolete completions do not repaint old rows.
+The clear control presents busy state while its existing action owns the transaction.
+
+
 ## Map Source control ownership
 
 Map Source controls own chip listeners, source-state subscriptions and selection

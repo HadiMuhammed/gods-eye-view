@@ -269,3 +269,10 @@ it imports no renderer or application. Source construction and availability poli
 remain with the map controller. Rebuilding controls removes their previous chip
 listeners, and destruction suppresses late completions without owning or destroying
 the supplied controller.
+
+## Layer panel
+
+`ui/layers` exports the Layers panel and clear-control binding. Callers supply
+snapshots, row descriptors, subscriptions and actions; the component imports no
+layer implementation or application bootstrap. Layer transactions remain with
+the caller. Hidden-page refresh scheduling remains an explicit callback.

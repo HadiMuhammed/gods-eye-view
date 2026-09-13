@@ -127,6 +127,7 @@
     "./ui/display": "./src/ui/displayControls.js",
     "./ui/effects": "./src/ui/effects.js",
     "./ui/effects/bloom": "./src/bloom.js",
-    "./ui/maps": "./src/ui/mapSource.js"
+    "./ui/maps": "./src/ui/mapSource.js",
+    "./ui/layers": "./src/ui/layers.js"
   
 }

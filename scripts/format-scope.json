@@ -153,5 +153,8 @@
   "src/ui/mapSourceControls.js",
   "src/ui/mapSourceControls.test.mjs",
   "src/mapStackChips.js",
-  "scripts/qa-map-source-controls.mjs"
+  "scripts/qa-map-source-controls.mjs",
+  "src/ui/layers.js",
+  "src/ui/layerPanel.js",
+  "src/ui/clearLayersControl.js"
 ]

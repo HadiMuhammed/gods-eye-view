@@ -1,3 +1,4 @@
+import { bindClearLayersControl } from './ui/layers.js';
 import { createMapSourceControls } from './ui/mapSource.js';
 import { VisualEffects, STYLES, GLOBAL_POST_DEFAULTS, STYLE_PRESET_DEFAULTS, MILITARY_DETECTION_PRESET } from './ui/effects.js';
 import { bindDisplayControls } from './ui/displayControls.js';
@@ -2088,7 +2089,6 @@ export class StyleManager {
     this._globeResetHandler = null;
     this._clearSelectedLayersPromise = null;
     this._clearSelectedLayersManagerPromise = null;
-    this._clearSelectedLayersHandler = null;
     this._dataManager = null;
     this._cctvUnsubscribe = null;
     this._radioUnsubscribe = null;
@@ -3332,6 +3332,7 @@ export class StyleManager {
   _initMapStackControl() {
     if (!this.mapStackController) return;
     this._mapSourceControls?.destroy();
+    this._clearLayersControl?.destroy();
     this._mapSourceControls = createMapSourceControls({
       container: this._mapStackChips,
       statusElement: this._mapStackStatus,
@@ -8894,8 +8895,8 @@ export class StyleManager {
   /** Wire the top-center action that clears only manager-owned data layers. */
   _initClearSelectedLayersButton() {
     if (!this._clearSelectedLayersBtn) return;
-    this._clearSelectedLayersHandler = () => { void this.clearSelectedLayers(); };
-    this._clearSelectedLayersBtn.addEventListener('click', this._clearSelectedLayersHandler);
+    this._clearLayersControl?.destroy();
+    this._clearLayersControl = bindClearLayersControl(this._clearSelectedLayersBtn, () => this.clearSelectedLayers());
   }
 
   /**
@@ -8922,9 +8923,7 @@ export class StyleManager {
     this._preservePanelStateDuringLayerClear = true;
     this._syncContextModeButtons();
     this._userFacingContextNotificationTokens.add(notificationToken);
-    this._clearSelectedLayersBtn.setAttribute('aria-disabled', 'true');
-    this._clearSelectedLayersBtn.setAttribute('aria-busy', 'true');
-    this._clearSelectedLayersBtn.setAttribute('aria-label', 'Clearing selected data layers');
+    this._clearLayersControl?.setBusy(true);
 
     const managerOperation = this._dataManager.clearSelectedLayers({
       origin: 'user',
@@ -8956,9 +8955,7 @@ export class StyleManager {
         this._contextModeChanging = false;
         this._syncContextModeButtons();
       }
-      this._clearSelectedLayersBtn.setAttribute('aria-disabled', 'false');
-      this._clearSelectedLayersBtn.setAttribute('aria-busy', 'false');
-      this._clearSelectedLayersBtn.setAttribute('aria-label', 'Clear selected data layers');
+      this._clearLayersControl?.setBusy(false);
       this._preservePanelStateDuringLayerClear = false;
       this._clearSelectedLayersManagerPromise = null;
       this._clearSelectedLayersPromise = null;
@@ -9371,6 +9368,7 @@ export class StyleManager {
     this._applicationShortcuts?.destroy();
     this._displayControls?.destroy();
     this._mapSourceControls?.destroy();
+    this._clearLayersControl?.destroy();
     this._visualEffects.stop();
     this._styleParameters?.destroy();
     for (const control of this._panelDisclosureControls || []) control.destroy();
@@ -9460,10 +9458,7 @@ export class StyleManager {
       this._cockpitResetGlobeBtn?.removeEventListener('click', this._globeResetHandler);
       this._globeResetHandler = null;
     }
-    if (this._clearSelectedLayersBtn && this._clearSelectedLayersHandler) {
-      this._clearSelectedLayersBtn.removeEventListener('click', this._clearSelectedLayersHandler);
-      this._clearSelectedLayersHandler = null;
-    }
+
     this._cctvUnsubscribe?.();
     this._cctvUnsubscribe = null;
     this._commandDockTrayObserver?.disconnect?.();
