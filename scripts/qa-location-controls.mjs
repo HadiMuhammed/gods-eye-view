@@ -166,6 +166,33 @@ try {
     () => !window.__godsEyeView.viewer.camera._currentFlight,
     { timeout: 10000 },
   );
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  const settled = await page
+    .waitForFunction(
+      () => {
+        const scene = window.__godsEyeView.viewer.scene;
+        for (let index = 0; index < scene.primitives.length; index++) {
+          const primitive = scene.primitives.get(index);
+          if (
+            typeof primitive.tilesLoaded === 'boolean' &&
+            !primitive.tilesLoaded
+          )
+            return false;
+        }
+        return true;
+      },
+      { timeout: 60000 },
+    )
+    .then(
+      () => true,
+      () => false,
+    );
+  check('visible city tiles settle before screenshots', settled);
   fs.mkdirSync('qa-shots/location-controls', { recursive: true });
   await page.screenshot({ path: 'qa-shots/location-controls/desktop.png' });
   await page.setViewport({ width: 620, height: 900 });
