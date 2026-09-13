@@ -2,7 +2,10 @@ import {
   allocatePanelStackHeights,
   panelStackAutoCollapseIndices,
 } from '../panelStackLayout.js';
-import { resolveHudRailLayout, shouldHideCollapsedRightPanels } from './panelRailGeometry.js';
+import {
+  resolveHudRailLayout,
+  shouldHideCollapsedRightPanels,
+} from './panelRailGeometry.js';
 
 /**
  * Measure and place the right panel rail for one synchronous layout pass.
@@ -34,28 +37,35 @@ export function layoutRightPanelRail({
   displayPanel,
   readDisplayScrollTop,
   documentRef = stack?.ownerDocument,
-  getComputedStyle = (element) => windowRef.getComputedStyle(element)
+  getComputedStyle = (element) => windowRef.getComputedStyle(element),
 }) {
   if (!stack) return;
 
-  const panels = [...stack.children].filter((panel) => panel.matches('[data-panel-id]'));
+  const panels = [...stack.children].filter((panel) =>
+    panel.matches('[data-panel-id]'),
+  );
   if (!hud.visible || hud.variant !== 'tactical') {
-    for (const panel of panels.filter((item) => item.classList.contains('layout-auto-collapsed'))) {
+    for (const panel of panels.filter((item) =>
+      item.classList.contains('layout-auto-collapsed'),
+    )) {
       panel.classList.remove('collapsed', 'layout-auto-collapsed');
       onCollapse(panel);
     }
   }
   const isMobile = windowRef.matchMedia('(max-width: 720px)').matches;
-  const hasExpandedPanel = panels.some((panel) => (
-    !panel.classList.contains('collapsed') && (!isMobile || panel.id !== 'pp-toggles')
-  ));
+  const hasExpandedPanel = panels.some(
+    (panel) =>
+      !panel.classList.contains('collapsed') &&
+      (!isMobile || panel.id !== 'pp-toggles'),
+  );
   const exclusive = shouldHideCollapsedRightPanels({
     hudVariant: hud.variant,
     hasExpandedPanel,
   });
   stack.classList.toggle('layout-exclusive', exclusive);
   for (const panel of panels) {
-    if (exclusive && panel.classList.contains('collapsed')) panel.setAttribute('aria-hidden', 'true');
+    if (exclusive && panel.classList.contains('collapsed'))
+      panel.setAttribute('aria-hidden', 'true');
     else panel.removeAttribute('aria-hidden');
   }
 
@@ -63,7 +73,8 @@ export function layoutRightPanelRail({
     stack.classList.remove('layout-focus');
     stack.style.removeProperty('--right-stack-safe-top');
     stack.style.removeProperty('--right-stack-max-height');
-    for (const panel of panels) panel.style.removeProperty('--right-panel-allocated-height');
+    for (const panel of panels)
+      panel.style.removeProperty('--right-panel-allocated-height');
     stack.dataset.layoutMode = 'mobile';
     return;
   }
@@ -82,7 +93,11 @@ export function layoutRightPanelRail({
     let hiddenByAncestor = false;
     for (let element = obstacle; element; element = element.parentElement) {
       const style = getComputedStyle(element);
-      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
+      if (
+        style.display === 'none' ||
+        style.visibility === 'hidden' ||
+        Number(style.opacity) === 0
+      ) {
         hiddenByAncestor = true;
         break;
       }
@@ -98,9 +113,9 @@ export function layoutRightPanelRail({
     });
   }
 
-  const visiblePanels = panels.filter((panel) => (
-    !exclusive || !panel.classList.contains('collapsed')
-  ));
+  const visiblePanels = panels.filter(
+    (panel) => !exclusive || !panel.classList.contains('collapsed'),
+  );
 
   const displayScrollTop = readDisplayScrollTop();
   // Measure intrinsic content, not the allocation written by the previous
@@ -113,13 +128,18 @@ export function layoutRightPanelRail({
     }
   }
   const gap = parseFloat(getComputedStyle(stack).rowGap) || 0;
-  const naturalHeight = visiblePanels.reduce((total, panel) => (
-    total + Math.max(
-      panel.getBoundingClientRect().height,
-      panel.scrollHeight || 0,
-      panel.classList.contains('collapsed') ? 42 : 0,
-    )
-  ), 0) + gap * Math.max(0, visiblePanels.length - 1);
+  const naturalHeight =
+    visiblePanels.reduce(
+      (total, panel) =>
+        total +
+        Math.max(
+          panel.getBoundingClientRect().height,
+          panel.scrollHeight || 0,
+          panel.classList.contains('collapsed') ? 42 : 0,
+        ),
+      0,
+    ) +
+    gap * Math.max(0, visiblePanels.length - 1);
   const layout = resolveHudRailLayout({
     viewportHeight,
     panelHeight: naturalHeight,
@@ -139,41 +159,58 @@ export function layoutRightPanelRail({
     ? naturalHeight > availableHeight - stabilityBand * 2
     : naturalHeight > availableHeight - stabilityBand;
   const layoutTop = shouldFocus ? safeTop : layout.top;
-  const collapsedHeight = visiblePanels.reduce((total, panel) => (
-    panel.classList.contains('collapsed')
-      ? total + panel.getBoundingClientRect().height
-      : total
-  ), 0);
-  const expandedPanelsInDomOrder = visiblePanels.filter((panel) => !panel.classList.contains('collapsed'));
-  const focusedExpandedPanel = expandedPanelsInDomOrder.find((panel) => panel.contains(documentRef.activeElement));
-  const preferredExpandedPanel = expandedPanelsInDomOrder.find(
-    (panel) => panel.id === preferredPanelId,
-  ) || focusedExpandedPanel;
+  const collapsedHeight = visiblePanels.reduce(
+    (total, panel) =>
+      panel.classList.contains('collapsed')
+        ? total + panel.getBoundingClientRect().height
+        : total,
+    0,
+  );
+  const expandedPanelsInDomOrder = visiblePanels.filter(
+    (panel) => !panel.classList.contains('collapsed'),
+  );
+  const focusedExpandedPanel = expandedPanelsInDomOrder.find((panel) =>
+    panel.contains(documentRef.activeElement),
+  );
+  const preferredExpandedPanel =
+    expandedPanelsInDomOrder.find((panel) => panel.id === preferredPanelId) ||
+    focusedExpandedPanel;
   // Match the left lane: allocation order follows the latest explicit
   // disclosure, not DOM order. A focused panel is the fallback owner so
   // temporary presentation collapse never strands keyboard focus.
   const expandedPanels = preferredExpandedPanel
-    ? [preferredExpandedPanel, ...expandedPanelsInDomOrder.filter((panel) => panel !== preferredExpandedPanel)]
+    ? [
+        preferredExpandedPanel,
+        ...expandedPanelsInDomOrder.filter(
+          (panel) => panel !== preferredExpandedPanel,
+        ),
+      ]
     : expandedPanelsInDomOrder;
   const expandedAvailableHeight = Math.max(
     0,
-    safeBottom - layoutTop - collapsedHeight - gap * Math.max(0, visiblePanels.length - 1),
+    safeBottom -
+      layoutTop -
+      collapsedHeight -
+      gap * Math.max(0, visiblePanels.length - 1),
   );
   const expandedHeights = allocatePanelStackHeights({
-    naturalHeights: expandedPanels.map((panel) => Math.max(
-      panel.getBoundingClientRect().height,
-      panel.scrollHeight || 0,
-    )),
+    naturalHeights: expandedPanels.map((panel) =>
+      Math.max(panel.getBoundingClientRect().height, panel.scrollHeight || 0),
+    ),
     availableHeight: expandedAvailableHeight,
   });
-  const autoCollapseIndices = hud.visible ? panelStackAutoCollapseIndices({
-    naturalHeights: expandedPanels.map((panel) => Math.max(
-      panel.getBoundingClientRect().height,
-      panel.scrollHeight || 0,
-    )),
-    allocatedHeights: expandedHeights,
-    collapseLaterPanels: shouldFocus && hud.variant === 'tactical',
-  }) : [];
+  const autoCollapseIndices = hud.visible
+    ? panelStackAutoCollapseIndices({
+        naturalHeights: expandedPanels.map((panel) =>
+          Math.max(
+            panel.getBoundingClientRect().height,
+            panel.scrollHeight || 0,
+          ),
+        ),
+        allocatedHeights: expandedHeights,
+        collapseLaterPanels: shouldFocus && hud.variant === 'tactical',
+      })
+    : [];
   if (autoCollapseIndices.length) {
     for (const index of autoCollapseIndices) {
       const panel = expandedPanels[index];
@@ -191,7 +228,9 @@ export function layoutRightPanelRail({
   // render savings. Only a real allocation change may touch the attribute.
   expandedPanels.forEach((panel, index) => {
     const next = `${expandedHeights[index].toFixed(1)}px`;
-    if (panel.style.getPropertyValue('--right-panel-allocated-height') !== next) {
+    if (
+      panel.style.getPropertyValue('--right-panel-allocated-height') !== next
+    ) {
       panel.style.setProperty('--right-panel-allocated-height', next);
     }
   });
@@ -200,8 +239,14 @@ export function layoutRightPanelRail({
     panel.style.removeProperty('--right-panel-allocated-height');
   }
 
-  stack.style.setProperty('--right-stack-safe-top', `${layoutTop.toFixed(1)}px`);
-  stack.style.setProperty('--right-stack-max-height', `${Math.max(0, safeBottom - layoutTop).toFixed(1)}px`);
+  stack.style.setProperty(
+    '--right-stack-safe-top',
+    `${layoutTop.toFixed(1)}px`,
+  );
+  stack.style.setProperty(
+    '--right-stack-max-height',
+    `${Math.max(0, safeBottom - layoutTop).toFixed(1)}px`,
+  );
   stack.classList.toggle('layout-focus', shouldFocus);
   stack.dataset.layoutMode = shouldFocus ? 'focus' : 'normal';
   stack.dataset.safeTop = layoutTop.toFixed(1);
@@ -211,7 +256,10 @@ export function layoutRightPanelRail({
   stack.dataset.expandedCount = String(expandedPanels.length);
 
   if (displayPanel && expandedPanels.includes(displayPanel)) {
-    const maxScrollTop = Math.max(0, displayPanel.scrollHeight - displayPanel.clientHeight);
+    const maxScrollTop = Math.max(
+      0,
+      displayPanel.scrollHeight - displayPanel.clientHeight,
+    );
     displayPanel.scrollTop = Math.min(displayScrollTop, maxScrollTop);
   }
 }

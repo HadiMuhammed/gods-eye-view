@@ -153,17 +153,17 @@ test('desktop panel lanes use per-panel allocations and presentation-only auto-c
   assert.match(ui, /this\._leftStackPreferredPanelId = leftOwnerPanel\.id;/);
   assert.match(
     leftRail,
-    /preferredExpandedPanel[\s\S]*?\[preferredExpandedPanel, \.\.\.expandedPanelsInDomOrder/,
+    /preferredExpandedPanel[\s\S]*?\[\s*preferredExpandedPanel,\s*\.\.\.expandedPanelsInDomOrder/,
     'the latest explicitly opened left panel must receive primary allocation',
   );
   assert.match(ui, /this\._rightStackPreferredPanelId = rightOwnerPanel\.id;/);
   assert.match(
     rightRail,
-    /panel\.id === preferredPanelId[\s\S]*?\[preferredExpandedPanel, \.\.\.expandedPanelsInDomOrder/,
+    /panel\.id === preferredPanelId[\s\S]*?\[\s*preferredExpandedPanel,\s*\.\.\.expandedPanelsInDomOrder/,
     'the latest explicitly opened right panel must receive primary allocation',
   );
   assert.match(ui, /panelId === 'radio-panel'[\s\S]*?document\.getElementById\('global-context-panel'\)/);
-  assert.match(rightRail, /focusedExpandedPanel = expandedPanelsInDomOrder\.find\(\(panel\) => panel\.contains\(documentRef\.activeElement\)\)/);
+  assert.match(rightRail, /focusedExpandedPanel = expandedPanelsInDomOrder\.find\(\s*\(panel\) =>\s*panel\.contains\(documentRef\.activeElement\),?\s*\)/);
   assert.match(ui, /setAttribute\('aria-expanded', String\(!collapsed\)\)/);
   assert.match(leftRail, /--left-panel-allocated-height/);
   assert.match(rightRail, /--right-panel-allocated-height/);
@@ -185,7 +185,7 @@ test('desktop panel lanes use per-panel allocations and presentation-only auto-c
     'focus mode must hide every collapsed sibling, including presentation-only auto-collapses',
   );
   assert.doesNotMatch(css, /layout-focus > \[data-panel-id\]\.collapsed:not\(\.layout-auto-collapsed\)/);
-  assert.match(leftRail, /const hiddenSibling = shouldFocus && panel\.classList\.contains\('collapsed'\);/);
+  assert.match(leftRail, /const hiddenSibling =\s*shouldFocus && panel\.classList\.contains\('collapsed'\);/);
 });
 
 test('share-panel state excludes responsive collapse and preserves recipient preferences', () => {

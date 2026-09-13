@@ -6,8 +6,13 @@
  * @returns {number} Natural height in CSS pixels.
  */
 export function measurePanelNaturalHeight(panel, getComputedStyle) {
-  const inner = [...panel.children].find((child) => !child.classList.contains('panel-glow'));
-  if (!inner) return Math.ceil(panel.scrollHeight || panel.getBoundingClientRect().height);
+  const inner = [...panel.children].find(
+    (child) => !child.classList.contains('panel-glow'),
+  );
+  if (!inner)
+    return Math.ceil(
+      panel.scrollHeight || panel.getBoundingClientRect().height,
+    );
 
   const innerRect = inner.getBoundingClientRect();
   const panelStyle = getComputedStyle(panel);
@@ -17,17 +22,23 @@ export function measurePanelNaturalHeight(panel, getComputedStyle) {
 
   for (const child of inner.children) {
     const childStyle = getComputedStyle(child);
-    if (childStyle.display === 'none' || childStyle.visibility === 'hidden') continue;
+    if (childStyle.display === 'none' || childStyle.visibility === 'hidden')
+      continue;
     const childRect = child.getBoundingClientRect();
     const marginBottom = parseFloat(childStyle.marginBottom) || 0;
-    const naturalChildHeight = Math.max(childRect.height, child.scrollHeight || 0);
-    const childBottom = childRect.top - innerRect.top + naturalChildHeight + marginBottom;
+    const naturalChildHeight = Math.max(
+      childRect.height,
+      child.scrollHeight || 0,
+    );
+    const childBottom =
+      childRect.top - innerRect.top + naturalChildHeight + marginBottom;
     contentBottom = Math.max(contentBottom, childBottom);
   }
 
-  const wrapperChrome = (parseFloat(panelStyle.borderTopWidth) || 0)
-    + (parseFloat(panelStyle.borderBottomWidth) || 0)
-    + (parseFloat(panelStyle.paddingTop) || 0)
-    + (parseFloat(panelStyle.paddingBottom) || 0);
+  const wrapperChrome =
+    (parseFloat(panelStyle.borderTopWidth) || 0) +
+    (parseFloat(panelStyle.borderBottomWidth) || 0) +
+    (parseFloat(panelStyle.paddingTop) || 0) +
+    (parseFloat(panelStyle.paddingBottom) || 0);
   return Math.ceil(contentBottom + paddingBottom + wrapperChrome);
 }

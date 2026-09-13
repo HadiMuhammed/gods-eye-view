@@ -271,9 +271,7 @@
     "external": []
   },
   "panel-rail-layout": {
-    "exports": [
-      "./ui/layout"
-    ],
+    "exports": ["./ui/layout"],
     "modules": [
       "src/ui/panelRails.js",
       "src/ui/leftPanelRail.js",

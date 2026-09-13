@@ -32,14 +32,16 @@ export function layoutLeftPanelRail({
   onRetry,
   collapsedHeights,
   onAligned,
-  getComputedStyle = (element) => windowRef.getComputedStyle(element)
+  getComputedStyle = (element) => windowRef.getComputedStyle(element),
 }) {
   if (!stack) return;
 
   const panels = [...stack.querySelectorAll(':scope > [data-panel-id]')];
   if (!panels.length) return;
   if (!hud.visible || hud.variant !== 'tactical') {
-    for (const panel of panels.filter((item) => item.classList.contains('layout-auto-collapsed'))) {
+    for (const panel of panels.filter((item) =>
+      item.classList.contains('layout-auto-collapsed'),
+    )) {
       panel.classList.remove('collapsed', 'layout-auto-collapsed');
       onCollapse(panel);
     }
@@ -76,7 +78,11 @@ export function layoutLeftPanelRail({
     let hiddenByAncestor = false;
     for (let element = obstacle; element; element = element.parentElement) {
       const style = getComputedStyle(element);
-      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
+      if (
+        style.display === 'none' ||
+        style.visibility === 'hidden' ||
+        Number(style.opacity) === 0
+      ) {
         hiddenByAncestor = true;
         break;
       }
@@ -84,7 +90,8 @@ export function layoutLeftPanelRail({
     if (hiddenByAncestor) continue;
     const rect = obstacle.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) continue;
-    const overlapsHorizontally = rect.right > stackRect.left && rect.left < stackRect.right;
+    const overlapsHorizontally =
+      rect.right > stackRect.left && rect.left < stackRect.right;
     if (!overlapsHorizontally) continue;
 
     if (rect.top < baseTop && rect.bottom <= viewportHeight * 0.5) {
@@ -123,7 +130,9 @@ export function layoutLeftPanelRail({
     }
   }
 
-  const expandedPanelsInDomOrder = panels.filter((panel) => !panel.classList.contains('collapsed'));
+  const expandedPanelsInDomOrder = panels.filter(
+    (panel) => !panel.classList.contains('collapsed'),
+  );
   const preferredExpandedPanel = expandedPanelsInDomOrder.find(
     (panel) => panel.id === preferredPanelId,
   );
@@ -132,7 +141,12 @@ export function layoutLeftPanelRail({
   // panel first so an older expanded sibling yields when the corridor cannot
   // usefully present both (for example Map Stack followed by Scenes).
   const expandedPanels = preferredExpandedPanel
-    ? [preferredExpandedPanel, ...expandedPanelsInDomOrder.filter((panel) => panel !== preferredExpandedPanel)]
+    ? [
+        preferredExpandedPanel,
+        ...expandedPanelsInDomOrder.filter(
+          (panel) => panel !== preferredExpandedPanel,
+        ),
+      ]
     : expandedPanelsInDomOrder;
   // Clear the prior pass before reading intrinsic heights. The allocated
   // outer height and the inner scroller otherwise feed their constrained
@@ -141,8 +155,13 @@ export function layoutLeftPanelRail({
     panel.style.removeProperty('--left-panel-allocated-height');
   }
   const availableHeight = Math.max(0, safeBottom - safeTop);
-  const naturalExpandedHeights = expandedPanels.map((panel) => measurePanelNaturalHeight(panel, getComputedStyle));
-  const naturalExpandedHeight = naturalExpandedHeights.reduce((sum, height) => sum + height, 0);
+  const naturalExpandedHeights = expandedPanels.map((panel) =>
+    measurePanelNaturalHeight(panel, getComputedStyle),
+  );
+  const naturalExpandedHeight = naturalExpandedHeights.reduce(
+    (sum, height) => sum + height,
+    0,
+  );
   const siblingHeight = panels.reduce((total, panel) => {
     if (!panel.classList.contains('collapsed')) return total;
     const measured = collapsedHeights.get(panel.id);
@@ -162,12 +181,15 @@ export function layoutLeftPanelRail({
   const wasTail = stack.classList.contains('layout-tail');
   const wasConstrained = wasFocused || wasTail;
   const stabilityBand = viewportHeight * 0.01;
-  const exceedsCenteredCorridor = expandedPanels.length > 0 && (wasConstrained
-    ? requiredHeight > availableHeight - stabilityBand * 2
-    : requiredHeight > availableHeight - stabilityBand);
-  const tailRequiredHeight = naturalExpandedHeight
-    + siblingHeight
-    + rowGap * Math.max(0, panels.length - 1);
+  const exceedsCenteredCorridor =
+    expandedPanels.length > 0 &&
+    (wasConstrained
+      ? requiredHeight > availableHeight - stabilityBand * 2
+      : requiredHeight > availableHeight - stabilityBand);
+  const tailRequiredHeight =
+    naturalExpandedHeight +
+    siblingHeight +
+    rowGap * Math.max(0, panels.length - 1);
   // A compact expansion should not make the whole control stack jump down
   // merely to center a few short rows. Preserve the normal top anchor when
   // the centered stack would begin below it; tall stacks can still grow
@@ -177,36 +199,47 @@ export function layoutLeftPanelRail({
   const tailLayoutBottom = tailLayoutTop + tailRequiredHeight;
   const tailAvailableHeight = Math.max(0, obstacleSafeBottom - obstacleSafeTop);
   const tailTolerance = wasTail ? stabilityBand : -stabilityBand;
-  const shouldTail = expandedPanels.length > 0
-    && tailLayoutTop >= obstacleSafeTop - tailTolerance
-    && tailLayoutBottom <= obstacleSafeBottom + tailTolerance;
+  const shouldTail =
+    expandedPanels.length > 0 &&
+    tailLayoutTop >= obstacleSafeTop - tailTolerance &&
+    tailLayoutBottom <= obstacleSafeBottom + tailTolerance;
   const shouldFocus = exceedsCenteredCorridor && !shouldTail;
   // Focus mode owns the lane, so let every expanded panel share the full
   // obstacle-safe corridor. Tail/normal layouts keep the balanced
   // viewport centering used for compact accordion stacks.
   const layoutTop = shouldFocus
     ? obstacleSafeTop
-    : shouldTail ? tailLayoutTop : safeTop;
+    : shouldTail
+      ? tailLayoutTop
+      : safeTop;
   const layoutBottom = shouldFocus
     ? obstacleSafeBottom
-    : shouldTail ? tailLayoutBottom : safeBottom;
+    : shouldTail
+      ? tailLayoutBottom
+      : safeBottom;
   const topPct = (layoutTop / viewportHeight) * 100;
   const bottomPct = ((viewportHeight - layoutBottom) / viewportHeight) * 100;
   const topValue = `${topPct.toFixed(3)}vh`;
   const bottomValue = `${bottomPct.toFixed(3)}vh`;
   const expandedAvailableHeight = shouldFocus
-    ? Math.max(0, layoutBottom - layoutTop
-      - rowGap * Math.max(0, expandedPanels.length - 1))
+    ? Math.max(
+        0,
+        layoutBottom -
+          layoutTop -
+          rowGap * Math.max(0, expandedPanels.length - 1),
+      )
     : naturalExpandedHeight;
   const allocatedExpandedHeights = allocatePanelStackHeights({
     naturalHeights: naturalExpandedHeights,
     availableHeight: expandedAvailableHeight,
   });
-  const autoCollapseIndices = hud.visible ? panelStackAutoCollapseIndices({
-    naturalHeights: naturalExpandedHeights,
-    allocatedHeights: allocatedExpandedHeights,
-    collapseLaterPanels: shouldFocus && hud.variant === 'tactical',
-  }) : [];
+  const autoCollapseIndices = hud.visible
+    ? panelStackAutoCollapseIndices({
+        naturalHeights: naturalExpandedHeights,
+        allocatedHeights: allocatedExpandedHeights,
+        collapseLaterPanels: shouldFocus && hud.variant === 'tactical',
+      })
+    : [];
   if (autoCollapseIndices.length) {
     for (const index of autoCollapseIndices) {
       const panel = expandedPanels[index];
@@ -219,23 +252,42 @@ export function layoutLeftPanelRail({
   if (stack.style.getPropertyValue('--left-stack-safe-top') !== topValue) {
     stack.style.setProperty('--left-stack-safe-top', topValue);
   }
-  if (stack.style.getPropertyValue('--left-stack-safe-bottom') !== bottomValue) {
+  if (
+    stack.style.getPropertyValue('--left-stack-safe-bottom') !== bottomValue
+  ) {
     stack.style.setProperty('--left-stack-safe-bottom', bottomValue);
   }
   stack.style.removeProperty('--left-stack-centered-height');
-  for (const panel of panels) panel.style.removeProperty('--left-panel-allocated-height');
+  for (const panel of panels)
+    panel.style.removeProperty('--left-panel-allocated-height');
   expandedPanels.forEach((panel, index) => {
-    panel.style.setProperty('--left-panel-allocated-height', `${allocatedExpandedHeights[index].toFixed(1)}px`);
+    panel.style.setProperty(
+      '--left-panel-allocated-height',
+      `${allocatedExpandedHeights[index].toFixed(1)}px`,
+    );
   });
 
   stack.classList.toggle('layout-focus', shouldFocus);
   stack.classList.toggle('layout-tail', shouldTail);
-  stack.dataset.layoutMode = shouldFocus ? 'focus' : shouldTail ? 'tail' : 'normal';
+  stack.dataset.layoutMode = shouldFocus
+    ? 'focus'
+    : shouldTail
+      ? 'tail'
+      : 'normal';
   stack.dataset.safeTopPct = topPct.toFixed(2);
   stack.dataset.safeBottomPct = (100 - bottomPct).toFixed(2);
-  stack.dataset.availableHeightPct = ((availableHeight / viewportHeight) * 100).toFixed(2);
-  stack.dataset.requiredHeightPct = ((requiredHeight / viewportHeight) * 100).toFixed(2);
-  stack.dataset.tailAvailableHeightPct = ((tailAvailableHeight / viewportHeight) * 100).toFixed(2);
+  stack.dataset.availableHeightPct = (
+    (availableHeight / viewportHeight) *
+    100
+  ).toFixed(2);
+  stack.dataset.requiredHeightPct = (
+    (requiredHeight / viewportHeight) *
+    100
+  ).toFixed(2);
+  stack.dataset.tailAvailableHeightPct = (
+    (tailAvailableHeight / viewportHeight) *
+    100
+  ).toFixed(2);
   stack.dataset.expandedCount = String(expandedPanels.length);
 
   // Cockpit Display/Radio live in the opposite margin and no longer borrow
