@@ -54,6 +54,7 @@ export function renderSceneShots(
   for (const shot of scene.shots) {
     const row = document.createElement('div');
     row.className = 'scene-shot-row';
+    row.dataset.sceneShotId = shot.id;
     row.classList.toggle('active', shot.id === state.selectedShotId);
     const top = document.createElement('div');
     top.className = 'scene-shot-top';
@@ -87,6 +88,12 @@ export function renderSceneShots(
     row.appendChild(top);
     row.appendChild(meta);
     element.appendChild(row);
+  }
+}
+
+export function presentSceneSelection(element, selectedShotId) {
+  for (const row of element?.children || []) {
+    row.classList.toggle('active', row.dataset.sceneShotId === selectedShotId);
   }
 }
 

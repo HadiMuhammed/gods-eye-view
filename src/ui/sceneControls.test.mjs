@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SceneControls } from './sceneControls.js';
+import { SceneDirector } from '../scenes/director.js';
 
 function fixture() {
   class Element extends EventTarget {
@@ -8,6 +9,7 @@ function fixture() {
       super();
       this.children = [];
       this.style = {};
+      this.dataset = {};
       this.value = '';
       this._text = '';
       const classes = new Set();
@@ -301,6 +303,49 @@ test('creation and deletion prompts precede their model actions and remain inert
     f.owner.deleteShot('scene-a', 'shot-a');
     assert.equal(prompts, 6);
   } finally {
+    f.restore();
+  }
+});
+
+test('the real director preserves a selected shot label for the following double-click', async () => {
+  const f = fixture();
+  const previousStorage = globalThis.localStorage;
+  let director;
+  try {
+    f.owner.destroy();
+    const ids = {
+      'scene-panel': 'panel',
+      'scene-select': 'select',
+      'scene-new-btn': 'new',
+      'scene-delete-btn': 'delete',
+      'scene-capture-btn': 'capture',
+      'scene-update-shot-btn': 'update',
+      'scene-shot-list': 'shots',
+      'scene-start-btn': 'start',
+      'scene-stop-btn': 'stop',
+      'scene-next-btn': 'next',
+      'scene-export-btn': 'export',
+      'scene-import-btn': 'import',
+      'scene-import-file': 'file',
+      'scene-download-btn': 'download',
+      'scene-status': 'status',
+      'scene-progress-fill': 'progress',
+      'scene-runtime': 'runtime',
+    };
+    f.document.getElementById = (id) => f.elements[ids[id]] || null;
+    globalThis.localStorage = {
+      getItem: () => JSON.stringify({ version: 3, scenes: f.state.scenes }),
+      setItem() {},
+    };
+    director = new SceneDirector({ camera: { cancelFlight() {} } }, {}, {});
+    const label = f.elements.shots.children[0].children[0].children[0];
+    label.click();
+    assert.equal(f.elements.shots.children[0].children[0].children[0], label);
+    label.dispatchEvent(new Event('dblclick'));
+    assert.equal(director._getSelectedScene().shots[0].title, 'Renamed');
+  } finally {
+    await director?.destroy();
+    globalThis.localStorage = previousStorage;
     f.restore();
   }
 });

@@ -409,7 +409,7 @@ export class SceneDirector {
           this._selectedShotId = this._getSelectedScene()?.shots[0]?.id || null;
           this._renderShotList();
         },
-        selectShot: (id) => { this._selectedShotId = id; this._renderShotList(); },
+        selectShot: (id) => { this._selectedShotId = id; },
         renameShot: (sceneId, shotId, title) => {
           const { shot } = this._getShot(sceneId, shotId);
           if (!shot) return;

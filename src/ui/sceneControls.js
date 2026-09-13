@@ -3,6 +3,7 @@ import {
   sceneElements,
   renderSceneOptions,
   renderSceneShots,
+  presentSceneSelection,
   presentSceneButtons,
   presentSceneProgress,
   presentSceneRuntime,
@@ -112,7 +113,14 @@ export class SceneControls {
     renderSceneShots(this.elements.shots, this.read(), {
       listen: (element, type, callback) =>
         this.listen(element, type, callback, this.rowRemovers),
-      select: (id) => this.run('selectShot', id),
+      select: (id) => {
+        this.run('selectShot', id);
+        if (!this.destroyed)
+          presentSceneSelection(
+            this.elements.shots,
+            this.read().selectedShotId,
+          );
+      },
       rename: (sceneId, shotId, title) =>
         this.run('renameShot', sceneId, shotId, title),
       load: (sceneId, shotId) => this.run('load', sceneId, shotId),
