@@ -1,6 +1,5 @@
 import { createAisStreamSource } from '../sources/live/standalone.js';
 import * as Cesium from 'cesium';
-let _source = createAisStreamSource({ apiUrl: import.meta.env?.VITE_AIS_LIVE_API_URL || '/api/ais-live' });
 import {
   registerEntityContext,
   selectEntityContext,
@@ -47,6 +46,8 @@ import {
 } from './focusDeemphasis.js';
 import { requestWorldFocus } from '../worldFocus.js';
 import { holdContinuousRender, releaseContinuousRender } from '../renderGovernor.js';
+
+let _source = createAisStreamSource({ apiUrl: import.meta.env?.VITE_AIS_LIVE_API_URL || '/api/ais-live' });
 
 const FOCUS_EVIDENCE_DEV = import.meta.env?.DEV === true;
 
@@ -349,6 +350,7 @@ const aisLiveVesselsLayer = {
     if (state.viewer) throw new Error('Configure the source before layer initialization');
     if (typeof source?.getSnapshot !== 'function') throw new TypeError('A snapshot source is required');
     _source = source;
+    this.source = source.label || this.source;
   },
 
   init(viewer) {
@@ -1639,7 +1641,7 @@ function startSelectedVesselTrail(record) {
     state.trail = createTrail(state.viewer, { color: TRAIL_COLOR, width: 2.5 });
   }
   if (state.trail) state.trail.setPositions(state.trailPositions);
-  backfillVesselTrail(record.mmsi, state.trailBackfillToken);
+  backfillVesselTrail(record.mmsi, state.trailBackfillToken, record.reference);
 }
 
 /**

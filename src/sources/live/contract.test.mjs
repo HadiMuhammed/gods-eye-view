@@ -247,3 +247,17 @@ test('AIS reports limited received coverage and keeps connection state separate 
     now,
   );
 });
+
+test('a malformed vessel row cannot prevent admission of valid positions', async () => {
+  const source = createAisStreamSource({
+    fetchImpl: async () =>
+      response({
+        status: 'live',
+        rows: [null, { mmsi: '123456789', lat: 30, lon: -97 }],
+      }),
+  });
+  const snapshot = await source.getSnapshot();
+  assert.equal(snapshot.records.length, 1);
+  assert.equal(snapshot.rejectedCount, 1);
+  assert.equal(snapshot.complete, false);
+});

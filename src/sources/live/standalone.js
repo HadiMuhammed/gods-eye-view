@@ -54,6 +54,7 @@ export function createOpenSkySource({
   now = () => Date.now(),
 } = {}) {
   return {
+    label: 'OpenSky Network',
     async getSnapshot(query = {}, { signal } = {}) {
       const params = new URLSearchParams();
       if (Number.isFinite(query.latitude) && Number.isFinite(query.longitude)) {
@@ -111,6 +112,7 @@ export function createAdsbLolSource({
   now = () => Date.now(),
 } = {}) {
   return {
+    label: 'adsb.lol',
     async getSnapshot(_query = {}, { signal } = {}) {
       const { response, payload } = await readResponse(
         fetchImpl,
@@ -158,6 +160,7 @@ export function createAisStreamSource({
   origin = () => globalThis.location?.origin || 'http://localhost',
 } = {}) {
   return {
+    label: 'AISStream',
     async getSnapshot({ maxRows = 12000 } = {}, { signal } = {}) {
       const url = new URL(apiUrl, origin());
       url.searchParams.set('maxRows', String(maxRows));

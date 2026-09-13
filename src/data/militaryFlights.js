@@ -1,6 +1,5 @@
 import { createAdsbLolSource } from '../sources/live/standalone.js';
 import * as Cesium from 'cesium';
-let _source = createAdsbLolSource();
 import { aircraftIncludedInNearby } from './aircraftNearbyPolicy.js';
 import { registerPickOwner, unregisterPickOwner, isOwnedByOtherLayer, resolvePickId } from './pickRegistry.js';
 import { registerSpriteCollection, restoreSpriteOrder } from './spriteOrder.js';
@@ -63,6 +62,8 @@ import {
 } from './contextStore.js';
 import { CONTACT_MATCH_TIER, contactMatchWins, rankContactMatch } from './contactMatch.js';
 import { holdContinuousRender, releaseContinuousRender } from '../renderGovernor.js';
+
+let _source = createAdsbLolSource();
 
 /**
  * @module militaryFlights
@@ -2195,7 +2196,7 @@ function _startTrail(icao24) {
 async function _backfillTrail(icao24, token, oldestFixEpochSec) {
   let trace = null;
   try {
-    const track = await _source.getTrack?.(icao24, { signal: AbortSignal.timeout(8000) });
+    const track = await _source.getTrack?.(_flightData.get(icao24)?.sourceReference ?? icao24, { signal: AbortSignal.timeout(8000) });
     trace = track?.records ?? null;
   } catch {
     return; // silent fallback to the accumulated trail
@@ -2591,18 +2592,20 @@ const militaryFlightsLayer = {
   /** @type {number} Polling interval in ms between API fetches */
   updateInterval: 15000,
 
-  /**
-   * Initialize the layer: create the billboard collection, reset all state,
-   * and install the click-to-track handler.
-   * @param {Cesium.Viewer} viewer - The Cesium viewer instance
-   */
   /** Configure the source before initialization; an active layer keeps its owner. */
   setSource(source) {
     if (_viewer) throw new Error('Configure the source before layer initialization');
     if (typeof source?.getSnapshot !== 'function') throw new TypeError('A snapshot source is required');
     _source = source;
+    _lastSource = source.label || _lastSource;
+    this.source = _lastSource;
   },
 
+  /**
+   * Initialize the layer: create the billboard collection, reset all state,
+   * and install the click-to-track handler.
+   * @param {Cesium.Viewer} viewer - The Cesium viewer instance
+   */
   init(viewer) {
     clearFocusTarget('militaryFlights');
     _viewer = viewer;
@@ -2782,7 +2785,7 @@ const militaryFlightsLayer = {
       _lastSource = snapshot.source;
       militaryFlightsLayer.source = _lastSource;
       const usableAircraft = snapshot.records;
-      _backoff = snapshot.stale;
+      _backoff = snapshot.stale || snapshot.freshness === 'unknown';
       _retryAt = 0;
       _lastError = snapshot.freshness === 'unknown' ? 'Source snapshot time unavailable' : null;
       const currentIcaos = new Set();
@@ -2900,6 +2903,8 @@ const militaryFlightsLayer = {
         // last-known-good (bounded by the layer's eviction, which deletes the entry).
         const stickyType = stickyText(type, prevMeta?.type);
         const meta = {
+          sourceReference: aircraft.reference,
+          observedReceiptMs: Date.now(),
           callsign: stickyText(callsign, prevMeta?.callsign),
           type: stickyType,
           // Type outranks category automatically inside classifyAircraft.
@@ -3094,7 +3099,9 @@ const militaryFlightsLayer = {
       // LANDED_MISSING_POLL_LIMIT — their disappearance means "landed", not a
       // feed gap, and the full grace left phantom planes parked at airports.
       for (const [icao24, bb] of _billboards) {
-        if (currentIcaos.has(icao24) || !snapshot.complete) continue;
+        if (currentIcaos.has(icao24)) continue;
+        // Partial admissions do not prove absence, but stale retention is bounded.
+        if (!snapshot.complete && Date.now() - (_flightData.get(icao24)?.observedReceiptMs ?? 0) < 300000) continue;
         const misses = (_missingPolls.get(icao24) || 0) + 1;
         const limit = _likelyLanded(icao24) ? LANDED_MISSING_POLL_LIMIT : MISSING_POLL_LIMIT;
         if (misses < limit) {
@@ -3155,6 +3162,7 @@ const militaryFlightsLayer = {
       _backoff = true;
       _retryAt = Date.now() + (e?.retryAfterMs ?? ERROR_BACKOFF_INTERVAL);
       _lastStatus = e?.status ?? null;
+      if (e?.source) { _lastSource = e.source; this.source = _lastSource; }
       _lastError = e?.name === 'LiveSourceError' ? e.message : 'Live data unavailable';
     } finally {
       _activeUpdateControllers.delete(resourceController);

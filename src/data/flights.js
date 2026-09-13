@@ -21,7 +21,6 @@ import { createOpenSkySource } from '../sources/live/standalone.js';
  * looking at (owner decision 2026-07-02).
  */
 import * as Cesium from 'cesium';
-let _source = createOpenSkySource();
 import { aircraftIncludedInNearby } from './aircraftNearbyPolicy.js';
 import { registerPickOwner, unregisterPickOwner, isOwnedByOtherLayer, resolvePickId } from './pickRegistry.js';
 import {
@@ -96,6 +95,8 @@ import {
 } from './contextStore.js';
 import { CONTACT_MATCH_TIER, contactMatchWins, rankContactMatch } from './contactMatch.js';
 import { holdContinuousRender, releaseContinuousRender } from '../renderGovernor.js';
+
+let _source = createOpenSkySource();
 
 const FOCUS_EVIDENCE_DEV = import.meta.env?.DEV === true;
 
@@ -340,7 +341,7 @@ let _lastTrackingRefreshOutcome = {
   epoch: 0,
   status: 'unavailable',
   ids: new Set(),
-  source: 'OpenSky Network',
+  source: _lastSource,
   coverage: null,
 };
 /** @type {Cesium.Entity|null} Entity used for camera tracking */
@@ -412,7 +413,7 @@ function _contextSubjectMetadata(icao24) {
     id: icao24,
     layerId: 'flights',
     layerName: 'Live Flights',
-    source: 'OpenSky Network',
+    source: _lastSource,
     label: _contactLabel(icao24, _flightData.get(icao24)),
     latitude: described.latitude,
     longitude: described.longitude,
@@ -995,13 +996,6 @@ let _drPrevMs = 0;
 let _drReconcileValid = false;
 /** @type {string|null} icao the reconciliation state currently belongs to */
 let _drReconcileIcao = null;
-
-/**
- * Normalize a value to a trimmed lowercase string.
- * @param {*} value - Any value (typically a header string or null).
- * @returns {string} Lowercase trimmed string, or '' if falsy.
- */
-
 
 /**
  * Normalize a value to a trimmed string. A whitespace-only field ("   ") is
@@ -2991,7 +2985,7 @@ function _startTrail(icao24) {
 async function _backfillTrail(icao24, token, oldestFixEpochSec) {
   let path = null;
   try {
-    const track = await _source.getTrack?.(icao24, { signal: AbortSignal.timeout(8000) });
+    const track = await _source.getTrack?.(_flightData.get(icao24)?.sourceReference ?? icao24, { signal: AbortSignal.timeout(8000) });
     path = track?.records ?? null;
   } catch {
     return; // silent fallback to the accumulated trail
@@ -3822,12 +3816,21 @@ const flightsLayer = {
   id: 'flights',
   name: 'Live Flights',
   icon: '✈️',
-  source: 'OpenSky Network',
+  source: _lastSource,
   // Browser-harness seam: isolates synthetic display-floor scenarios without
   // changing any production lifecycle or cache policy.
   _clearDisplayFloorStateForTest,
   /** @type {number} Polling interval (ms) between update() calls */
   updateInterval: 30000,
+
+  /** Configure the source before initialization; an active layer keeps its owner. */
+  setSource(source) {
+    if (_viewer) throw new Error('Configure the source before layer initialization');
+    if (typeof source?.getSnapshot !== 'function') throw new TypeError('A snapshot source is required');
+    _source = source;
+    _lastSource = source.label || _lastSource;
+    this.source = _lastSource;
+  },
 
   /**
    * Initialize the flights layer.
@@ -3835,13 +3838,6 @@ const flightsLayer = {
    * click-to-track handler on the scene canvas.
    * @param {Cesium.Viewer} viewer - The CesiumJS viewer instance.
    */
-  /** Configure the source before initialization; an active layer keeps its owner. */
-  setSource(source) {
-    if (_viewer) throw new Error('Configure the source before layer initialization');
-    if (typeof source?.getSnapshot !== 'function') throw new TypeError('A snapshot source is required');
-    _source = source;
-  },
-
   init(viewer) {
     clearFocusTarget('flights');
     _focusEvidenceIds.clear();
@@ -3875,7 +3871,7 @@ const flightsLayer = {
     _retryAt = 0;
     _lastError = null;
     _lastStatus = null;
-    _lastSource = 'OpenSky Network';
+    _lastSource = _source.label || 'OpenSky Network';
     _lastCoverage = 'worldwide upstream snapshot';
     _trackedIcao = null;
     _resetTrackedSelectionState();
@@ -4029,7 +4025,7 @@ const flightsLayer = {
       const usableStates = snapshot.records;
       const sourceEpochMs = snapshot.observedAtMs;
       const sourceAgeMs = snapshot.ageMs;
-      const sourceStale = snapshot.stale;
+      const sourceStale = snapshot.stale || snapshot.freshness === 'unknown';
       _backoff = sourceStale;
       _retryAt = 0;
       _lastError = sourceStale
@@ -4219,6 +4215,8 @@ const flightsLayer = {
         // Store flight metadata for click-to-track labels
         const cat = stickyNumber(category, prevMeta?.category, null);
         const meta = {
+          sourceReference: observation.reference,
+          observedReceiptMs: Date.now(),
           callsign: stickyText(callsign, prevMeta?.callsign),
           altitude: alt,
           // geoAltitudeM/renderAltitudeM are ADDITIVE fields alongside the
@@ -4398,7 +4396,9 @@ const flightsLayer = {
       // LANDED_MISSING_POLL_LIMIT — their disappearance means "landed", not a
       // feed gap, and the full grace left phantom planes parked at airports.
       for (const [icao24, bb] of _billboards) {
-        if (currentIcaos.has(icao24) || !snapshot.complete) continue;
+        if (currentIcaos.has(icao24)) continue;
+        // Partial admissions do not prove absence, but stale retention is bounded.
+        if (!snapshot.complete && Date.now() - (_flightData.get(icao24)?.observedReceiptMs ?? 0) < 300000) continue;
         const misses = (_missingPolls.get(icao24) || 0) + 1;
         const limit = _likelyLanded(icao24) ? LANDED_MISSING_POLL_LIMIT : MISSING_POLL_LIMIT;
         if (misses < limit) {
@@ -4477,7 +4477,7 @@ const flightsLayer = {
       _count = _billboards.size;
       // Freshness belongs to the source snapshot, not the moment this browser
       // received a cached 200 response.
-      _lastUpdate = sourceEpochMs ?? Date.now();
+      _lastUpdate = sourceEpochMs;
       _lastTrackingRefreshOutcome = {
         epoch: trackingRefreshEpoch,
         status: 'accepted',
@@ -4496,6 +4496,7 @@ const flightsLayer = {
       _backoff = true;
       _retryAt = Date.now() + (e?.retryAfterMs ?? ERROR_BACKOFF_INTERVAL);
       _lastStatus = e?.status ?? null;
+      if (e?.source) { _lastSource = e.source; this.source = _lastSource; }
       _lastError = e?.name === 'LiveSourceError' ? e.message : 'Live data unavailable';
     } finally {
       _activeUpdateControllers.delete(resourceController);

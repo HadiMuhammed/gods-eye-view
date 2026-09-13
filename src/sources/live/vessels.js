@@ -40,7 +40,8 @@ export function vesselSnapshot(
   const records = [],
     ids = new Set();
   for (const row of rows) {
-    const record = normalizeVesselObservation(row, referenceFor(row));
+    const record = normalizeVesselObservation(row);
+    if (record) record.reference = referenceFor(row);
     if (record && !ids.has(record.id)) {
       records.push(record);
       ids.add(record.id);
@@ -57,7 +58,7 @@ export function vesselSnapshot(
     records,
     source,
     coverage,
-    complete: false,
+    complete: records.length === rows.length && !payload?.refreshing,
     rejectedCount: rows.length - records.length,
     observedAtMs,
     freshness: payload?.refreshing

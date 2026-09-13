@@ -10,7 +10,8 @@ retain separate heading/course and sea-surface datum. History is a best-effort
 addition to the locally accumulated trail, never a promise of complete coverage.
 
 Snapshot coverage, completeness and freshness are separate fields. A partially
-admitted aircraft snapshot cannot evict absent contacts. An invalid nonempty
+admitted aircraft snapshot retains absent contacts for up to five minutes before
+the usual missed-poll eviction. Unknown snapshot times remain unknown in stats. An invalid nonempty
 snapshot retains the previous display. Empty vessel refreshes retain the existing
 first-connect grace and warm-data behavior. Known source failures have bounded
 messages; arbitrary HTTP response bodies are not surfaced as diagnostics.
