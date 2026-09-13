@@ -1,5 +1,15 @@
 # God's Eye View Current State
 
+## Cockpit component ownership
+
+Cockpit presentation is separated from its camera/controller behavior. Existing
+layer, terrain and rendering operations are supplied by composition, retaining
+the same tracked identity, ground acquisition, motion correction and cadence.
+The Display portal owns group anchors, focus/scroll restoration and listeners.
+Superseded portal frames cannot repaint old state or steal focus after disposal;
+retained Cockpit actions cannot restart a disposed controller.
+
+
 ## Context coordination
 
 Context controls own Contacts/Space Missions state, entry and exit transactions,
