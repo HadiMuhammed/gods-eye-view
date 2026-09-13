@@ -141,7 +141,8 @@ export function normalizeAircraftTrack(
     const latitude = finite(row[1]),
       longitude = finite(row[2]);
     const offset = finite(row[0]);
-    const observedAtMs = offset == null ? null : baseTimeMs + offset * 1000;
+    const observedAtMs =
+      offset == null ? null : epoch(baseTimeMs + offset * 1000);
     if (
       !coordinates(latitude, longitude) ||
       observedAtMs == null ||

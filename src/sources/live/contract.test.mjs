@@ -261,3 +261,13 @@ test('a malformed vessel row cannot prevent admission of valid positions', async
   assert.equal(snapshot.rejectedCount, 1);
   assert.equal(snapshot.complete, false);
 });
+
+test('out-of-range source epochs do not reach Date or globe time constructors', () => {
+  const row = [...aircraft];
+  row[3] = 1e100;
+  row[4] = 1e100;
+  const snapshot = openSkySnapshot({ time: 1e100, states: [row] });
+  assert.equal(snapshot.observedAtMs, null);
+  assert.equal(snapshot.records[0].positionTimeMs, null);
+  assert.equal(snapshot.records[0].contactTimeMs, null);
+});

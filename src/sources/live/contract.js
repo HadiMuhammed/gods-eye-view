@@ -32,7 +32,12 @@ export function finite(value) {
 
 export function epoch(value, scale = 1) {
   const number = finite(value);
-  return number != null && number > 0 ? number * scale : null;
+  const milliseconds = number == null ? null : number * scale;
+  return milliseconds != null &&
+    milliseconds > 0 &&
+    milliseconds <= 8640000000000000
+    ? milliseconds
+    : null;
 }
 
 export function cleanText(value) {
