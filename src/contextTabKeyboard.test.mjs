@@ -23,7 +23,7 @@ test('Contacts and Space Missions both participate in the ordinary Tab sequence'
   }
 
   const syncSource = _syncContextModeButtons.toString();
-  assert.match(syncSource, /\[this\._globalContextFlightsBtn, this\._globalContextMissionsBtn\]/);
+  assert.match(syncSource, /\[\s*this\._globalContextFlightsBtn,\s*this\._globalContextMissionsBtn,?\s*\]/);
   assert.match(syncSource, /button\.tabIndex = 0/);
   assert.doesNotMatch(syncSource, /tabIndex\s*=\s*[^;]*\?\s*-1/);
 });
@@ -100,7 +100,7 @@ test('Context activation and Clear All never native-disable tabs and guard repea
   const init = _initGlobalContextPanel.toString();
   const select = _selectContextMode.toString();
   const clear = clearSelectedLayers.toString();
-  assert.equal((init.match(/if \(this\.destroyed \|\| this\._contextModeChanging \|\| this\._clearSelectedLayersPromise\) return;/g) || []).length, 2);
+  assert.equal((init.match(/if \(\s*this\.destroyed\s*\|\|\s*this\._contextModeChanging\s*\|\|\s*this\._clearSelectedLayersPromise\s*\)\s*return;/g) || []).length, 2);
   assert.doesNotMatch(select, /_globalContext(?:Flights|Missions)Btn\.disabled\s*=\s*true/);
   assert.doesNotMatch(clear, /_globalContext(?:Flights|Missions)Btn\.disabled\s*=\s*true/);
 });
