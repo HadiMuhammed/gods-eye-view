@@ -80,6 +80,22 @@ function check(name, ok, detail = '') {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Native pick buffers and clustered overlay entries settle on rendered frames,
+// not on wall-clock sleeps, particularly with software rendering.
+async function settleRadioFrames(page) {
+  await page.evaluate(() => new Promise((resolve, reject) => {
+    const scene = window.__godsEyeView.viewer.scene;
+    let remaining = 4;
+    const timeout = setTimeout(() => { remove(); reject(new Error('Radio rendered-frame deadline exceeded')); }, 10_000);
+    const remove = scene.postRender.addEventListener(() => {
+      if (--remaining === 0) { remove(); clearTimeout(timeout); resolve(); }
+      else requestAnimationFrame(() => scene.requestRender());
+    });
+    scene.requestRender();
+  }));
+}
+
+
 async function main() {
   const response = await fetch(APP_URL).catch(() => null);
   if (!response?.ok) {
@@ -652,6 +668,7 @@ async function main() {
           viewer.scene.requestRender();
         }, { lon: spec.lon, height: view.height });
         await sleep(700);
+        await settleRadioFrames(page);
         const sample = await page.evaluate(async () => {
           const viewer = window.__godsEyeView.viewer;
           const radio = window.__godsEyeView.dataManager.layers.get('radio').module;
@@ -1334,12 +1351,9 @@ async function main() {
         && clusterBadge?.rect?.h > 0,
       JSON.stringify(clusterBadge),
     );
-    const highGlobalClusterLabels = await page.evaluate(async () => {
+    await page.evaluate(async () => {
       const viewer = window.__godsEyeView.viewer;
-      const radio = window.__godsEyeView.dataManager.layers.get('radio').module;
       const ellipsoid = viewer.scene.globe.ellipsoid;
-      const { getWorldOverlayDiagnostics } = await import('/src/overlays/worldOverlay.js');
-      const { distanceFade } = await import('/src/overlays/worldOverlayDraw.js');
       viewer.camera.cancelFlight();
       viewer.camera.setView({
         destination: ellipsoid.cartographicToCartesian({
@@ -1351,6 +1365,14 @@ async function main() {
       });
       viewer.scene.requestRender();
       await new Promise((resolve) => setTimeout(resolve, 500));
+    });
+    await settleRadioFrames(page);
+    const highGlobalClusterLabels = await page.evaluate(async () => {
+      const viewer = window.__godsEyeView.viewer;
+      const radio = window.__godsEyeView.dataManager.layers.get('radio').module;
+      const ellipsoid = viewer.scene.globe.ellipsoid;
+      const { getWorldOverlayDiagnostics } = await import('/src/overlays/worldOverlay.js');
+      const { distanceFade } = await import('/src/overlays/worldOverlayDraw.js');
       const source = radio.getOverlayDiagnostics();
       const cameraPosition = viewer.camera.positionWC;
       const cameraRadius = Math.hypot(cameraPosition.x, cameraPosition.y, cameraPosition.z);
@@ -1361,11 +1383,23 @@ async function main() {
       const points = Array.from({ length: viewer.dataSources.length }, (_, index) => viewer.dataSources.get(index))
         .find((item) => item.name === 'Radio stations')?.clustering?._clusterPointCollection;
       let clusterPoint = null;
+      // Pool order is not visibility order after a camera change. Choose an
+      // on-screen point independently of the native pick result being tested.
+      const visiblePoints = [];
       for (let index = 0; index < (points?.length || 0); index += 1) {
         const point = points.get(index);
         if (!point?.show || !Array.isArray(point.id) || !point.id.length) continue;
         const anchor = viewer.scene.cartesianToCanvasCoordinates(point.position);
         if (!anchor) continue;
+        if (anchor.x < 0 || anchor.y < 0 || anchor.x > viewer.canvas.clientWidth || anchor.y > viewer.canvas.clientHeight) continue;
+        visiblePoints.push({ point, anchor });
+      }
+      visiblePoints.sort((a, b) => (
+        Math.hypot(a.anchor.x - viewer.canvas.clientWidth / 2, a.anchor.y - viewer.canvas.clientHeight / 2)
+        - Math.hypot(b.anchor.x - viewer.canvas.clientWidth / 2, b.anchor.y - viewer.canvas.clientHeight / 2)
+      ));
+      if (visiblePoints.length) {
+        const { point, anchor } = visiblePoints[0];
         const exactPick = (viewer.scene.drillPick(anchor, 16) || []).find((picked) => (
           picked?.primitive === point && picked?.id === point.id
         ));
@@ -1373,7 +1407,6 @@ async function main() {
           maxDistance: point.distanceDisplayCondition?.far ?? null,
           pickable: Boolean(exactPick),
         };
-        break;
       }
       return {
         source,
