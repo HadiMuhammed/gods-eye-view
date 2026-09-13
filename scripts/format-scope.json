@@ -120,5 +120,7 @@
   "src/search/google.js",
   "src/keylessGeocoder.js",
   "src/standalone/placeSearch.js",
-  "src/ui/panelDisclosure.js"
+  "src/ui/panelDisclosure.js",
+  "src/ui/surfaceKeyboard.js",
+  "src/ui/surfaceKeyboard.test.mjs"
 ]

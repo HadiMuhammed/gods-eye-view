@@ -34,8 +34,13 @@ export function createSurfaceKeyboard({
     }
     if (event.key !== 'Tab') return;
     const order = [
-      ...root.querySelectorAll('button, input, [href], [tabindex]:not([tabindex="-1"])'),
-    ].filter((node) => !node.hasAttribute('disabled') && node.getClientRects().length > 0);
+      ...root.querySelectorAll(
+        'button, input, [href], [tabindex]:not([tabindex="-1"])',
+      ),
+    ].filter(
+      (node) =>
+        !node.hasAttribute('disabled') && node.getClientRects().length > 0,
+    );
     if (!order.length) return;
     const first = order[0];
     const last = order[order.length - 1];

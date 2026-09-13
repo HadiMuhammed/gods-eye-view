@@ -22,9 +22,16 @@ function fixture() {
     hidden: false,
     disabled: false,
     focusCalls: [],
-    hasAttribute(name) { return name === 'disabled' && this.disabled; },
-    getClientRects() { return this.hidden ? [] : [{}]; },
-    focus(options) { documentRef.activeElement = this; this.focusCalls.push(options); },
+    hasAttribute(name) {
+      return name === 'disabled' && this.disabled;
+    },
+    getClientRects() {
+      return this.hidden ? [] : [{}];
+    },
+    focus(options) {
+      documentRef.activeElement = this;
+      this.focusCalls.push(options);
+    },
   });
   const opener = node();
   const fallback = node();
@@ -39,7 +46,9 @@ function fixture() {
   };
   let visible = true;
   let escapes = 0;
-  let onEscape = () => { escapes += 1; };
+  let onEscape = () => {
+    escapes += 1;
+  };
   const controller = createSurfaceKeyboard({
     root,
     isActive: () => visible,
@@ -51,8 +60,12 @@ function fixture() {
     key,
     defaultPrevented: false,
     stopped: false,
-    preventDefault() { this.defaultPrevented = true; },
-    stopPropagation() { this.stopped = true; },
+    preventDefault() {
+      this.defaultPrevented = true;
+    },
+    stopPropagation() {
+      this.stopped = true;
+    },
     ...extra,
   });
   const send = (key, extra) => {
@@ -60,10 +73,27 @@ function fixture() {
     for (const listener of [...listeners]) listener(e);
     return e;
   };
-  return { controller, listeners, documentRef, opener, fallback, first, middle, last, node, event, send,
-    setVisible(value) { visible = value; },
-    setControls(value) { controls = value; },
-    setEscape(value) { onEscape = value; },
+  return {
+    controller,
+    listeners,
+    documentRef,
+    opener,
+    fallback,
+    first,
+    middle,
+    last,
+    node,
+    event,
+    send,
+    setVisible(value) {
+      visible = value;
+    },
+    setControls(value) {
+      controls = value;
+    },
+    setEscape(value) {
+      onEscape = value;
+    },
     escapes: () => escapes,
   };
 }
@@ -97,7 +127,11 @@ test('Tab enters from outside in either direction and wraps only at an edge', ()
   f.opener.focus();
   f.send('Tab', { shiftKey: true });
   assert.equal(f.documentRef.activeElement, f.last);
-  assert.equal(f.last.focusCalls.at(-1), undefined, 'wrapping permits native scroll into view');
+  assert.equal(
+    f.last.focusCalls.at(-1),
+    undefined,
+    'wrapping permits native scroll into view',
+  );
 });
 
 test('Tab uses current controls and skips hidden/disabled nodes without changing native middle movement', () => {
