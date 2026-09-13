@@ -1466,6 +1466,20 @@ try {
       for (const width of [1000, 620, 480]) {
         await page.setViewport({ width, height: 900, deviceScaleFactor: 1 });
         await page.evaluate(() => window.__godsEyeView.styleManager.setPanelCollapsed('data-panel', false, { persist: false, syncShare: false }));
+        // Resizing schedules rail placement on animation frames. Wait for that
+        // pass and its CSS transitions before comparing a focus rectangle with
+        // hit testing; a fixed Tab delay can observe two different positions.
+        await page.evaluate(() => new Promise((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        }));
+        await page.waitForFunction((expectedWidth) => {
+          const stack = document.getElementById('left-panel-stack');
+          if (innerWidth !== expectedWidth || !stack) return false;
+          if ((stack.dataset.layoutMode === 'mobile') !== (expectedWidth <= 720)) return false;
+          return !stack.getAnimations({ subtree: true }).some((animation) => (
+            animation instanceof CSSTransition && animation.playState === 'running'
+          ));
+        }, { timeout: 5_000 }, width);
         await page.focus('#data-panel .panel-collapse-btn');
         const targets = [[dataSetup.offId, 'OFF', false], [dataSetup.fixtureIds[0], 'ON', true], [dataSetup.fixtureIds[1], 'STALE', true]];
         for (const [id, label, enabled] of targets) {
