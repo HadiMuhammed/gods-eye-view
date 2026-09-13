@@ -5,8 +5,13 @@ import { renderMapStackChips, syncMapStackChips } from '../mapStackChips.js';
  * The supplied controller remains authoritative for availability and active state.
  */
 export function createMapSourceControls({
-  container, statusElement, controller, subscribe,
-  claimSelection = () => {}, onStateChanged = () => {}, onError = () => {},
+  container,
+  statusElement,
+  controller,
+  subscribe,
+  claimSelection = () => {},
+  onStateChanged = () => {},
+  onError = () => {},
 }) {
   let destroyed = false;
   let generation = 0;
@@ -20,7 +25,10 @@ export function createMapSourceControls({
     syncMapStackChips(container, state.activeId);
     if (statusElement) {
       const stack = state.activeStack;
-      statusElement.textContent = state.status === 'switching' ? '...' : (stack?.shortLabel || stack?.label || 'MAP');
+      statusElement.textContent =
+        state.status === 'switching'
+          ? '...'
+          : stack?.shortLabel || stack?.label || 'MAP';
       statusElement.classList.toggle('warn', !!state.lastError);
     }
   }
@@ -42,7 +50,8 @@ export function createMapSourceControls({
     }
     if (destroyed || current !== generation) return state;
     render(controller.getState());
-    if (state?.activeId === before && stackId !== before && state?.lastError) onError(state.lastError);
+    if (state?.activeId === before && stackId !== before && state?.lastError)
+      onError(state.lastError);
     if (syncShare) onStateChanged();
     return state;
   }
@@ -51,7 +60,9 @@ export function createMapSourceControls({
     for (const remove of removers.splice(0)) remove();
     renderMapStackChips(container, controller.getStacks(), {
       activeId: controller.getActiveId(),
-      onSelect: (id) => { void select(id).catch(() => {}); },
+      onSelect: (id) => {
+        void select(id).catch(() => {});
+      },
       bind,
     });
     render(controller.getState());
@@ -63,7 +74,9 @@ export function createMapSourceControls({
   });
   refresh();
   return {
-    render, select, refresh,
+    render,
+    select,
+    refresh,
     destroy() {
       if (destroyed) return;
       destroyed = true;

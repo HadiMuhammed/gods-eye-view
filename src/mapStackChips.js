@@ -40,7 +40,9 @@ export function mapStackChipModel(stack, activeId) {
   const fallbackReason = requiresIon
     ? keySetupRequirement('cesium-ion')
     : `${label || 'This map stack'} is unavailable`;
-  const unavailableHint = available ? '' : String(stack?.unavailableReason || fallbackReason);
+  const unavailableHint = available
+    ? ''
+    : String(stack?.unavailableReason || fallbackReason);
   return {
     id: String(stack?.id ?? ''),
     label,
@@ -63,10 +65,10 @@ export function mapStackChipModel(stack, activeId) {
  *   `PRESENTED_MAP_STACK_IDS` order; unlisted stacks stay outside this presentation.
  */
 export function mapStackChipModels(stacks, activeId) {
-  const stacksById = new Map((Array.isArray(stacks) ? stacks : [])
-    .map((stack) => [stack?.id, stack]));
-  return PRESENTED_MAP_STACK_IDS
-    .map((id) => stacksById.get(id))
+  const stacksById = new Map(
+    (Array.isArray(stacks) ? stacks : []).map((stack) => [stack?.id, stack]),
+  );
+  return PRESENTED_MAP_STACK_IDS.map((id) => stacksById.get(id))
     .filter(Boolean)
     .map((stack) => mapStackChipModel(stack, activeId));
 }
@@ -82,7 +84,17 @@ export function mapStackChipModels(stacks, activeId) {
  * @param {(element: HTMLElement, type: string, listener: Function) => void} [options.bind] - Listener owner override.
  * @returns {Array<object>} The rendered chip models.
  */
-export function renderMapStackChips(container, stacks, { activeId = null, onSelect = null, doc, bind = (element, type, listener) => element.addEventListener(type, listener) } = {}) {
+export function renderMapStackChips(
+  container,
+  stacks,
+  {
+    activeId = null,
+    onSelect = null,
+    doc,
+    bind = (element, type, listener) =>
+      element.addEventListener(type, listener),
+  } = {},
+) {
   if (!container) return [];
   const ownerDoc = doc || container.ownerDocument || globalThis.document;
   if (!ownerDoc?.createElement) return [];
@@ -97,13 +109,18 @@ export function renderMapStackChips(container, stacks, { activeId = null, onSele
       MAP_STACK_CHIP_CLASS,
       model.active ? 'active' : '',
       model.available ? '' : 'unavailable',
-    ].filter(Boolean).join(' ');
+    ]
+      .filter(Boolean)
+      .join(' ');
     chip.dataset.stackId = model.id;
     chip.title = model.title;
     chip.setAttribute('aria-pressed', String(model.active));
     chip.setAttribute('aria-disabled', String(!model.available));
     if (!model.available) {
-      chip.setAttribute('aria-label', `${model.label} unavailable: ${model.unavailableHint}`);
+      chip.setAttribute(
+        'aria-label',
+        `${model.label} unavailable: ${model.unavailableHint}`,
+      );
     }
 
     const label = ownerDoc.createElement('span');

@@ -16,7 +16,9 @@ function makeElement(tagName = 'div') {
     children: [],
     classList: {
       toggle(name, force) {
-        const classes = new Set(String(element.className).split(/\s+/).filter(Boolean));
+        const classes = new Set(
+          String(element.className).split(/\s+/).filter(Boolean),
+        );
         const next = force === undefined ? !classes.has(name) : !!force;
         if (next) classes.add(name);
         else classes.delete(name);
@@ -26,16 +28,35 @@ function makeElement(tagName = 'div') {
         return String(element.className).split(/\s+/).includes(name);
       },
     },
-    appendChild(child) { element.children.push(child); return child; },
-    setAttribute(name, value) { element.attributes[name] = String(value); },
-    getAttribute(name) { return element.attributes[name] ?? null; },
-    addEventListener(type, handler) { (element.listeners[type] ||= []).push(handler); },
-    removeEventListener(type, handler) { element.listeners[type] = (element.listeners[type] || []).filter((current) => current !== handler); },
-    click() { for (const handler of element.listeners.click || []) handler(); },
+    appendChild(child) {
+      element.children.push(child);
+      return child;
+    },
+    setAttribute(name, value) {
+      element.attributes[name] = String(value);
+    },
+    getAttribute(name) {
+      return element.attributes[name] ?? null;
+    },
+    addEventListener(type, handler) {
+      (element.listeners[type] ||= []).push(handler);
+    },
+    removeEventListener(type, handler) {
+      element.listeners[type] = (element.listeners[type] || []).filter(
+        (current) => current !== handler,
+      );
+    },
+    click() {
+      for (const handler of element.listeners.click || []) handler();
+    },
   };
   Object.defineProperty(element, 'innerHTML', {
-    get() { return ''; },
-    set() { element.children.length = 0; },
+    get() {
+      return '';
+    },
+    set() {
+      element.children.length = 0;
+    },
   });
   return element;
 }
@@ -44,7 +65,16 @@ function fixture() {
   const container = makeElement();
   container.ownerDocument = { createElement: (tag) => makeElement(tag) };
   const statusElement = makeElement();
-  const sources = [{ id: 'osm', label: 'OSM' }, { id: 'esri-imagery', label: 'Esri' }, { id: 'bing-aerial', label: 'Bing', available: false, unavailableReason: 'Unavailable for this test' }];
+  const sources = [
+    { id: 'osm', label: 'OSM' },
+    { id: 'esri-imagery', label: 'Esri' },
+    {
+      id: 'bing-aerial',
+      label: 'Bing',
+      available: false,
+      unavailableReason: 'Unavailable for this test',
+    },
+  ];
   let state = { activeId: 'osm', activeStack: sources[0], status: 'ready' };
   const listeners = new Set();
   const requests = [];
@@ -55,20 +85,49 @@ function fixture() {
     getState: (status) => ({ ...state, status: status || state.status }),
     setStack: (id) => {
       calls.push(['select', id]);
-      return new Promise((resolve, reject) => requests.push({ id, resolve, reject }));
+      return new Promise((resolve, reject) =>
+        requests.push({ id, resolve, reject }),
+      );
     },
   };
-  const controls = createMapSourceControls({ container, statusElement, controller,
-    subscribe: (listener) => { listeners.add(listener); return () => listeners.delete(listener); },
-    claimSelection: () => calls.push(['claim']), onStateChanged: () => calls.push(['state']), onError: (message) => calls.push(['error', message]),
+  const controls = createMapSourceControls({
+    container,
+    statusElement,
+    controller,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    claimSelection: () => calls.push(['claim']),
+    onStateChanged: () => calls.push(['state']),
+    onError: (message) => calls.push(['error', message]),
   });
-  const chip = (id) => container.children.find((el) => el.dataset.stackId === id);
+  const chip = (id) =>
+    container.children.find((el) => el.dataset.stackId === id);
   function change(id, lastError = null) {
-    state = { activeId: id, activeStack: sources.find((source) => source.id === id), status: 'ready', lastError };
+    state = {
+      activeId: id,
+      activeStack: sources.find((source) => source.id === id),
+      status: 'ready',
+      lastError,
+    };
     return controller.getState();
   }
-  const emit = () => { for (const listener of listeners) listener(); };
-  return { container, statusElement, controller, controls, requests, calls, listeners, chip, change, emit };
+  const emit = () => {
+    for (const listener of listeners) listener();
+  };
+  return {
+    container,
+    statusElement,
+    controller,
+    controls,
+    requests,
+    calls,
+    listeners,
+    chip,
+    change,
+    emit,
+  };
 }
 
 test('initial presentation uses actual state and retains unavailable chip semantics', () => {
@@ -76,7 +135,11 @@ test('initial presentation uses actual state and retains unavailable chip semant
   assert.equal(f.chip('osm').getAttribute('aria-pressed'), 'true');
   assert.equal(f.statusElement.textContent, 'OSM');
   const unavailable = f.chip('bing-aerial');
-  assert.equal(unavailable.disabled, false, 'unavailable chips remain focusable');
+  assert.equal(
+    unavailable.disabled,
+    false,
+    'unavailable chips remain focusable',
+  );
   assert.equal(unavailable.getAttribute('aria-disabled'), 'true');
   unavailable.click();
   assert.equal(f.requests.length, 0);
@@ -98,8 +161,10 @@ test('selection claims authority before requesting and never lights a pending so
 
 test('provider-driven fallback updates the active chip and durable state notification', () => {
   const f = fixture();
-  f.change('esri-imagery'); f.emit();
-  f.change('osm', 'Source unavailable; using OSM'); f.emit();
+  f.change('esri-imagery');
+  f.emit();
+  f.change('osm', 'Source unavailable; using OSM');
+  f.emit();
   assert.equal(f.chip('osm').getAttribute('aria-pressed'), 'true');
   assert.equal(f.statusElement.textContent, 'OSM');
   assert.equal(f.statusElement.classList.contains('warn'), true);
@@ -114,7 +179,11 @@ test('a late superseded response cannot overwrite the latest displayed selection
   f.requests[1].resolve(f.change('osm'));
   await second;
   const count = f.calls.length;
-  f.requests[0].resolve({ activeId: 'esri-imagery', activeStack: { label: 'old' }, lastError: 'obsolete failure' });
+  f.requests[0].resolve({
+    activeId: 'esri-imagery',
+    activeStack: { label: 'old' },
+    lastError: 'obsolete failure',
+  });
   await first;
   assert.equal(f.statusElement.textContent, 'OSM');
   assert.equal(f.calls.length, count);
@@ -128,7 +197,9 @@ test('failed selection keeps the real source lit and reports its error', async (
   await pending;
   assert.equal(f.chip('osm').getAttribute('aria-pressed'), 'true');
   assert.equal(f.statusElement.classList.contains('warn'), true);
-  assert.ok(f.calls.some((call) => call[0] === 'error' && call[1] === 'Unavailable'));
+  assert.ok(
+    f.calls.some((call) => call[0] === 'error' && call[1] === 'Unavailable'),
+  );
   f.controls.destroy();
 });
 
@@ -138,7 +209,9 @@ test('rejected selection leaves switching presentation and propagates a useful e
   f.requests[0].reject(new Error('Request failed'));
   await assert.rejects(pending, /Request failed/);
   assert.equal(f.statusElement.textContent, 'OSM');
-  assert.ok(f.calls.some((call) => call[0] === 'error' && call[1] === 'Request failed'));
+  assert.ok(
+    f.calls.some((call) => call[0] === 'error' && call[1] === 'Request failed'),
+  );
   f.controls.destroy();
 });
 
