@@ -134,5 +134,7 @@
   "src/ui/styleParameters.js",
   "src/ui/visualInput.js",
   "src/ui/visualInput.test.mjs",
-  "scripts/qa-visual-input.mjs"
+  "scripts/qa-visual-input.mjs",
+  "src/ui/displayControls.js",
+  "src/ui/displayControls.test.mjs"
 ]

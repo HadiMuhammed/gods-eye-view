@@ -146,28 +146,43 @@ try {
     manager._bloomSlider.value = '80';
     manager._bloomSlider.dispatchEvent(new Event('input', { bubbles: true }));
     manager._bloomSlider.focus();
-    return { value: Number(manager._bloomSlider.value), contrast: manager._bloomStage.uniforms.contrast };
+    return {
+      value: Number(manager._bloomSlider.value),
+      contrast: manager._bloomStage.uniforms.contrast,
+    };
   });
   await page.keyboard.press('ArrowRight');
-  check('native Display slider updates effect state', await page.evaluate((before) => {
-    const manager = window.__godsEyeView.styleManager;
-    return Number(manager._bloomSlider.value) > before.value && manager._bloomStage.uniforms.contrast < before.contrast;
-  }, displayBefore));
-  check('Display buttons toggle current state once', await page.evaluate(() => {
-    const manager = window.__godsEyeView.styleManager;
-    const before = manager.bloomEnabled;
-    manager._bloomBtn.click();
-    const changed = manager.bloomEnabled !== before;
-    manager._bloomBtn.click();
-    return changed && manager.bloomEnabled === before;
-  }));
-  check('Display rebind removes old listeners', await page.evaluate(() => {
-    const manager = window.__godsEyeView.styleManager;
-    manager._initUI();
-    const before = manager.bloomEnabled;
-    manager._bloomBtn.click();
-    return manager.bloomEnabled !== before;
-  }));
+  check(
+    'native Display slider updates effect state',
+    await page.evaluate((before) => {
+      const manager = window.__godsEyeView.styleManager;
+      return (
+        Number(manager._bloomSlider.value) > before.value &&
+        manager._bloomStage.uniforms.contrast < before.contrast
+      );
+    }, displayBefore),
+  );
+  check(
+    'Display buttons toggle current state once',
+    await page.evaluate(() => {
+      const manager = window.__godsEyeView.styleManager;
+      const before = manager.bloomEnabled;
+      manager._bloomBtn.click();
+      const changed = manager.bloomEnabled !== before;
+      manager._bloomBtn.click();
+      return changed && manager.bloomEnabled === before;
+    }),
+  );
+  check(
+    'Display rebind removes old listeners',
+    await page.evaluate(() => {
+      const manager = window.__godsEyeView.styleManager;
+      manager._initUI();
+      const before = manager.bloomEnabled;
+      manager._bloomBtn.click();
+      return manager.bloomEnabled !== before;
+    }),
+  );
   fs.mkdirSync('qa-shots/visual-input', { recursive: true });
   await page.screenshot({ path: 'qa-shots/visual-input/desktop.png' });
   await page.setViewport({ width: 620, height: 900 });
@@ -212,16 +227,22 @@ try {
       );
     }),
   );
-  check('destroyed Display controls cannot change settings', await page.evaluate(() => {
-    const manager = window.__godsEyeView.styleManager;
-    manager._displayControls.destroy();
-    const before = manager.bloomEnabled;
-    const contrast = manager._bloomStage.uniforms.contrast;
-    manager._bloomBtn.click();
-    manager._bloomSlider.value = '15';
-    manager._bloomSlider.dispatchEvent(new Event('input', { bubbles: true }));
-    return manager.bloomEnabled === before && manager._bloomStage.uniforms.contrast === contrast;
-  }));
+  check(
+    'destroyed Display controls cannot change settings',
+    await page.evaluate(() => {
+      const manager = window.__godsEyeView.styleManager;
+      manager._displayControls.destroy();
+      const before = manager.bloomEnabled;
+      const contrast = manager._bloomStage.uniforms.contrast;
+      manager._bloomBtn.click();
+      manager._bloomSlider.value = '15';
+      manager._bloomSlider.dispatchEvent(new Event('input', { bubbles: true }));
+      return (
+        manager.bloomEnabled === before &&
+        manager._bloomStage.uniforms.contrast === contrast
+      );
+    }),
+  );
   check('runtime has no uncaught browser errors', errors.length === 0);
 } finally {
   await browser.close();

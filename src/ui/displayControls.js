@@ -14,16 +14,23 @@ export function bindDisplayControls({ elements, actions }) {
   };
   const integer = (element) => parseInt(element.value, 10);
   for (const [name, action] of [
-    ['bloomButton', 'toggleBloom'], ['sharpenButton', 'toggleSharpen'],
-    ['scopeButton', 'toggleScope'], ['cleanViewButton', 'toggleCleanView'],
-    ['cleanViewExitButton', 'exitCleanView'], ['celestialButton', 'toggleCelestial'],
-    ['hudButton', 'toggleHud'], ['detectionButton', 'cycleDetection'],
+    ['bloomButton', 'toggleBloom'],
+    ['sharpenButton', 'toggleSharpen'],
+    ['scopeButton', 'toggleScope'],
+    ['cleanViewButton', 'toggleCleanView'],
+    ['cleanViewExitButton', 'exitCleanView'],
+    ['celestialButton', 'toggleCelestial'],
+    ['hudButton', 'toggleHud'],
+    ['detectionButton', 'cycleDetection'],
     ['modelsButton', 'toggleModels'],
-  ]) listen(elements[name], 'click', action);
+  ])
+    listen(elements[name], 'click', action);
   for (const [name, action] of [
-    ['bloomSlider', 'setBloomIntensity'], ['sharpenSlider', 'setSharpenIntensity'],
+    ['bloomSlider', 'setBloomIntensity'],
+    ['sharpenSlider', 'setSharpenIntensity'],
     ['scopeFeatherSlider', 'setScopeFeather'],
-  ]) listen(elements[name], 'input', action, integer);
+  ])
+    listen(elements[name], 'input', action, integer);
   listen(elements.densitySlider, 'input', 'setDensity', (el) => el.value);
   listen(elements.hudLayout, 'change', 'setHudLayout', (el) => el.value);
   for (const el of elements.styleButtons || [])
@@ -31,7 +38,9 @@ export function bindDisplayControls({ elements, actions }) {
   for (const el of elements.allocationButtons || [])
     listen(el, 'click', 'setAllocation', (el) => el.dataset.allocation);
   for (const el of elements.modelModeButtons || [])
-    listen(el, 'click', 'setModelsMode', (el) => el.dataset.mode === 'all' ? 'all' : 'proximity');
+    listen(el, 'click', 'setModelsMode', (el) =>
+      el.dataset.mode === 'all' ? 'all' : 'proximity',
+    );
   for (const el of elements.fadeSliders || []) listen(el, 'input', 'setFade');
   return {
     destroy() {
