@@ -2031,6 +2031,10 @@ async function main() {
       };
       const waitForHudSettle = async () => {
         await new Promise((resolve) => setTimeout(resolve, 560));
+        // The synthetic shell below stops the aircraft/context update loop.
+        // Restore its layout pass after the HUD fade before measuring geometry;
+        // qa-cockpit-utility exercises scheduling with the real controller.
+        manager.cockpitView.scheduleContextLayout();
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       };
       const prior = {
