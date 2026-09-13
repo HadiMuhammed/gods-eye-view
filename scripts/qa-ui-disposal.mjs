@@ -121,7 +121,9 @@ try {
       feedbackLabel.querySelector('.gev-flap-text')?.firstChild;
     let stateNotifications = 0;
     ui.subscribeShareState(() => stateNotifications++, { emitCurrent: false });
-    ui.subscribeLocationSearch(() => stateNotifications++, { emitCurrent: false });
+    ui.subscribeLocationSearch(() => stateNotifications++, {
+      emitCurrent: false,
+    });
     try {
       const disposal = ui.dispose();
       const focusBefore = document.activeElement;
@@ -256,7 +258,10 @@ try {
     'shell teardown cancels deferred work and releases listeners',
     result.shellWorkReleased,
   );
-  check('state subscriptions stop synchronously with UI disposal', result.stateStopped);
+  check(
+    'state subscriptions stop synchronously with UI disposal',
+    result.stateStopped,
+  );
   check('repeated UI disposal is inert', result.idempotent);
   check(
     'disposal and subsequent resize produce no uncaught browser errors',

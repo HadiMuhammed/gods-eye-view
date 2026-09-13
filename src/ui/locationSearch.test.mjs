@@ -109,7 +109,6 @@ test('empty queries and refused navigation do not issue a lookup', async () => {
   assert.ok(f.calls.some((x) => x[0] === 'blur'));
 });
 
-
 test('search snapshots retain the current busy owner when an older request settles', async () => {
   const f = fixture();
   const events = [];
@@ -128,7 +127,9 @@ test('search snapshots retain the current busy owner when an older request settl
   const found = events.filter((event) => event.change?.type === 'found');
   assert.equal(found.length, 1);
   assert.equal(found[0].state.query, 'Second');
-  assert.throws(() => { found[0].state.destination.label = 'Changed'; }, TypeError);
+  assert.throws(() => {
+    found[0].state.destination.label = 'Changed';
+  }, TypeError);
   assert.equal(f.search.getState().destination.label, 'Second');
   assert.equal(f.search.getState().searching, false);
   const count = events.length;

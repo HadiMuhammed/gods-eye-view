@@ -539,13 +539,25 @@ export class StyleManager {
       );
     });
     this._shareState = createStateChannel(() => this._readShareState());
-    this._shareState.subscribe(({ state }) => {
-      this.shareLinkManager.onToggleChange(state.bloomEnabled, state.sharpenEnabled, state.options);
-    }, { emitCurrent: false });
-    this._locationState = createStateChannel(() => this._locationLookup?.getState() || null);
-    this._locationState.subscribe(({ state, change }) => {
-      this._handleLocationSearchState(state, change);
-    }, { emitCurrent: false });
+    this._shareState.subscribe(
+      ({ state }) => {
+        this.shareLinkManager.onToggleChange(
+          state.bloomEnabled,
+          state.sharpenEnabled,
+          state.options,
+        );
+      },
+      { emitCurrent: false },
+    );
+    this._locationState = createStateChannel(
+      () => this._locationLookup?.getState() || null,
+    );
+    this._locationState.subscribe(
+      ({ state, change }) => {
+        this._handleLocationSearchState(state, change);
+      },
+      { emitCurrent: false },
+    );
     // Parse before panel chrome initializes so every valid share URL starts
     // from deterministic markup defaults instead of recipient-local panel
     // preferences. Encoded panel fields are applied after all panels exist.
@@ -4513,7 +4525,8 @@ export class StyleManager {
 
   _handleLocationSearchState(state, change) {
     if (this._disposed || !change) return;
-    if (change.type === 'started') this._activeLocationSearchGeneration = change.generation;
+    if (change.type === 'started')
+      this._activeLocationSearchGeneration = change.generation;
     else if (change.type === 'found') {
       this._searchedLocationLabel = state.destination.label || state.query;
       this._setActiveLocation(null);
@@ -4522,8 +4535,12 @@ export class StyleManager {
       this._updateLocationMiniStatus();
     } else if (change.type === 'missing') this._showToast('Location not found');
     else if (change.type === 'failed') this._showToast('Search failed');
-    else if (change.type === 'settled') this._settleLocationSearchUi(change.generation);
-    else if (change.type === 'reset' && this._activeLocationSearchGeneration !== null) {
+    else if (change.type === 'settled')
+      this._settleLocationSearchUi(change.generation);
+    else if (
+      change.type === 'reset' &&
+      this._activeLocationSearchGeneration !== null
+    ) {
       this._settleLocationSearchUi(this._activeLocationSearchGeneration);
     }
   }
@@ -4552,9 +4569,11 @@ export class StyleManager {
         }),
       onError: (error) => console.error('[Search] Geocoding failed:', error),
     });
-    this._locationLookupUnsubscribe = this._locationLookup.subscribe(({ initial, change }) => {
-      this._locationState.publish(initial ? { type: 'reset' } : change);
-    });
+    this._locationLookupUnsubscribe = this._locationLookup.subscribe(
+      ({ initial, change }) => {
+        this._locationState.publish(initial ? { type: 'reset' } : change);
+      },
+    );
     this._locationControls = new LocationControls({
       elements: {
         pills: this._locationPills,

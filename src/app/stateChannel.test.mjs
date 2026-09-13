@@ -22,7 +22,9 @@ test('snapshots and action data are immutable copies of live product state', () 
 test('reentrant updates retain order and a new subscriber never regresses behind its initial snapshot', () => {
   let count = 0;
   const channel = createStateChannel(() => ({ count }));
-  const first = [], second = [], joined = [];
+  const first = [],
+    second = [],
+    joined = [];
   channel.subscribe(({ state, initial }) => {
     if (initial) return;
     first.push(state.count);
@@ -32,7 +34,9 @@ test('reentrant updates retain order and a new subscriber never regresses behind
       channel.subscribe(({ state }) => joined.push(state.count));
     }
   });
-  channel.subscribe(({ state, initial }) => { if (!initial) second.push(state.count); });
+  channel.subscribe(({ state, initial }) => {
+    if (!initial) second.push(state.count);
+  });
   count = 1;
   channel.publish();
   assert.deepEqual(first, [1, 2]);
@@ -45,11 +49,14 @@ test('unsubscribe and destroy during delivery revoke pending callbacks and futur
   const channel = createStateChannel(() => ({ reads: ++reads }));
   let late = 0;
   let remove;
-  channel.subscribe(() => {
-    remove();
-    channel.publish();
-    channel.destroy();
-  }, { emitCurrent: false });
+  channel.subscribe(
+    () => {
+      remove();
+      channel.publish();
+      channel.destroy();
+    },
+    { emitCurrent: false },
+  );
   remove = channel.subscribe(() => late++, { emitCurrent: false });
   channel.publish();
   const stoppedReads = reads;
@@ -67,7 +74,9 @@ test('a failed subscriber cannot prevent other controls from receiving an update
   const original = console.error;
   console.error = (message) => errors.push(message);
   try {
-    channel.subscribe(() => { throw new Error('consumer failure'); });
+    channel.subscribe(() => {
+      throw new Error('consumer failure');
+    });
     let received = 0;
     channel.subscribe(() => received++);
     channel.publish();
@@ -78,7 +87,6 @@ test('a failed subscriber cannot prevent other controls from receiving an update
     channel.destroy();
   }
 });
-
 
 test('an invalid initial snapshot cannot retain a subscriber without a cleanup handle', () => {
   let live = { action() {} };

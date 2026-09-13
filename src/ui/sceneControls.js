@@ -20,8 +20,14 @@ export class SceneControls {
     this.rowRemovers = [];
     this.playbackKeyRemover = null;
     if (!elements.select) return;
-    if (subscribe) this.unsubscribe = subscribe((notification) => this.present(notification));
-    else { this.renderSceneSelect(); this.renderShotList(); }
+    if (subscribe)
+      this.unsubscribe = subscribe((notification) =>
+        this.present(notification),
+      );
+    else {
+      this.renderSceneSelect();
+      this.renderShotList();
+    }
     this.listen(elements.select, 'change', () =>
       this.run('selectScene', elements.select.value),
     );
@@ -58,18 +64,47 @@ export class SceneControls {
   present({ state, change, initial }) {
     if (this.destroyed) return;
     const type = change?.type;
-    if (initial || ['scene-options-changed', 'scene-created', 'scene-deleted', 'project-imported'].includes(type)) this.renderSceneSelect();
-    if (initial || ['shots-changed', 'scene-created', 'scene-deleted', 'shot-captured', 'shot-updated', 'shot-renamed', 'shot-deleted', 'project-imported'].includes(type)) this.renderShotList();
-    if (type === 'selection-changed') presentSceneSelection(this.elements.shots, state.selectedShotId);
+    if (
+      initial ||
+      [
+        'scene-options-changed',
+        'scene-created',
+        'scene-deleted',
+        'project-imported',
+      ].includes(type)
+    )
+      this.renderSceneSelect();
+    if (
+      initial ||
+      [
+        'shots-changed',
+        'scene-created',
+        'scene-deleted',
+        'shot-captured',
+        'shot-updated',
+        'shot-renamed',
+        'shot-deleted',
+        'project-imported',
+      ].includes(type)
+    )
+      this.renderShotList();
+    if (type === 'selection-changed')
+      presentSceneSelection(this.elements.shots, state.selectedShotId);
     if (initial || type === 'buttons-changed') this.setButtons(state.running);
-    if (initial || type === 'progress-changed') this.setProgress(state.progress);
+    if (initial || type === 'progress-changed')
+      this.setProgress(state.progress);
     if (initial || type === 'status-changed') this.updateStatus(state.status);
-    if (initial || type === 'runtime-changed') this.updateRuntime(state.runtime);
-    if (initial || type === 'playback-presentation') this.setPlaybackActive(state.playbackActive);
-    if (initial || type === 'playback-keyboard') this.setPlaybackKeyboardEnabled(state.keyboardEnabled);
+    if (initial || type === 'runtime-changed')
+      this.updateRuntime(state.runtime);
+    if (initial || type === 'playback-presentation')
+      this.setPlaybackActive(state.playbackActive);
+    if (initial || type === 'playback-keyboard')
+      this.setPlaybackKeyboardEnabled(state.keyboardEnabled);
     if (type === 'project-exported') this.updateStatus('Project exported');
-    if (type === 'shot-loaded') this.updateStatus(`Loaded: ${change.sceneTitle} / ${change.shot.title}`);
-    if (type === 'run-event' && change.event === 'shot_start') this.setButtons(state.running);
+    if (type === 'shot-loaded')
+      this.updateStatus(`Loaded: ${change.sceneTitle} / ${change.shot.title}`);
+    if (type === 'run-event' && change.event === 'shot_start')
+      this.setButtons(state.running);
   }
 
   listen(target, type, callback, removers = this.removers) {

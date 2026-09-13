@@ -351,14 +351,24 @@ test('the real director preserves a selected shot label for the following double
   }
 });
 
-
 test('Scene controls consume current state, preserve rows on progress, and unsubscribe on destruction', () => {
   const f = fixture();
   try {
     f.owner.destroy();
-    Object.assign(f.state, { status: 'Ready to resume', progress: 0.25, runtime: '', playbackActive: false, keyboardEnabled: false });
+    Object.assign(f.state, {
+      status: 'Ready to resume',
+      progress: 0.25,
+      runtime: '',
+      playbackActive: false,
+      keyboardEnabled: false,
+    });
     const channel = createStateChannel(() => f.state);
-    const owner = new SceneControls({ read: () => f.state, actions: f.actions, elements: f.elements, subscribe: (listener) => channel.subscribe(listener) });
+    const owner = new SceneControls({
+      read: () => f.state,
+      actions: f.actions,
+      elements: f.elements,
+      subscribe: (listener) => channel.subscribe(listener),
+    });
     assert.equal(f.elements.status.textContent, 'Ready to resume');
     const row = f.elements.shots.children[0];
     f.state.progress = 0.5;
@@ -372,5 +382,7 @@ test('Scene controls consume current state, preserve rows on progress, and unsub
     assert.equal(f.elements.status.textContent, 'Project exported');
     assert.equal(owner.unsubscribe, null);
     channel.destroy();
-  } finally { f.restore(); }
+  } finally {
+    f.restore();
+  }
 });
