@@ -148,6 +148,12 @@ try {
       document.getElementById('left-panel-stack')?.dataset.layoutMode ===
       'mobile',
   );
+  await page.evaluate(() => {
+    const slider =
+      window.__godsEyeView.styleManager._sliderContainer.querySelector('input');
+    slider.focus();
+    slider.scrollIntoView({ block: 'center', behavior: 'instant' });
+  });
   await page.screenshot({ path: 'qa-shots/visual-input/narrow.png' });
   await page.evaluate(() => {
     const manager = window.__godsEyeView.styleManager;
