@@ -1,3 +1,4 @@
+import { createMapSourceControls } from './ui/mapSource.js';
 import { VisualEffects, STYLES, GLOBAL_POST_DEFAULTS, STYLE_PRESET_DEFAULTS, MILITARY_DETECTION_PRESET } from './ui/effects.js';
 import { bindDisplayControls } from './ui/displayControls.js';
 import { bindApplicationShortcuts, createStyleParameters } from './ui/visualInput.js';
@@ -23,7 +24,6 @@ import {
   isExplicitLayerStateOrigin,
   LayerStateCoordinator,
 } from './data/layerState.js';
-import { renderMapStackChips, syncMapStackChips } from './mapStackChips.js';
 import { OrbitController } from './orbit.js';
 import {
   CelestialRing,
@@ -2057,9 +2057,7 @@ export class StyleManager {
   constructor(viewer, { mapStackController = null } = {}) {
     this.viewer = viewer;
     this.mapStackController = mapStackController;
-<<<<<<< HEAD
     this.stages = {};
-=======
     this.placeSearch = placeSearch;
     this._visualEffects = new VisualEffects({
       viewer,
@@ -2067,7 +2065,6 @@ export class StyleManager {
       holdRender: holdContinuousRender,
       releaseRender: releaseContinuousRender,
     });
->>>>>>> c30f7cc (refactor(ui): separate visual effects and animation ownership)
     this.activeStyle = 'normal';
     document.documentElement.dataset.gevStyle = this.activeStyle;
 
@@ -3333,27 +3330,20 @@ export class StyleManager {
    * @returns {void}
    */
   _initMapStackControl() {
-    if (!this._mapStackChips || !this.mapStackController) return;
-
-    if (!this._mapStackChangeHandler) {
-      // Provider-driven transitions (notably Esri tile-error fallback) do not
-      // pass through `_setMapStack()`. Follow the controller's existing public
-      // event so the lit tile, the status line, AND the durable share state all
-      // describe the rendered source — without the share sync, a silent
-      // fallback leaves copyLink() encoding a stack that is no longer shown.
-      this._mapStackChangeHandler = (event) => {
-        this._renderMapStackState(event.detail);
-        this._syncShareState();
-      };
-      window.addEventListener('gev:map-stack-changed', this._mapStackChangeHandler);
-    }
-
-    renderMapStackChips(this._mapStackChips, this.mapStackController.getStacks(), {
-      activeId: this.mapStackController.getActiveId(),
-      onSelect: (stackId) => { this._setMapStack(stackId); },
+    if (!this.mapStackController) return;
+    this._mapSourceControls?.destroy();
+    this._mapSourceControls = createMapSourceControls({
+      container: this._mapStackChips,
+      statusElement: this._mapStackStatus,
+      controller: this.mapStackController,
+      subscribe: (onChange) => {
+        window.addEventListener('gev:map-stack-changed', onChange);
+        return () => window.removeEventListener('gev:map-stack-changed', onChange);
+      },
+      claimSelection: () => this.shareLinkManager?.claimRestoreLane?.('map'),
+      onStateChanged: () => this._syncShareState(),
+      onError: (message) => this._showToast(message),
     });
-
-    this._renderMapStackState(this.mapStackController.getState());
   }
 
   /**
@@ -3365,16 +3355,7 @@ export class StyleManager {
    */
   async _setMapStack(stackId, { syncShare = true } = {}) {
     if (!this.mapStackController) return;
-    if (syncShare) this.shareLinkManager?.claimRestoreLane?.('map');
-    const before = this.mapStackController.getActiveId();
-    this._renderMapStackState(this.mapStackController.getState('switching'));
-    const state = await this.mapStackController.setStack(stackId);
-    this._renderMapStackState(state);
-
-    if (state?.activeId === before && stackId !== before && state?.lastError) {
-      this._showToast(state.lastError);
-    }
-    if (syncShare) this._syncShareState();
+    return this._mapSourceControls.select(stackId, { syncShare });
   }
 
   /**
@@ -3385,16 +3366,7 @@ export class StyleManager {
    * @returns {void}
    */
   _renderMapStackState(state) {
-    if (!state) return;
-    syncMapStackChips(this._mapStackChips, state.activeId);
-    if (this._mapStackStatus) {
-      const stack = state.activeStack;
-      const label = state.status === 'switching'
-        ? '...'
-        : (stack?.shortLabel || stack?.label || 'MAP');
-      this._mapStackStatus.textContent = label;
-      this._mapStackStatus.classList.toggle('warn', !!state.lastError);
-    }
+    this._mapSourceControls?.render(state);
   }
 
   /**
@@ -9398,6 +9370,7 @@ export class StyleManager {
     this._disposed = true;
     this._applicationShortcuts?.destroy();
     this._displayControls?.destroy();
+    this._mapSourceControls?.destroy();
     this._visualEffects.stop();
     this._styleParameters?.destroy();
     for (const control of this._panelDisclosureControls || []) control.destroy();
@@ -9427,10 +9400,7 @@ export class StyleManager {
       window.removeEventListener('gev:awareness-subject-cleared', this._awarenessClearedHandler);
       this._awarenessClearedHandler = null;
     }
-    if (this._mapStackChangeHandler) {
-      window.removeEventListener('gev:map-stack-changed', this._mapStackChangeHandler);
-      this._mapStackChangeHandler = null;
-    }
+
     // Invalidate any in-flight Context transaction the same way a newer request
     // would. Without this, a reinstatement already past its awaits could
     // re-enable a mode's entry layer and republish `_contextMode` while the

@@ -311,5 +311,10 @@
       "src/styles/snow.js"
     ],
     "external": ["cesium"]
+  },
+  "map-source-controls": {
+    "exports": ["./ui/maps"],
+    "modules": ["src/ui/mapSource.js", "src/ui/mapSourceControls.js", "src/mapStackChips.js", "src/keySetupCore.mjs"],
+    "external": []
   }
 }

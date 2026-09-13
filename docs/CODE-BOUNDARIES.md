@@ -260,3 +260,12 @@ releasing UI consumers, then destroy to remove owned stages and restore the
 borrowed bloom state. `ui/effects/bloom` exposes the pure intensity/version helpers
 without loading the renderer. UI presentation and product-action coordination
 remain in their callers.
+
+## Map Source controls
+
+`ui/maps` owns source-chip presentation, selection feedback and its subscription
+lifetime. It receives the existing controller and explicit state/action callbacks;
+it imports no renderer or application. Source construction and availability policy
+remain with the map controller. Rebuilding controls removes their previous chip
+listeners, and destruction suppresses late completions without owning or destroying
+the supplied controller.

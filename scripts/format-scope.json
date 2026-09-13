@@ -148,5 +148,10 @@
   "src/styles/anime.js",
   "src/styles/noir.js",
   "src/styles/snow.js",
-  "scripts/qa-visual-effects.mjs"
+  "scripts/qa-visual-effects.mjs",
+  "src/ui/mapSource.js",
+  "src/ui/mapSourceControls.js",
+  "src/ui/mapSourceControls.test.mjs",
+  "src/mapStackChips.js",
+  "scripts/qa-map-source-controls.mjs"
 ]

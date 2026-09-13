@@ -1,5 +1,14 @@
 # God's Eye View Current State
 
+## Map Source control ownership
+
+Map Source controls own chip listeners, source-state subscriptions and selection
+feedback. Loading remains with the supplied map controller. The active chip
+follows the source actually displayed, including fallback; obsolete completions
+cannot overwrite a newer selection. Refresh and destruction revoke old listeners
+and destruction suppresses late UI updates. Available choices and setup behavior
+remain unchanged.
+
 ## Visual effects ownership
 
 VisualEffects owns style-stage creation, crossfades, animation scheduling, bloom
