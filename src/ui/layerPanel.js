@@ -15,16 +15,21 @@ const FEED_STATE_LABELS = Object.freeze({
  */
 export function layerFeedState(stats = {}) {
   const state = stats || {};
-  const status = typeof state.status === 'string' ? state.status.toLowerCase() : '';
+  const status =
+    typeof state.status === 'string' ? state.status.toLowerCase() : '';
   const source = `${state.source || ''} ${state.coverage || ''}`;
   const hasExplicitFallback = typeof state.fallback === 'boolean';
   const hasPriorData = Number(state.count) > 0 || Boolean(state.lastUpdate);
-  const presentedError = state.error || state.lastError || state.managerRefreshError;
-  if (['unavailable', 'offline', 'down', 'error'].includes(status)) return 'unavailable';
+  const presentedError =
+    state.error || state.lastError || state.managerRefreshError;
+  if (['unavailable', 'offline', 'down', 'error'].includes(status))
+    return 'unavailable';
   if (
-    (presentedError || state.unavailable === true || state.available === false)
-    && !hasPriorData
-    && !GUIDANCE_STATUSES.includes(status)
+    (presentedError ||
+      state.unavailable === true ||
+      state.available === false) &&
+    !hasPriorData &&
+    !GUIDANCE_STATUSES.includes(status)
   ) {
     return 'unavailable';
   }
@@ -37,29 +42,37 @@ export function layerFeedState(stats = {}) {
     return state.stale ? 'stale' : 'nominal';
   }
   if (
-    state.fallback === true
-    || status === 'fallback'
-    || state.mode === 'sim'
-    || /\bfallback\b/i.test(source)
-    || (!hasExplicitFallback && /\badsb\.lol\b/i.test(source))
+    state.fallback === true ||
+    status === 'fallback' ||
+    state.mode === 'sim' ||
+    /\bfallback\b/i.test(source) ||
+    (!hasExplicitFallback && /\badsb\.lol\b/i.test(source))
   ) {
     return 'fallback';
   }
   if (state.stale || status === 'stale') return 'stale';
   if (
-    state.degraded
-    || presentedError
-    || state.unavailable === true
-    || state.available === false
-  ) return 'degraded';
+    state.degraded ||
+    presentedError ||
+    state.unavailable === true ||
+    state.available === false
+  )
+    return 'degraded';
   return 'nominal';
 }
 
-
 /** Layer row presentation over supplied state and actions; no layer imports. */
 export class LayerPanel {
-  constructor({ getLayers, isEnabled, setEnabled, setLayerParams, getRowControls,
-    hasRowControls, subscribeRowControls, onHiddenRefresh = () => {} }) {
+  constructor({
+    getLayers,
+    isEnabled,
+    setEnabled,
+    setLayerParams,
+    getRowControls,
+    hasRowControls,
+    subscribeRowControls,
+    onHiddenRefresh = () => {},
+  }) {
     this.getAll = getLayers;
     this.isEnabled = isEnabled;
     this.setEnabled = setEnabled;
@@ -123,7 +136,9 @@ export class LayerPanel {
 
       const count = document.createElement('span');
       count.className = 'data-count';
-      count.textContent = layer.stats.count ? this._formatCount(layer.stats.count) : '—';
+      count.textContent = layer.stats.count
+        ? this._formatCount(layer.stats.count)
+        : '—';
 
       const toggle = document.createElement('button');
       toggle.type = 'button';
@@ -133,16 +148,24 @@ export class LayerPanel {
         // Native `disabled` immediately evicts keyboard focus in Chromium. Keep
         // the lifecycle control focusable while it is busy, and enforce the
         // same single-flight interaction contract through ARIA instead.
-        if (this._destroyed || this._generation !== generation || toggle.getAttribute('aria-disabled') === 'true') return;
+        if (
+          this._destroyed ||
+          this._generation !== generation ||
+          toggle.getAttribute('aria-disabled') === 'true'
+        )
+          return;
         toggle.setAttribute('aria-disabled', 'true');
         toggle.setAttribute('aria-busy', 'true');
         try {
-          await this.setEnabled(layer.id, !this.isEnabled(layer.id), { origin: 'user' });
+          await this.setEnabled(layer.id, !this.isEnabled(layer.id), {
+            origin: 'user',
+          });
         } catch (error) {
           console.warn(`[Data] ${layer.id} toggle error:`, error);
         } finally {
           const current = this.getAll().find(({ id }) => id === layer.id);
-          if (!this._destroyed && current && this._generation === generation) this._syncToggleButton(toggle, current);
+          if (!this._destroyed && current && this._generation === generation)
+            this._syncToggleButton(toggle, current);
         }
       });
 
@@ -165,7 +188,9 @@ export class LayerPanel {
         // A layer whose controls settle asynchronously (a chunked catalog load
         // that can also fail) pushes a re-render through this; nothing else
         // would repaint the row before its next scheduled refresh.
-        const unsubscribe = this.subscribeRowControls(layer.id, () => this._refreshTogglePanel());
+        const unsubscribe = this.subscribeRowControls(layer.id, () =>
+          this._refreshTogglePanel(),
+        );
         if (unsubscribe) this._removers.push(unsubscribe);
         const controls = document.createElement('div');
         controls.className = 'data-toggle-controls';
@@ -174,9 +199,11 @@ export class LayerPanel {
           if (!button || button.disabled) return;
           // Re-read the live descriptor rather than trusting the rendered
           // chip, so a stale row can never apply an inverted toggle.
-          const chip = this._rowControlsFor(layer.id)?.chips
-            ?.find((entry) => entry.id === button.dataset.chipId);
-          if (chip?.params) this.setLayerParams(layer.id, chip.params, { origin: 'user' });
+          const chip = this._rowControlsFor(layer.id)?.chips?.find(
+            (entry) => entry.id === button.dataset.chipId,
+          );
+          if (chip?.params)
+            this.setLayerParams(layer.id, chip.params, { origin: 'user' });
         });
         row.appendChild(controls);
         this._syncRowControls(controls, layer);
@@ -215,7 +242,10 @@ export class LayerPanel {
     container.hidden = chips.length === 0 && legend.length === 0;
 
     for (const node of [...container.children]) {
-      if (String(node.className).split(/\s+/).includes('data-toggle-legend-item')) node.remove();
+      if (
+        String(node.className).split(/\s+/).includes('data-toggle-legend-item')
+      )
+        node.remove();
     }
 
     const stale = new Map();
@@ -265,7 +295,9 @@ export class LayerPanel {
       return;
     }
     for (const layer of this.getAll()) {
-      const row = this._toggleContainer.querySelector(`[data-layer-id="${layer.id}"]`);
+      const row = this._toggleContainer.querySelector(
+        `[data-layer-id="${layer.id}"]`,
+      );
       if (!row) continue;
 
       const btn = row.querySelector('.data-toggle-btn');
@@ -275,7 +307,9 @@ export class LayerPanel {
 
       const count = row.querySelector('.data-count');
       if (count) {
-        count.textContent = layer.stats.count ? this._formatCount(layer.stats.count) : '—';
+        count.textContent = layer.stats.count
+          ? this._formatCount(layer.stats.count)
+          : '—';
       }
 
       const meta = row.querySelector('.data-toggle-meta');
@@ -292,14 +326,16 @@ export class LayerPanel {
     const feedState = layerFeedState(stats);
     const stateLabel = FEED_STATE_LABELS[feedState];
     const source = stats.source || layer.source;
-    const lifecycleState = layer.lifecycleState || (layer.enabled ? 'enabled' : 'disabled');
+    const lifecycleState =
+      layer.lifecycleState || (layer.enabled ? 'enabled' : 'disabled');
     if (lifecycleState === 'enabling' || lifecycleState === 'disabling') {
       return `${lifecycleState.toUpperCase()} · ${source}`;
     }
     if (layer.lifecycleUncertain) {
       return `UNCERTAIN · ${source} · lifecycle state requires reconciliation`;
     }
-    const presentedError = stats.error || stats.lastError || stats.managerRefreshError;
+    const presentedError =
+      stats.error || stats.lastError || stats.managerRefreshError;
     if (presentedError) {
       if (typeof stats.retryInSec === 'number' && stats.retryInSec > 0) {
         return `${stateLabel} · ${source} · ${presentedError} · retry ${stats.retryInSec}s`;
@@ -308,27 +344,33 @@ export class LayerPanel {
     }
     // A guidance status carries its prompt in `statusMessage`, not `error`, so
     // the row still tells the operator what to do without reporting a fault.
-    if (GUIDANCE_STATUSES.includes(String(stats.status || '').toLowerCase())
-        && typeof stats.statusMessage === 'string' && stats.statusMessage.trim()) {
+    if (
+      GUIDANCE_STATUSES.includes(String(stats.status || '').toLowerCase()) &&
+      typeof stats.statusMessage === 'string' &&
+      stats.statusMessage.trim()
+    ) {
       return `${source} · ${stats.statusMessage.trim()}`;
     }
     const ago = stats.lastUpdate ? this._timeAgo(stats.lastUpdate) : 'never';
     if (stats.loading) {
-      const loadingLabel = typeof stats.loadingLabel === 'string' && stats.loadingLabel.trim()
-        ? stats.loadingLabel.trim()
-        : 'loading...';
+      const loadingLabel =
+        typeof stats.loadingLabel === 'string' && stats.loadingLabel.trim()
+          ? stats.loadingLabel.trim()
+          : 'loading...';
       return `${source} · ${loadingLabel}`;
     }
     if (feedState === 'fallback') {
-      const detail = typeof stats.loadingLabel === 'string' && stats.loadingLabel.trim()
-        ? stats.loadingLabel.trim()
-        : (stats.coverage || ago);
+      const detail =
+        typeof stats.loadingLabel === 'string' && stats.loadingLabel.trim()
+          ? stats.loadingLabel.trim()
+          : stats.coverage || ago;
       return `${stateLabel} · ${source} · ${detail}`;
     }
     if (feedState === 'stale') {
-      const retry = typeof stats.retryInSec === 'number' && stats.retryInSec > 0
-        ? ` · retrying in ${stats.retryInSec}s`
-        : '';
+      const retry =
+        typeof stats.retryInSec === 'number' && stats.retryInSec > 0
+          ? ` · retrying in ${stats.retryInSec}s`
+          : '';
       return `${stateLabel} · ${source} · ${ago}${retry}`;
     }
     if (typeof stats.loadingLabel === 'string' && stats.loadingLabel.trim()) {
@@ -339,7 +381,9 @@ export class LayerPanel {
 
   _syncToggleButton(button, layer) {
     const feedState = layer.enabled ? layerFeedState(layer.stats) : 'off';
-    const transitioning = layer.lifecycleState === 'enabling' || layer.lifecycleState === 'disabling';
+    const transitioning =
+      layer.lifecycleState === 'enabling' ||
+      layer.lifecycleState === 'disabling';
     const uncertain = Boolean(layer.lifecycleUncertain);
     button.classList.toggle('active', layer.enabled);
     button.classList.toggle('transitioning', transitioning);
@@ -347,11 +391,16 @@ export class LayerPanel {
     button.classList.toggle('disabling', layer.lifecycleState === 'disabling');
     button.classList.toggle('lifecycle-uncertain', uncertain);
     for (const state of Object.keys(FEED_STATE_LABELS)) {
-      button.classList.toggle(`feed-${state}`, layer.enabled && !uncertain && feedState === state);
+      button.classList.toggle(
+        `feed-${state}`,
+        layer.enabled && !uncertain && feedState === state,
+      );
     }
     button.dataset.feedState = transitioning
       ? layer.lifecycleState
-      : (uncertain ? 'uncertain' : feedState);
+      : uncertain
+        ? 'uncertain'
+        : feedState;
     // A busy toggle remains the keyboard focus owner. `aria-disabled` plus the
     // click guard above prevents repeat activation without the focus loss caused
     // by native `disabled`.
@@ -360,7 +409,11 @@ export class LayerPanel {
     button.setAttribute('aria-busy', String(transitioning));
     button.textContent = transitioning
       ? layer.lifecycleState.toUpperCase()
-      : (uncertain ? 'UNCERTAIN' : (layer.enabled ? FEED_STATE_LABELS[feedState] : 'OFF'));
+      : uncertain
+        ? 'UNCERTAIN'
+        : layer.enabled
+          ? FEED_STATE_LABELS[feedState]
+          : 'OFF';
     button.setAttribute('aria-label', `${layer.name}: ${button.textContent}`);
   }
 
