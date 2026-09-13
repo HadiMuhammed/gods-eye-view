@@ -3,8 +3,30 @@ const POI_KEYS = ['Q', 'W', 'E', 'R', 'T'];
 
 /** Location DOM, keyboard handling and pending row animation over supplied actions. */
 export class LocationControls {
-  constructor({ elements, cities, getExpandedCity, onCity, onPoi, onSearch, onReset, doc = document, requestFrame = requestAnimationFrame, cancelFrame = cancelAnimationFrame }) {
-    Object.assign(this, { elements, cities, getExpandedCity, onCity, onPoi, onSearch, onReset, doc, requestFrame, cancelFrame });
+  constructor({
+    elements,
+    cities,
+    getExpandedCity,
+    onCity,
+    onPoi,
+    onSearch,
+    onReset,
+    doc = document,
+    requestFrame = requestAnimationFrame,
+    cancelFrame = cancelAnimationFrame,
+  }) {
+    Object.assign(this, {
+      elements,
+      cities,
+      getExpandedCity,
+      onCity,
+      onPoi,
+      onSearch,
+      onReset,
+      doc,
+      requestFrame,
+      cancelFrame,
+    });
     this.removers = [];
     this.poiRemovers = [];
     this.frame = null;
@@ -20,24 +42,34 @@ export class LocationControls {
       this.bind(pill, 'click', () => onCity(id));
       elements.pills.appendChild(pill);
     }
-    this.bind(doc, 'keydown', event => {
+    this.bind(doc, 'keydown', (event) => {
       const cityId = getExpandedCity();
-      if (!cityId || event.target?.matches?.('select, input, textarea') || event.target === elements.search) return;
+      if (
+        !cityId ||
+        event.target?.matches?.('select, input, textarea') ||
+        event.target === elements.search
+      )
+        return;
       const index = POI_KEYS.indexOf(event.key.toUpperCase());
-      if (index !== -1 && index < (cities[cityId]?.pois.length || 0)) onPoi(cityId, index);
+      if (index !== -1 && index < (cities[cityId]?.pois.length || 0))
+        onPoi(cityId, index);
     });
     this.bind(elements.searchToggle, 'click', () => {
       elements.search.classList.toggle('expanded');
-      if (elements.search.classList.contains('expanded')) elements.search.focus();
+      if (elements.search.classList.contains('expanded'))
+        elements.search.focus();
     });
-    this.bind(elements.search, 'keydown', event => {
+    this.bind(elements.search, 'keydown', (event) => {
       if (event.key === 'Enter') void onSearch(elements.search.value);
     });
-    for (const button of elements.resetButtons) this.bind(button, 'click', onReset);
+    for (const button of elements.resetButtons)
+      this.bind(button, 'click', onReset);
   }
   bind(element, event, handler, removers = this.removers) {
     if (!element) return;
-    const listener = (...args) => { if (!this.destroyed) return handler(...args); };
+    const listener = (...args) => {
+      if (!this.destroyed) return handler(...args);
+    };
     element.addEventListener(event, listener);
     removers.push(() => element.removeEventListener(event, listener));
   }
@@ -66,7 +98,12 @@ export class LocationControls {
       label.className = 'poi-pill-name';
       label.textContent = poi.name;
       pill.append(key, label);
-      this.bind(pill, 'click', () => this.onPoi(cityId, index), this.poiRemovers);
+      this.bind(
+        pill,
+        'click',
+        () => this.onPoi(cityId, index),
+        this.poiRemovers,
+      );
       this.elements.poiRow.appendChild(pill);
     });
     this.frame = this.requestFrame(() => {
@@ -84,14 +121,17 @@ export class LocationControls {
   }
   highlightPoi(index) {
     if (this.destroyed) return;
-    for (const pill of this.elements.poiRow.querySelectorAll('.poi-pill')) pill.classList.toggle('active', Number(pill.dataset.poiIndex) === index);
+    for (const pill of this.elements.poiRow.querySelectorAll('.poi-pill'))
+      pill.classList.toggle('active', Number(pill.dataset.poiIndex) === index);
   }
   highlightCity(id) {
     if (this.destroyed) return;
-    for (const pill of this.elements.pills.querySelectorAll('.location-pill')) pill.classList.toggle('active', pill.dataset.locationId === id);
+    for (const pill of this.elements.pills.querySelectorAll('.location-pill'))
+      pill.classList.toggle('active', pill.dataset.locationId === id);
   }
   renderStatus(state) {
-    if (this.destroyed || !this.elements.statusCity || !this.elements.statusPoi) return;
+    if (this.destroyed || !this.elements.statusCity || !this.elements.statusPoi)
+      return;
     const lines = locationMiniStatus(state);
     this.elements.statusCity.textContent = lines.city;
     this.elements.statusPoi.textContent = lines.poi;
@@ -113,7 +153,11 @@ export class LocationControls {
     if (this.destroyed) return;
     this.destroyed = true;
     this.cancelExpansion();
-    for (const remove of [...this.poiRemovers.splice(0), ...this.removers.splice(0)]) remove();
+    for (const remove of [
+      ...this.poiRemovers.splice(0),
+      ...this.removers.splice(0),
+    ])
+      remove();
     this.orbitIndicator?.remove();
   }
 }

@@ -1,7 +1,29 @@
 /** One cancellable place lookup at a time, under the caller's camera authority. */
 export class LocationSearch {
-  constructor({ input, begin, isCurrent, beforeFly, search, onStart, onResult, onMissing, onError, onSettled }) {
-    Object.assign(this, { input, begin, isCurrent, beforeFly, search, onStart, onResult, onMissing, onError, onSettled });
+  constructor({
+    input,
+    begin,
+    isCurrent,
+    beforeFly,
+    search,
+    onStart,
+    onResult,
+    onMissing,
+    onError,
+    onSettled,
+  }) {
+    Object.assign(this, {
+      input,
+      begin,
+      isCurrent,
+      beforeFly,
+      search,
+      onStart,
+      onResult,
+      onMissing,
+      onError,
+      onSettled,
+    });
     this.controller = null;
     this.generation = 0;
     this.destroyed = false;
@@ -19,7 +41,10 @@ export class LocationSearch {
     const controller = new AbortController();
     this.controller = controller;
     const generation = ++this.generation;
-    const current = () => !this.destroyed && generation === this.generation && this.isCurrent(authority);
+    const current = () =>
+      !this.destroyed &&
+      generation === this.generation &&
+      this.isCurrent(authority);
     this.onStart(authority);
     this.input.classList.add('searching');
     try {
