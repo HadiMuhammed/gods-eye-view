@@ -561,7 +561,8 @@
       "src/app/stateChannel.js",
       "src/ui/scenes.js",
       "src/ui/sceneControls.js",
-      "src/ui/scenePresentation.js"
+      "src/ui/scenePresentation.js",
+      "src/contextModePolicy.js"
     ],
     "external": ["cesium"]
   }

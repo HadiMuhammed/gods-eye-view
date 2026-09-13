@@ -394,10 +394,6 @@ export class SceneDirector {
     } catch { /* toast is best-effort */ }
   }
 
-  /**
-   * Wire up all scene-panel DOM event listeners and render the initial UI state.
-   * Exits silently if the scene-select element is missing (headless/test mode).
-   */
   /** Immutable playback snapshots and completed editing actions. */
   subscribe(listener, options) { return this._state.subscribe(listener, options); }
 
@@ -408,6 +404,10 @@ export class SceneDirector {
     this._publish({ type, sceneId: scene.id, sceneTitle: scene.title, shot, index });
   }
 
+  /**
+   * Wire up all scene-panel DOM event listeners and render the initial UI state.
+   * Exits silently if the scene-select element is missing (headless/test mode).
+   */
   _initUI() {
     this._controls = new SceneControls({
       subscribe: (listener) => this.subscribe(listener),
