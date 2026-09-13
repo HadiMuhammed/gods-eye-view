@@ -1,14 +1,27 @@
 /** Scene panel elements and text-only project presentation. */
 export function sceneElements(root = document) {
   const ids = {
-    panel: 'scene-panel', select: 'scene-select', new: 'scene-new-btn',
-    delete: 'scene-delete-btn', capture: 'scene-capture-btn', update: 'scene-update-shot-btn',
-    shots: 'scene-shot-list', start: 'scene-start-btn', stop: 'scene-stop-btn',
-    next: 'scene-next-btn', export: 'scene-export-btn', import: 'scene-import-btn',
-    file: 'scene-import-file', download: 'scene-download-btn', status: 'scene-status',
-    progress: 'scene-progress-fill', runtime: 'scene-runtime',
+    panel: 'scene-panel',
+    select: 'scene-select',
+    new: 'scene-new-btn',
+    delete: 'scene-delete-btn',
+    capture: 'scene-capture-btn',
+    update: 'scene-update-shot-btn',
+    shots: 'scene-shot-list',
+    start: 'scene-start-btn',
+    stop: 'scene-stop-btn',
+    next: 'scene-next-btn',
+    export: 'scene-export-btn',
+    import: 'scene-import-btn',
+    file: 'scene-import-file',
+    download: 'scene-download-btn',
+    status: 'scene-status',
+    progress: 'scene-progress-fill',
+    runtime: 'scene-runtime',
   };
-  return Object.fromEntries(Object.entries(ids).map(([name, id]) => [name, root.getElementById(id)]));
+  return Object.fromEntries(
+    Object.entries(ids).map(([name, id]) => [name, root.getElementById(id)]),
+  );
 }
 
 export function renderSceneOptions(element, { scenes, selectedSceneId }) {
@@ -23,7 +36,11 @@ export function renderSceneOptions(element, { scenes, selectedSceneId }) {
   if (selectedSceneId) element.value = selectedSceneId;
 }
 
-export function renderSceneShots(element, state, { listen, select, rename, load, remove }) {
+export function renderSceneShots(
+  element,
+  state,
+  { listen, select, rename, load, remove },
+) {
   if (!element) return;
   const scene = state.scenes.find((item) => item.id === state.selectedSceneId);
   element.textContent = '';
@@ -74,7 +91,17 @@ export function renderSceneShots(element, state, { listen, select, rename, load,
 }
 
 export function presentSceneButtons(elements, running, hasRun) {
-  for (const name of ['start', 'next', 'select', 'new', 'delete', 'capture', 'update', 'export', 'import']) {
+  for (const name of [
+    'start',
+    'next',
+    'select',
+    'new',
+    'delete',
+    'capture',
+    'update',
+    'export',
+    'import',
+  ]) {
     if (elements[name]) elements[name].disabled = running;
   }
   if (elements.stop) elements.stop.disabled = !running;

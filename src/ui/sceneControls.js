@@ -1,5 +1,12 @@
 /** Own Scene panel listeners and presentation through project reads and actions. */
-import { sceneElements, renderSceneOptions, renderSceneShots, presentSceneButtons, presentSceneProgress, presentSceneRuntime } from './scenePresentation.js';
+import {
+  sceneElements,
+  renderSceneOptions,
+  renderSceneShots,
+  presentSceneButtons,
+  presentSceneProgress,
+  presentSceneRuntime,
+} from './scenePresentation.js';
 
 export class SceneControls {
   constructor({ read, actions, elements = sceneElements() }) {
@@ -14,11 +21,23 @@ export class SceneControls {
     if (!elements.select) return;
     this.renderSceneSelect();
     this.renderShotList();
-    this.listen(elements.select, 'change', () => this.run('selectScene', elements.select.value));
-    for (const [element, action] of Object.entries({ new: 'create', delete: 'deleteScene', capture: 'capture', update: 'update', next: 'next', export: 'export', download: 'download' })) {
+    this.listen(elements.select, 'change', () =>
+      this.run('selectScene', elements.select.value),
+    );
+    for (const [element, action] of Object.entries({
+      new: 'create',
+      delete: 'deleteScene',
+      capture: 'capture',
+      update: 'update',
+      next: 'next',
+      export: 'export',
+      download: 'download',
+    })) {
       this.listen(elements[element], 'click', () => this.run(action));
     }
-    this.listen(elements.start, 'click', () => this.run('start', this.read().selectedSceneId));
+    this.listen(elements.start, 'click', () =>
+      this.run('start', this.read().selectedSceneId),
+    );
     this.listen(elements.stop, 'click', () => this.run('stop', 'Stopped'));
     this.listen(elements.import, 'click', () => elements.file?.click());
     this.listen(elements.file, 'change', async () => {
@@ -34,7 +53,9 @@ export class SceneControls {
 
   listen(target, type, callback, removers = this.removers) {
     if (!target) return;
-    const listener = (event) => { if (!this.destroyed) return callback(event); };
+    const listener = (event) => {
+      if (!this.destroyed) return callback(event);
+    };
     target.addEventListener(type, listener);
     removers.push(() => target.removeEventListener(type, listener));
   }
@@ -43,7 +64,8 @@ export class SceneControls {
     if (this.destroyed) return;
     const generation = ++this.actionGeneration;
     const failed = () => {
-      if (!this.destroyed && generation === this.actionGeneration) this.updateStatus('Scene action failed');
+      if (!this.destroyed && generation === this.actionGeneration)
+        this.updateStatus('Scene action failed');
     };
     try {
       const result = this.actions[action](...args);
@@ -61,16 +83,19 @@ export class SceneControls {
     if (this.destroyed) return;
     for (const remove of this.rowRemovers.splice(0)) remove();
     renderSceneShots(this.elements.shots, this.read(), {
-      listen: (element, type, callback) => this.listen(element, type, callback, this.rowRemovers),
+      listen: (element, type, callback) =>
+        this.listen(element, type, callback, this.rowRemovers),
       select: (id) => this.run('selectShot', id),
-      rename: (sceneId, shotId, title) => this.run('renameShot', sceneId, shotId, title),
+      rename: (sceneId, shotId, title) =>
+        this.run('renameShot', sceneId, shotId, title),
       load: (sceneId, shotId) => this.run('load', sceneId, shotId),
       remove: (sceneId, shotId) => this.run('deleteShot', sceneId, shotId),
     });
   }
 
   setButtons(running) {
-    if (!this.destroyed) presentSceneButtons(this.elements, running, this.read().hasRun);
+    if (!this.destroyed)
+      presentSceneButtons(this.elements, running, this.read().hasRun);
   }
 
   setProgress(progress) {
@@ -78,7 +103,8 @@ export class SceneControls {
   }
 
   updateStatus(text) {
-    if (!this.destroyed && this.elements.status) this.elements.status.textContent = text;
+    if (!this.destroyed && this.elements.status)
+      this.elements.status.textContent = text;
   }
 
   updateRuntime(text) {
@@ -96,10 +122,12 @@ export class SceneControls {
       this.playbackKeyRemover = null;
     } else if (!this.destroyed && !this.playbackKeyRemover) {
       const onKeyDown = (event) => {
-        if (!this.destroyed && event.key === 'Escape' && this.read().running) this.run('stop', 'Stopped (Esc)');
+        if (!this.destroyed && event.key === 'Escape' && this.read().running)
+          this.run('stop', 'Stopped (Esc)');
       };
       document.addEventListener('keydown', onKeyDown);
-      this.playbackKeyRemover = () => document.removeEventListener('keydown', onKeyDown);
+      this.playbackKeyRemover = () =>
+        document.removeEventListener('keydown', onKeyDown);
     }
   }
 
@@ -108,7 +136,11 @@ export class SceneControls {
     this.destroyed = true;
     this.actionGeneration++;
     this.setPlaybackKeyboardEnabled(false);
-    for (const remove of [...this.removers.splice(0), ...this.rowRemovers.splice(0)]) remove();
+    for (const remove of [
+      ...this.removers.splice(0),
+      ...this.rowRemovers.splice(0),
+    ])
+      remove();
     if (this.elements.shots) this.elements.shots.textContent = '';
     presentSceneRuntime(this.elements.runtime, '');
     this.setPlaybackActive(false);

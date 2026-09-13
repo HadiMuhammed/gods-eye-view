@@ -12,28 +12,116 @@ function fixture() {
       this._text = '';
       const classes = new Set();
       this.classList = {
-        toggle(name, active) { if (active) classes.add(name); else classes.delete(name); },
+        toggle(name, active) {
+          if (active) classes.add(name);
+          else classes.delete(name);
+        },
         contains: (name) => classes.has(name),
       };
     }
-    appendChild(element) { this.children.push(element); }
-    set textContent(value) { this._text = value; this.children = []; }
-    get textContent() { return this._text + this.children.map((node) => node.textContent).join(''); }
-    click() { this.dispatchEvent(new Event('click')); }
+    appendChild(element) {
+      this.children.push(element);
+    }
+    set textContent(value) {
+      this._text = value;
+      this.children = [];
+    }
+    get textContent() {
+      return (
+        this._text + this.children.map((node) => node.textContent).join('')
+      );
+    }
+    click() {
+      this.dispatchEvent(new Event('click'));
+    }
   }
   const saved = { document: globalThis.document, window: globalThis.window };
-  const document = Object.assign(new EventTarget(), { createElement: () => new Element(), body: new Element() });
+  const document = Object.assign(new EventTarget(), {
+    createElement: () => new Element(),
+    body: new Element(),
+  });
   globalThis.document = document;
   globalThis.window = { prompt: () => 'Renamed' };
-  const elements = Object.fromEntries(['panel','select','new','delete','capture','update','shots','start','stop','next','export','import','file','download','status','progress','runtime'].map((name) => [name, new Element()]));
+  const elements = Object.fromEntries(
+    [
+      'panel',
+      'select',
+      'new',
+      'delete',
+      'capture',
+      'update',
+      'shots',
+      'start',
+      'stop',
+      'next',
+      'export',
+      'import',
+      'file',
+      'download',
+      'status',
+      'progress',
+      'runtime',
+    ].map((name) => [name, new Element()]),
+  );
   const state = {
-    scenes: [{ id: 'scene-a', title: '<Scene A>', shots: [{ id: 'shot-a', title: '<Shot A>', durationSec: 4, holdSec: 0.9, visual: { style: 'normal' } }] }],
-    selectedSceneId: 'scene-a', selectedShotId: 'shot-a', running: false, hasRun: false,
+    scenes: [
+      {
+        id: 'scene-a',
+        title: '<Scene A>',
+        shots: [
+          {
+            id: 'shot-a',
+            title: '<Shot A>',
+            durationSec: 4,
+            holdSec: 0.9,
+            visual: { style: 'normal' },
+          },
+        ],
+      },
+    ],
+    selectedSceneId: 'scene-a',
+    selectedShotId: 'shot-a',
+    running: false,
+    hasRun: false,
   };
   const calls = [];
-  const actions = Object.fromEntries(['selectScene','selectShot','renameShot','create','deleteScene','capture','update','start','stop','next','export','import','download','load','deleteShot'].map((name) => [name, (...args) => { calls.push([name, ...args]); }]));
+  const actions = Object.fromEntries(
+    [
+      'selectScene',
+      'selectShot',
+      'renameShot',
+      'create',
+      'deleteScene',
+      'capture',
+      'update',
+      'start',
+      'stop',
+      'next',
+      'export',
+      'import',
+      'download',
+      'load',
+      'deleteShot',
+    ].map((name) => [
+      name,
+      (...args) => {
+        calls.push([name, ...args]);
+      },
+    ]),
+  );
   const owner = new SceneControls({ read: () => state, actions, elements });
-  return { owner, state, actions, elements, calls, document, restore() { owner.destroy(); Object.assign(globalThis, saved); } };
+  return {
+    owner,
+    state,
+    actions,
+    elements,
+    calls,
+    document,
+    restore() {
+      owner.destroy();
+      Object.assign(globalThis, saved);
+    },
+  };
 }
 
 test('Scene controls render the supplied selection and running/download states', () => {
@@ -41,7 +129,10 @@ test('Scene controls render the supplied selection and running/download states',
   try {
     assert.equal(f.elements.select.children[0].textContent, '<Scene A>');
     assert.equal(f.elements.select.value, 'scene-a');
-    assert.equal(f.elements.shots.children[0].children[0].children[0].textContent, '<Shot A>');
+    assert.equal(
+      f.elements.shots.children[0].children[0].children[0].textContent,
+      '<Shot A>',
+    );
     assert.equal(f.elements.stop.disabled, true);
     assert.equal(f.elements.download.disabled, true);
     f.state.hasRun = true;
@@ -55,7 +146,9 @@ test('Scene controls render the supplied selection and running/download states',
     assert.equal(f.elements.progress.style.width, '100%');
     f.owner.setProgress(-1);
     assert.equal(f.elements.progress.textContent, '0%');
-  } finally { f.restore(); }
+  } finally {
+    f.restore();
+  }
 });
 
 test('Scene controls dispatch explicit actions and revoke replaced shot-row listeners', () => {
@@ -69,19 +162,30 @@ test('Scene controls dispatch explicit actions and revoke replaced shot-row list
     label.click();
     label.dispatchEvent(new Event('dblclick'));
     load.click();
-    assert.deepEqual(f.calls, [['capture'], ['start','scene-a'], ['selectShot','shot-a'], ['renameShot','scene-a','shot-a','Renamed'], ['load','scene-a','shot-a']]);
+    assert.deepEqual(f.calls, [
+      ['capture'],
+      ['start', 'scene-a'],
+      ['selectShot', 'shot-a'],
+      ['renameShot', 'scene-a', 'shot-a', 'Renamed'],
+      ['load', 'scene-a', 'shot-a'],
+    ]);
     f.owner.renderShotList();
     label.click();
     load.click();
     assert.equal(f.calls.length, 5);
     f.elements.shots.children[0].children[0].children[1].children[0].click();
     assert.equal(f.calls.length, 6);
-  } finally { f.restore(); }
+  } finally {
+    f.restore();
+  }
 });
 
 test('Scene Escape and recording presentation follow playback and release on destruction', () => {
   const f = fixture();
-  const escape = () => f.document.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Escape' }));
+  const escape = () =>
+    f.document.dispatchEvent(
+      Object.assign(new Event('keydown'), { key: 'Escape' }),
+    );
   try {
     escape();
     assert.deepEqual(f.calls, []);
@@ -98,18 +202,26 @@ test('Scene Escape and recording presentation follow playback and release on des
     f.elements.capture.click();
     f.owner.run('capture');
     assert.equal(f.calls.length, 1);
-    assert.equal(f.document.body.classList.contains('scene-playback-mode'), false);
+    assert.equal(
+      f.document.body.classList.contains('scene-playback-mode'),
+      false,
+    );
     assert.equal(f.elements.runtime.textContent, '');
     assert.equal(f.owner.removers.length, 0);
     assert.equal(f.owner.rowRemovers.length, 0);
-  } finally { f.restore(); }
+  } finally {
+    f.restore();
+  }
 });
 
 test('a file import finishing after disposal cannot clear the retained file control', async () => {
   const f = fixture();
   try {
     let finish;
-    f.actions.import = () => new Promise((resolve) => { finish = resolve; });
+    f.actions.import = () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      });
     f.elements.file.files = [{ name: 'project.json' }];
     f.elements.file.value = 'project.json';
     f.elements.file.dispatchEvent(new Event('change'));
@@ -118,14 +230,19 @@ test('a file import finishing after disposal cannot clear the retained file cont
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(f.elements.file.value, 'project.json');
     assert.equal(f.elements.status.textContent, 'Ready');
-  } finally { f.restore(); }
+  } finally {
+    f.restore();
+  }
 });
 
 test('Scene action failures are visible only while that action still owns presentation', async () => {
   const f = fixture();
   try {
     let reject;
-    f.actions.load = () => new Promise((_resolve, fail) => { reject = fail; });
+    f.actions.load = () =>
+      new Promise((_resolve, fail) => {
+        reject = fail;
+      });
     let pending = f.owner.run('load', 'scene-a', 'shot-a');
     reject(new Error('unavailable'));
     await pending;
@@ -141,5 +258,7 @@ test('Scene action failures are visible only while that action still owns presen
     reject(new Error('disposed'));
     await pending;
     assert.equal(f.elements.status.textContent, 'Current selection');
-  } finally { f.restore(); }
+  } finally {
+    f.restore();
+  }
 });
