@@ -298,7 +298,18 @@
   },
   "visual-effects": {
     "exports": ["./ui/effects", "./ui/effects/bloom"],
-    "modules": ["src/ui/effects.js", "src/ui/visualEffects.js", "src/ui/visualPresets.js", "src/bloom.js", "src/styles/retro.js", "src/styles/surveillance.js", "src/styles/thermal.js", "src/styles/anime.js", "src/styles/noir.js", "src/styles/snow.js"],
+    "modules": [
+      "src/ui/effects.js",
+      "src/ui/visualEffects.js",
+      "src/ui/visualPresets.js",
+      "src/bloom.js",
+      "src/styles/retro.js",
+      "src/styles/surveillance.js",
+      "src/styles/thermal.js",
+      "src/styles/anime.js",
+      "src/styles/noir.js",
+      "src/styles/snow.js"
+    ],
     "external": ["cesium"]
   }
 }
