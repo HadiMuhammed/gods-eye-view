@@ -1,6 +1,13 @@
 /** Own panel position preferences, viewport clamping and drag listeners. */
+/** Versioned localStorage namespace prefix to invalidate stale panel layouts. */
 const PANEL_LAYOUT_STORAGE_VERSION = 'v6';
+/**
+ * Position keys are versioned separately from collapsed-state keys so layout
+ * default changes (e.g. right-rail origin) can reset positions without also
+ * resetting every panel's open/closed preference.
+ */
 const PANEL_POSITION_STORAGE_VERSION = 'v8';
+/** Z ladder: panels promote within [100, 139]; voice pill 150, toast 200, clean-view-exit 300. */
 const PANEL_Z_BASE = 100;
 const PANEL_Z_MAX = 139;
 export class PanelPositionControls {
@@ -22,6 +29,7 @@ export class PanelPositionControls {
     this.destroyed = false;
   }
   listen(target, type, callback) {
+    if (this.destroyed || !target) return;
     const listener = (event) => {
       if (!this.destroyed) callback(event);
     };
@@ -29,6 +37,7 @@ export class PanelPositionControls {
     this.removers.push(() => target.removeEventListener(type, listener));
   }
   _reclampDraggablePanels() {
+    if (this.destroyed) return;
     const el = this._ppToggles;
     if (!el || !el.style.top || el.style.top === 'auto') return;
     const top = parseInt(el.style.top, 10);
@@ -56,6 +65,7 @@ export class PanelPositionControls {
   }
 
   _initPanelDrag() {
+    if (this.destroyed) return;
     const dragSpecs = [
       {
         id: 'pp-toggles',
@@ -258,10 +268,6 @@ export class PanelPositionControls {
       };
       const onUp = () => {
         cancel();
-        panelEl.classList.remove('panel-dragging');
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onUp);
-        window.removeEventListener('pointercancel', onUp);
         if (panelId === 'pp-toggles') {
           this._pinPanelToRight(panelEl);
         }

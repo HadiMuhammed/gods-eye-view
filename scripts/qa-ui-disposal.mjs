@@ -33,7 +33,10 @@ try {
     const ui = window.__godsEyeView.styleManager;
     const counts = {};
     const watchObserver = (name) => {
-      const owner = name === '_draggableResizeObserver' ? ui._panelPosition : ui._panelLayout;
+      const owner =
+        name === '_draggableResizeObserver'
+          ? ui._panelPosition
+          : ui._panelLayout;
       const observer = owner[name];
       if (!observer) return false;
       const disconnect = observer.disconnect.bind(observer);
@@ -110,6 +113,12 @@ try {
       if (type === 'resize' && callback === resizeHandler) counts.resize++;
       return removeEventListener.call(this, type, callback, options);
     };
+    const { setSplitFlapText } = await import('/src/splitFlap.js');
+    const feedbackLabel = document.getElementById('global-loading-label');
+    setSplitFlapText(feedbackLabel, 'CHECKING LIVE DATA');
+    setSplitFlapText(feedbackLabel, 'LOAD COMPLETE');
+    const permanentText =
+      feedbackLabel.querySelector('.gev-flap-text')?.firstChild;
     try {
       const disposal = ui.dispose();
       const focusBefore = document.activeElement;
@@ -167,7 +176,11 @@ try {
               counts[field] === 1 && ui._contextControls[field] === null,
           ),
         observersReleased: observed.every(
-          (name) => counts[name] === 1 && ui[name] === null,
+          (name) =>
+            counts[name] === 1 &&
+            (name === '_draggableResizeObserver'
+              ? ui._panelPosition
+              : ui._panelLayout)[name] === null,
         ),
         subscriptionReleased:
           counts.cctv === 1 && ui._cctvControls._cctvUnsubscribe === null,
@@ -176,6 +189,19 @@ try {
           ui._radioControls.destroyed &&
           ui._locationControls.destroyed &&
           ui._cctvControls.destroyed,
+        feedbackTextPreserved:
+          permanentText?.nodeType === Node.TEXT_NODE &&
+          feedbackLabel.querySelector('.gev-flap-text')?.firstChild ===
+            permanentText &&
+          permanentText.data === 'LOAD COMPLETE' &&
+          !feedbackLabel.classList.contains('gev-flap-active') &&
+          feedbackLabel.querySelector('.gev-flap-cells')?.childNodes.length ===
+            0,
+        shellWorkReleased:
+          ui._lifetime.destroyed &&
+          ui._lifetime.frames.size === 0 &&
+          ui._lifetime.timers.size === 0 &&
+          ui._lifetime.removers.size === 0,
         idempotent: once === JSON.stringify(counts),
       };
     } finally {
@@ -214,6 +240,14 @@ try {
   check(
     'Cockpit cleanup releases listeners and returns all Display groups home',
     result.cockpitReleased,
+  );
+  check(
+    'feedback teardown preserves the permanent accessible text node',
+    result.feedbackTextPreserved,
+  );
+  check(
+    'shell teardown cancels deferred work and releases listeners',
+    result.shellWorkReleased,
   );
   check('repeated UI disposal is inert', result.idempotent);
   check(

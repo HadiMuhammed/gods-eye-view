@@ -1,3 +1,4 @@
+import { setSplitFlapText } from '../splitFlap.js';
 import { UiLifetime } from './uiLifetime.js';
 import { RecordingControls } from './recordingControls.js';
 import { readShellElements } from './shellElements.js';
@@ -86,8 +87,6 @@ import {
   stampInitialShareGesture,
 } from '../navigationPolicy.js';
 
-/** Versioned localStorage namespace prefix to invalidate stale panel layouts. */
-
 const SHARE_PANEL_STATE_SPECS = Object.freeze([
   { id: 'control-panel', pinnable: true },
   { id: 'location-bar', pinnable: true },
@@ -108,28 +107,7 @@ const COCKPIT_ENTRY_COLLAPSE_PANEL_IDS = Object.freeze([
   'global-context-panel',
   'radio-panel',
 ]);
-/**
- * Position keys are versioned separately from collapsed-state keys so layout
- * default changes (e.g. right-rail origin) can reset positions without also
- * resetting every panel's open/closed preference.
- */
-
 const DETECTION_ALLOCATION_STORAGE_KEY = 'gev:detection-allocation:v1';
-/** Z ladder: panels promote within [100, 139]; voice pill 150, toast 200, clean-view-exit 300. */
-
-/**
- * Fixed UI regions that can occupy the left accordion's vertical lane.
- * Rectangles are filtered at runtime for visibility and horizontal overlap,
- * so right-side/center controls do not reduce the lane unless they actually
- * intersect it at the current viewport size.
- */
-
-/**
- * Fixed UI regions that can occupy the right control lane. Runtime rectangle
- * filtering keeps the rail clear of whichever HUD variant is currently
- * visible without tying the layout to one screen height.
- */
-
 /** Display labels shown in the mini-status readout for each active style. */
 const STYLE_STATUS_LABELS = {
   normal: 'NORMAL',

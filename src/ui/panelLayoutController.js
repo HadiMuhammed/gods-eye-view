@@ -1,6 +1,12 @@
 /** Own rail measurement, layout scheduling and dock tray observation. */
 import { layoutLeftPanelRail, layoutRightPanelRail } from './panelRails.js';
 const COCKPIT_LAYOUT_SETTLE_MS = 240;
+/**
+ * Fixed UI regions that can occupy the left accordion's vertical lane.
+ * Rectangles are filtered at runtime for visibility and horizontal overlap,
+ * so right-side/center controls do not reduce the lane unless they actually
+ * intersect it at the current viewport size.
+ */
 const LEFT_STACK_OBSTACLE_SELECTOR = [
   '#cockpit-hud .cockpit-topline',
   '#cockpit-hud .cockpit-topline > div',
@@ -26,6 +32,11 @@ const LEFT_STACK_OBSTACLE_SELECTOR = [
   '#pp-toggles',
   '#param-slider-panel',
 ].join(', ');
+/**
+ * Fixed UI regions that can occupy the right control lane. Runtime rectangle
+ * filtering keeps the rail clear of whichever HUD variant is currently
+ * visible without tying the layout to one screen height.
+ */
 const RIGHT_STACK_OBSTACLE_SELECTOR = [
   '#cockpit-hud .cockpit-topline',
   '#cockpit-hud .cockpit-topline > div',

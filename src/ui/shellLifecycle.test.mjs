@@ -201,6 +201,11 @@ test('panel disposal cancels a live drag without saving or accepting later point
     window.dispatchEvent(new Event('pointerup'));
     assert.deepEqual(panel.style, before);
     assert.equal(panel.classList.contains('panel-dragging'), false);
+    owner._makePanelDraggable('sample', panel, handle);
+    owner._initPanelDrag();
+    owner._ppToggles.style.top = '10000px';
+    owner._reclampDraggablePanels();
+    assert.equal(owner._ppToggles.style.top, '10000px');
     assert.equal(owner.removers.length, 0);
     assert.deepEqual(f.writes, []);
   } finally {
