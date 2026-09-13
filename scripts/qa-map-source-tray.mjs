@@ -946,7 +946,7 @@ try {
       styleManager._updateGlobalLoadingFeedback(baseNow);
       styleManager._updateGlobalLoadingFeedback(baseNow + 200);
       dataManager.getAll = () => [];
-      styleManager._loadingFeedbackEvent = {
+      styleManager._feedback._loadingFeedbackEvent = {
         type: 'visibility-failed',
         layerId: 'qa-unrelated-layer',
         error: new Error('QA offline'),
