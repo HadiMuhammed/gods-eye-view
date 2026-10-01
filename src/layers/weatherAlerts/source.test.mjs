@@ -75,6 +75,18 @@ test('projects current NWS alerts, including CAP polygon coordinate order', () =
   assert.deepEqual(snapshot.alerts[0].geometries[0].coordinates[0][0], [-122, 37]);
 });
 
+test('drops update lifecycle messages instead of inferring CAP state locally', () => {
+  const snapshot = normalizeCapSnapshot(
+    payload([
+      alert({ identifier: 'live', msgType: 'Alert' }),
+      alert({ identifier: 'update', msgType: 'Update' }),
+      alert({ identifier: 'cancelled', msgType: 'Cancel' }),
+    ]),
+    { now: Date.parse('2026-01-01T00:00:00Z') },
+  );
+  assert.deepEqual(snapshot.alerts.map((item) => item.id), ['live']);
+});
+
 test('resolves forecast, county and fire zones with bounded concurrency and caches results', async () => {
   let active = 0;
   let maximum = 0;
@@ -87,7 +99,7 @@ test('resolves forecast, county and fire zones with bounded concurrency and cach
       maximum = Math.max(maximum, active);
       await new Promise((resolve) => setTimeout(resolve, 1));
       active--;
-      const id = new URL(url).pathname.split('/').at(-1);
+      const id = new URL(url, 'http://localhost').pathname.split('/').at(-1);
       const offset = Number(id.slice(-3));
       return featureResponse({
         type: 'Polygon',
@@ -122,9 +134,9 @@ test('resolves forecast, county and fire zones with bounded concurrency and cach
   assert.equal(maximum, 5);
   assert.equal(resolved.filter((item) => item.geometries.length).length, 12);
   assert.equal(requests.length, 12);
-  assert.ok(requests.some((url) => url.includes('/county/CAC001')));
-  assert.ok(requests.some((url) => url.includes('/forecast/CAZ002')));
-  assert.ok(requests.some((url) => url.includes('/fire/CAZ012')));
+  assert.ok(requests.some((url) => url.includes('/api/weather-zones/county/CAC001')));
+  assert.ok(requests.some((url) => url.includes('/api/weather-zones/forecast/CAZ002')));
+  assert.ok(requests.some((url) => url.includes('/api/weather-zones/fire/CAZ012')));
   const before = requests.length;
   await resolver.resolve(records.slice(0, 5));
   assert.equal(requests.length, before);

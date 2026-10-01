@@ -160,7 +160,7 @@ function chooseInfo(raw) {
   );
 }
 
-/** Accept only NOAA's live CAP source and project its public display contract. */
+/** Project a lifecycle-normalized CAP snapshot; this layer must not infer update/cancel state locally. */
 export function normalizeCapSnapshot(value, { now = Date.now() } = {}) {
   if (
     value?.source !== 'cap' ||
@@ -180,7 +180,7 @@ export function normalizeCapSnapshot(value, { now = Date.now() } = {}) {
       raw.region !== 'US' ||
       raw.status !== 'Actual' ||
       raw.scope !== 'Public' ||
-      raw.msgType === 'Cancel' ||
+      raw.msgType !== 'Alert' ||
       typeof raw.identifier !== 'string' ||
       !raw.identifier.trim() ||
       raw.identifier.length > 512 ||
@@ -244,15 +244,12 @@ export function createNwsZoneResolver({
     const key = `${type}:${id}`;
     if (cache.has(key)) return cache.get(key);
     const pending = (async () => {
-      const response = await fetchImpl(
-        `https://api.weather.gov/zones/${type}/${id}`,
-        {
-          signal,
-          cache: 'force-cache',
-          redirect: 'error',
-          headers: { accept: 'application/geo+json, application/json' },
-        },
-      );
+      const response = await fetchImpl(`/api/weather-zones/${type}/${id}`, {
+        signal,
+        cache: 'force-cache',
+        redirect: 'error',
+        headers: { accept: 'application/geo+json, application/json' },
+      });
       if (!response.ok) {
         await response.body?.cancel();
         return null;
