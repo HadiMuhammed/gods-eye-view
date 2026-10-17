@@ -4,7 +4,13 @@ export const WEATHER_ALERTS_RESPONSE_LIMIT = 4 * 1024 * 1024;
 export const WEATHER_ALERTS_ZONE_LIMIT = 300;
 export const WEATHER_ALERTS_ZONE_CONCURRENCY = 5;
 
-const malformed = () => new Error('Malformed CAP alert snapshot');
+class MalformedCapAlertError extends Error {
+  constructor() {
+    super('Malformed CAP alert snapshot');
+    this.name = 'MalformedCapAlertError';
+  }
+}
+const malformed = () => new MalformedCapAlertError();
 const text = (value, max = 512) => {
   if (
     typeof value !== 'string' ||
@@ -174,60 +180,73 @@ export function normalizeCapSnapshot(value, { now = Date.now() } = {}) {
   const budget = { coordinates: 0 };
   const alerts = [];
   for (const raw of value.alerts) {
-    if (
-      !raw ||
-      !nwsSource(raw.source) ||
-      raw.region !== 'US' ||
-      raw.status !== 'Actual' ||
-      raw.scope !== 'Public' ||
-      raw.msgType !== 'Alert' ||
-      typeof raw.identifier !== 'string' ||
-      !raw.identifier.trim() ||
-      raw.identifier.length > 512 ||
-      seen.has(raw.identifier)
-    )
-      continue;
-    const info = chooseInfo(raw);
-    if (!info || !text(info.event, 160)) continue;
-    const expires = validTime(info.expires);
-    if (expires && Date.parse(expires) <= now) continue;
-    const areas = Array.isArray(info.areas) ? info.areas.slice(0, 128) : [];
-    const normalizedAreas = areas.map((area) => ({
-      description:
-        typeof area?.description === 'string'
-          ? area.description.slice(0, 512)
-          : '',
-      geocode:
-        typeof area?.geocode === 'string' ? area.geocode.slice(0, 2_000) : '',
-      geometry: areaGeometry(area, budget),
-    }));
-    const geometries = normalizedAreas
-      .map(({ geometry }) => geometry)
-      .filter(Boolean);
-    alerts.push({
-      id: raw.identifier,
-      sender: text(raw.sender, 256),
-      event: text(info.event, 160),
-      headline: info.headline
-        ? text(info.headline, 512)
-        : text(info.event, 160),
-      description: info.description ? text(info.description, 16_000) : '',
-      instruction: info.instruction ? text(info.instruction, 8_000) : '',
-      severity: ['Extreme', 'Severe', 'Moderate', 'Minor', 'Unknown'].includes(
-        info.severity,
+    const previousCoordinateCount = budget.coordinates;
+    try {
+      if (
+        !raw ||
+        !nwsSource(raw.source) ||
+        raw.region !== 'US' ||
+        raw.status !== 'Actual' ||
+        raw.scope !== 'Public' ||
+        !['Alert', 'Update'].includes(raw.msgType) ||
+        typeof raw.identifier !== 'string' ||
+        !raw.identifier.trim() ||
+        raw.identifier.length > 512 ||
+        seen.has(raw.identifier)
       )
-        ? info.severity
-        : 'Unknown',
-      urgency: typeof info.urgency === 'string' ? info.urgency : 'Unknown',
-      certainty:
-        typeof info.certainty === 'string' ? info.certainty : 'Unknown',
-      sent: validTime(raw.sent),
-      onset: validTime(info.onset),
-      expires,
-      areas: normalizedAreas,
-      geometries,
-    });
-    seen.add(raw.identifier);
+        continue;
+      const info = chooseInfo(raw);
+      if (!info || !text(info.event, 160)) continue;
+      const expires = validTime(info.expires);
+      if (expires && Date.parse(expires) <= now) continue;
+      const areas = Array.isArray(info.areas) ? info.areas.slice(0, 128) : [];
+      const normalizedAreas = areas.map((area) => ({
+        description:
+          typeof area?.description === 'string'
+            ? area.description.slice(0, 512)
+            : '',
+        geocode:
+          typeof area?.geocode === 'string' ? area.geocode.slice(0, 2_000) : '',
+        geometry: areaGeometry(area, budget),
+      }));
+      const geometries = normalizedAreas
+        .map(({ geometry }) => geometry)
+        .filter(Boolean);
+      alerts.push({
+        id: raw.identifier,
+        sender: text(raw.sender, 256),
+        event: text(info.event, 160),
+        headline: info.headline
+          ? text(info.headline, 512)
+          : text(info.event, 160),
+        description: info.description ? text(info.description, 16_000) : '',
+        instruction: info.instruction ? text(info.instruction, 8_000) : '',
+        severity: [
+          'Extreme',
+          'Severe',
+          'Moderate',
+          'Minor',
+          'Unknown',
+        ].includes(info.severity)
+          ? info.severity
+          : 'Unknown',
+        urgency: typeof info.urgency === 'string' ? info.urgency : 'Unknown',
+        certainty:
+          typeof info.certainty === 'string' ? info.certainty : 'Unknown',
+        sent: validTime(raw.sent),
+        onset: validTime(info.onset),
+        expires,
+        areas: normalizedAreas,
+        geometries,
+      });
+      seen.add(raw.identifier);
+    } catch (error) {
+      if (error instanceof MalformedCapAlertError) {
+        budget.coordinates = previousCoordinateCount;
+        continue;
+      }
+      throw error;
+    }
   }
   return { schemaVersion: 1, generatedAt, alerts };
 }

@@ -75,7 +75,7 @@ test('projects current NWS alerts, including CAP polygon coordinate order', () =
   assert.deepEqual(snapshot.alerts[0].geometries[0].coordinates[0][0], [-122, 37]);
 });
 
-test('drops update lifecycle messages instead of inferring CAP state locally', () => {
+test('includes active updates and drops cancellations', () => {
   const snapshot = normalizeCapSnapshot(
     payload([
       alert({ identifier: 'live', msgType: 'Alert' }),
@@ -84,7 +84,21 @@ test('drops update lifecycle messages instead of inferring CAP state locally', (
     ]),
     { now: Date.parse('2026-01-01T00:00:00Z') },
   );
-  assert.deepEqual(snapshot.alerts.map((item) => item.id), ['live']);
+  assert.deepEqual(snapshot.alerts.map((item) => item.id), ['live', 'update']);
+});
+
+test('skips one malformed alert without rejecting the whole snapshot', () => {
+  const snapshot = normalizeCapSnapshot(
+    payload([
+      alert({
+        identifier: 'malformed',
+        info: [{ ...alert().info[0], description: 'Gusts >60 mph' }],
+      }),
+      alert({ identifier: 'valid' }),
+    ]),
+    { now: Date.parse('2026-01-01T00:00:00Z') },
+  );
+  assert.deepEqual(snapshot.alerts.map((item) => item.id), ['valid']);
 });
 
 test('resolves forecast, county and fire zones with bounded concurrency and caches results', async () => {
